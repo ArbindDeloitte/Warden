@@ -1,0 +1,1332 @@
+<title>Okta Setup — SecureBank</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* ── Token system ────────────────────────────────────────────────────────────
+   Layout: sidebar-left TOC + main content column, stacks on mobile
+   Color: deep purple brand, lavender tint, burnt-orange accent, near-black ink
+   Type: Inter body + JetBrains Mono for code
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --brand:       #2f1472;
+  --brand-mid:   #4a22a8;
+  --brand-tint:  #f1ecfd;
+  --accent:      #da3d0c;
+  --accent-tint: #fdf0eb;
+  --ink:         #1a1525;
+  --ink-2:       #4a4162;
+  --muted:       #7a72a0;
+  --surface:     #ffffff;
+  --surface-2:   #f8f5ff;
+  --border:      #e4dff5;
+  --code-bg:     #160f32;
+  --code-fg:     #d4c9ff;
+  --code-key:    #7ee2c4;
+  --code-str:    #f9a96e;
+  --code-cmt:    #7a6fa8;
+  --warn-bg:     #fff8f4;
+  --warn-border: #f0a080;
+  --note-bg:     #f4f0ff;
+  --note-border: #b8a4e8;
+  --badge-size:  2rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --brand:       #8b6de8;
+    --brand-mid:   #a582f5;
+    --brand-tint:  #1c1238;
+    --accent:      #f07040;
+    --accent-tint: #2a1508;
+    --ink:         #ede8ff;
+    --ink-2:       #b0a8d4;
+    --muted:       #7a72a0;
+    --surface:     #120d24;
+    --surface-2:   #1a1335;
+    --border:      #2d2450;
+    --code-bg:     #0d0920;
+    --code-fg:     #d4c9ff;
+    --code-key:    #5dd6b3;
+    --code-str:    #f5a466;
+    --code-cmt:    #6a6090;
+    --warn-bg:     #1e1008;
+    --warn-border: #8a4020;
+    --note-bg:     #130e28;
+    --note-border: #6040b8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --brand:       #8b6de8;
+  --brand-mid:   #a582f5;
+  --brand-tint:  #1c1238;
+  --accent:      #f07040;
+  --accent-tint: #2a1508;
+  --ink:         #ede8ff;
+  --ink-2:       #b0a8d4;
+  --muted:       #7a72a0;
+  --surface:     #120d24;
+  --surface-2:   #1a1335;
+  --border:      #2d2450;
+  --code-bg:     #0d0920;
+  --code-fg:     #d4c9ff;
+  --code-key:    #5dd6b3;
+  --code-str:    #f5a466;
+  --code-cmt:    #6a6090;
+  --warn-bg:     #1e1008;
+  --warn-border: #8a4020;
+  --note-bg:     #130e28;
+  --note-border: #6040b8;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+.page-header {
+  background: var(--brand);
+  color: #fff;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.page-header .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.page-header .logo-icon {
+  width: 2rem;
+  height: 2rem;
+  background: rgba(255,255,255,.15);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.page-header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+.page-header .org-pill {
+  margin-left: auto;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 100px;
+  padding: .25rem .75rem;
+  font-size: .75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+/* ── Layout: sidebar + main ───────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  max-width: 1100px;
+  margin: 0 auto;
+  gap: 0;
+  align-items: start;
+  padding-inline: 1rem;
+  padding-block: 2rem;
+}
+
+.sidebar {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 4.5rem);
+  padding-right: 1.5rem;
+  padding-block: 0.5rem;
+  border-right: 1px solid var(--border);
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+}
+.sidebar-label {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .75rem;
+}
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.toc-list a {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: var(--ink-2);
+  font-size: .8rem;
+  padding: .3rem .5rem;
+  border-radius: 6px;
+  transition: background .15s, color .15s;
+  line-height: 1.3;
+}
+.toc-list a:hover { background: var(--brand-tint); color: var(--brand); }
+.toc-list .toc-badge {
+  flex-shrink: 0;
+  width: 1.3rem;
+  height: 1.3rem;
+  background: var(--brand-tint);
+  color: var(--brand);
+  border-radius: 50%;
+  font-size: .65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toc-list .toc-pg { background: var(--accent-tint); color: var(--accent); }
+.toc-divider { height: 1px; background: var(--border); margin: .6rem 0; }
+.toc-section-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: .2rem .5rem;
+}
+
+/* ── Main content ─────────────────────────────────────────────────────────── */
+.main {
+  padding-left: 2rem;
+  min-width: 0;
+}
+
+/* ── Overview block ────────────────────────────────────────────────────────── */
+.overview {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+.overview h2 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: .75rem;
+}
+.flow-diagram {
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 1.2rem 1.4rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+.flow-diagram pre {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  line-height: 1.7;
+  color: var(--code-fg);
+  white-space: pre;
+}
+
+/* ── Architecture comparison table ────────────────────────────────────────── */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.arch-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  border-top: 3px solid;
+}
+.arch-card.server-a { border-top-color: var(--brand); }
+.arch-card.server-b { border-top-color: var(--accent); }
+.arch-card .server-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: .5rem;
+}
+.arch-card h3 {
+  margin: 0 0 .75rem;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.arch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .5rem;
+  font-size: .8rem;
+  padding: .2rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.arch-row:last-child { border-bottom: none; }
+.arch-row .label { color: var(--muted); flex-shrink: 0; }
+.arch-row .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  color: var(--ink);
+  text-align: right;
+  word-break: break-all;
+}
+
+/* ── Checklist / What you will create ────────────────────────────────────── */
+.checklist-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  font-size: .85rem;
+  line-height: 1.4;
+}
+.check-badge {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-weight: 700;
+  font-size: .7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: .1rem;
+}
+.checklist-item .item-text { color: var(--ink-2); }
+.checklist-item .item-text strong { color: var(--ink); }
+
+/* ── Step sections ────────────────────────────────────────────────────────── */
+.step-section {
+  margin-bottom: 2.5rem;
+  padding-top: .5rem;
+  scroll-margin-top: 5rem;
+}
+.step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.step-num {
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: .9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: .1rem;
+}
+.step-num.pg {
+  background: var(--accent);
+  font-size: .7rem;
+  letter-spacing: -.02em;
+}
+.step-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-wrap: balance;
+  line-height: 1.3;
+}
+.step-header .step-sub {
+  margin: .25rem 0 0;
+  font-size: .8rem;
+  color: var(--muted);
+}
+.step-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2rem 0;
+}
+
+/* ── Nav path ─────────────────────────────────────────────────────────────── */
+.nav-path {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .3rem;
+  font-size: .78rem;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .4rem .75rem;
+  margin-bottom: 1rem;
+  font-family: 'Inter', sans-serif;
+}
+.nav-path .sep { opacity: .5; }
+.nav-path .last { color: var(--brand); font-weight: 600; }
+
+/* ── Tables ────────────────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin: 1rem 0; border-radius: 8px; border: 1px solid var(--border); }
+table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+thead { background: var(--surface-2); }
+th {
+  text-align: left;
+  padding: .6rem .9rem;
+  font-weight: 700;
+  font-size: .72rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: .6rem .9rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--ink-2);
+}
+tr:last-child td { border-bottom: none; }
+td code, th code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  background: var(--brand-tint);
+  color: var(--brand);
+  padding: .1em .4em;
+  border-radius: 4px;
+}
+td strong { color: var(--ink); font-weight: 600; }
+
+/* ── Code blocks ───────────────────────────────────────────────────────────── */
+.code-block-wrap {
+  background: var(--code-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.code-block-lang {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem;
+  font-weight: 500;
+  color: #6a60a0;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.copy-btn {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #9090c0;
+  font-family: 'Inter', sans-serif;
+  font-size: .7rem;
+  padding: .2rem .6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.copy-btn:hover { background: rgba(255,255,255,.14); color: #c0c0f0; }
+.copy-btn:focus-visible { outline: 2px solid #8060e0; outline-offset: 2px; }
+.code-block-wrap pre {
+  margin: 0;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  line-height: 1.75;
+  color: var(--code-fg);
+}
+.ck { color: var(--code-key); }
+.cs { color: var(--code-str); }
+.cm { color: var(--code-cmt); }
+.cv { color: #c8b4ff; }
+
+/* ── Inline code ───────────────────────────────────────────────────────────── */
+p code, li code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8em;
+  background: var(--brand-tint);
+  color: var(--brand);
+  padding: .15em .4em;
+  border-radius: 4px;
+}
+
+/* ── Callouts ──────────────────────────────────────────────────────────────── */
+.callout {
+  display: flex;
+  gap: .75rem;
+  padding: .9rem 1.1rem;
+  border-radius: 8px;
+  font-size: .82rem;
+  line-height: 1.5;
+  margin: 1rem 0;
+  border-left: 3px solid;
+}
+.callout-icon { flex-shrink: 0; font-size: 1rem; line-height: 1; margin-top: .05rem; }
+.callout.warn {
+  background: var(--warn-bg);
+  border-color: var(--accent);
+  color: var(--ink-2);
+}
+.callout.note {
+  background: var(--note-bg);
+  border-color: var(--brand);
+  color: var(--ink-2);
+}
+.callout strong { color: var(--ink); }
+
+/* ── Expected response ─────────────────────────────────────────────────────── */
+.expect-label {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.2rem 0 .4rem;
+}
+
+/* ── Claim verification table ─────────────────────────────────────────────── */
+.claim-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem;
+  color: var(--brand);
+}
+
+/* ── Env var sections ──────────────────────────────────────────────────────── */
+.env-section { margin-bottom: 1.8rem; }
+.env-section h3 {
+  margin: 0 0 .6rem;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.env-path {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  background: var(--brand-tint);
+  color: var(--brand);
+  padding: .3rem .7rem;
+  border-radius: 5px;
+  margin-bottom: .75rem;
+}
+
+/* ── Body text ─────────────────────────────────────────────────────────────── */
+p { margin: 0 0 .75rem; max-width: 68ch; }
+ul, ol { margin: .5rem 0; padding-left: 1.5rem; }
+li { margin-bottom: .3rem; }
+ol.steps-list { counter-reset: step; padding-left: 0; list-style: none; }
+ol.steps-list li {
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+  margin-bottom: .6rem;
+}
+ol.steps-list li::before {
+  content: counter(step);
+  counter-increment: step;
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  background: var(--brand-tint);
+  color: var(--brand);
+  border-radius: 50%;
+  font-size: .68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: .15rem;
+}
+
+/* ── Section headings ──────────────────────────────────────────────────────── */
+.section-heading {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin: 0 0 1rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── PG sub-steps ──────────────────────────────────────────────────────────── */
+.pg-subsection { margin-bottom: 1.6rem; }
+.pg-subsection h3 {
+  margin: 0 0 .8rem;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.pg-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  background: var(--accent-tint);
+  color: var(--accent);
+  padding: .2rem .5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding-inline: 1rem;
+    gap: 1rem;
+  }
+  .sidebar {
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+    padding-bottom: 1rem;
+    max-height: none;
+    overflow-y: visible;
+  }
+  .main { padding-left: 0; }
+  .arch-grid { grid-template-columns: 1fr; }
+  .page-header .org-pill { display: none; }
+  .page-header h1 { font-size: 1rem; }
+}
+@media (max-width: 480px) {
+  .step-num { width: 2rem; height: 2rem; font-size: .78rem; }
+  .step-header h2 { font-size: 1rem; }
+}
+</style>
+
+<!-- ── Page header ─────────────────────────────────────────────────────────── -->
+<header class="page-header">
+  <div class="logo">
+    <div class="logo-icon">🏦</div>
+    <h1>SecureBank — Okta Setup Guide</h1>
+  </div>
+  <div class="org-pill">demo-arbind-lochan-mishra.okta.com</div>
+</header>
+
+<!-- ── Layout ─────────────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar TOC -->
+  <nav class="sidebar" aria-label="Table of contents">
+    <div class="sidebar-label">Contents</div>
+    <ul class="toc-list">
+      <li><div class="toc-section-label">Overview</div></li>
+      <li><a href="#overview"><span class="toc-badge">&#9432;</span>Architecture</a></li>
+      <li><a href="#checklist"><span class="toc-badge">&#9745;</span>What you'll create</a></li>
+      <div class="toc-divider"></div>
+      <li><div class="toc-section-label">Okta Steps</div></li>
+      <li><a href="#step1"><span class="toc-badge">1</span>Auth Server A</a></li>
+      <li><a href="#step2"><span class="toc-badge">2</span>Auth Server B</a></li>
+      <li><a href="#step3"><span class="toc-badge">3</span>Establish Trust</a></li>
+      <li><a href="#step4"><span class="toc-badge">4</span>Banking Scopes</a></li>
+      <li><a href="#step5"><span class="toc-badge">5</span>Groups Claim</a></li>
+      <li><a href="#step6"><span class="toc-badge">6</span>SPA App</a></li>
+      <li><a href="#step7"><span class="toc-badge">7</span>API Services App</a></li>
+      <li><a href="#step8"><span class="toc-badge">8</span>Policy — Server A</a></li>
+      <li><a href="#step9"><span class="toc-badge">9</span>Policy — Server B</a></li>
+      <li><a href="#step10"><span class="toc-badge">10</span>Verify OBO</a></li>
+      <div class="toc-divider"></div>
+      <li><div class="toc-section-label">PointGuardAI</div></li>
+      <li><a href="#pg1"><span class="toc-badge toc-pg">PG1</span>API Token</a></li>
+      <li><a href="#pg2"><span class="toc-badge toc-pg">PG2</span>Add MCP Server</a></li>
+      <li><a href="#pg3"><span class="toc-badge toc-pg">PG3</span>Switch to OBO</a></li>
+      <li><a href="#pg4"><span class="toc-badge toc-pg">PG4</span>Virtual Server</a></li>
+      <li><a href="#pg5"><span class="toc-badge toc-pg">PG5</span>Access Rules</a></li>
+      <div class="toc-divider"></div>
+      <li><a href="#envvars"><span class="toc-badge">&#9903;</span>Env Variables</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Overview -->
+    <section class="step-section" id="overview">
+      <div class="section-heading">Architecture Overview</div>
+      <div class="overview">
+        <h2>Token flow</h2>
+        <div class="flow-diagram">
+          <pre>Frontend Login (Auth Code + PKCE)
+  └─→ Auth Server A  →  access token (aud: api://banking)
+                                │
+                                │  copied to x-user-token header
+                                ↓
+          PointGuardAI Gateway  (OBO exchange)
+                                │
+                                │  presents user token to Auth Server B
+                                ↓
+                         Auth Server B  ◄─ trusts Auth Server A
+                                │  →  OBO token (aud: api://banking-mcp, sub: same user)
+                                ↓
+                     Banking MCP Server  (validates Auth Server B token)</pre>
+        </div>
+
+        <div class="arch-grid">
+          <div class="arch-card server-a">
+            <div class="server-name">Auth Server A</div>
+            <h3>SecureBank-UserAuth</h3>
+            <div class="arch-row"><span class="label">Audience</span><span class="val">api://banking</span></div>
+            <div class="arch-row"><span class="label">Used by</span><span class="val">Frontend · Agent PKCE</span></div>
+            <div class="arch-row"><span class="label">Validates</span><span class="val">REST API routes</span></div>
+            <div class="arch-row"><span class="label">Trust</span><span class="val">—</span></div>
+          </div>
+          <div class="arch-card server-b">
+            <div class="server-name">Auth Server B</div>
+            <h3>SecureBank-MCPExchange</h3>
+            <div class="arch-row"><span class="label">Audience</span><span class="val">api://banking-mcp</span></div>
+            <div class="arch-row"><span class="label">Used by</span><span class="val">PG Gateway (OBO)</span></div>
+            <div class="arch-row"><span class="label">Validates</span><span class="val">MCP endpoint</span></div>
+            <div class="arch-row"><span class="label">Trust</span><span class="val">Trusts Server A</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Checklist -->
+    <section class="step-section" id="checklist">
+      <div class="section-heading">What You Will Create</div>
+      <div class="checklist-grid">
+        <div class="checklist-item"><div class="check-badge">A</div><div class="item-text"><strong>Auth Server A</strong> — <code>SecureBank-UserAuth</code> — issues user tokens for the frontend</div></div>
+        <div class="checklist-item"><div class="check-badge">B</div><div class="item-text"><strong>Auth Server B</strong> — <code>SecureBank-MCPExchange</code> — performs OBO exchange for the PG Gateway</div></div>
+        <div class="checklist-item"><div class="check-badge">C</div><div class="item-text"><strong>Trust</strong> — Server B trusts Server A — allows Server B to accept Server A tokens in exchanges</div></div>
+        <div class="checklist-item"><div class="check-badge">D</div><div class="item-text"><strong>Banking scopes</strong> on <em>both</em> servers — 10 granular permission scopes</div></div>
+        <div class="checklist-item"><div class="check-badge">E</div><div class="item-text"><strong>Groups claim</strong> on <em>both</em> servers — user group membership in tokens</div></div>
+        <div class="checklist-item"><div class="check-badge">F</div><div class="item-text"><strong>OIDC SPA app</strong> — <code>SecureBank Frontend</code> — frontend + agent PKCE login</div></div>
+        <div class="checklist-item"><div class="check-badge">G</div><div class="item-text"><strong>API Services app</strong> — <code>PointGuardAI Gateway</code> — OBO exchange client (registered on Server B)</div></div>
+        <div class="checklist-item"><div class="check-badge">H</div><div class="item-text"><strong>Access policy on Server A</strong> for app F — allows end-users to sign in</div></div>
+        <div class="checklist-item"><div class="check-badge">I</div><div class="item-text"><strong>Access policy on Server B</strong> for app G — allows gateway to exchange tokens</div></div>
+      </div>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 1 ── -->
+    <section class="step-section" id="step1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div>
+          <h2>Create Auth Server A — User / Frontend</h2>
+          <div class="step-sub">Issues access tokens for the SecureBank frontend and agent</div>
+        </div>
+      </div>
+      <div class="nav-path">
+        <span>Security</span><span class="sep">→</span>
+        <span>API</span><span class="sep">→</span>
+        <span>Authorization Servers</span><span class="sep">→</span>
+        <span class="last">Add Authorization Server</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Name</td><td><code>SecureBank-UserAuth</code></td></tr>
+            <tr><td>Audience</td><td><code>api://banking</code></td></tr>
+            <tr><td>Description</td><td>Issues access tokens for the SecureBank frontend and agent</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Save</strong>. Note the server's:</p>
+      <ul>
+        <li><strong>Issuer</strong>: <code>https://demo-arbind-lochan-mishra.okta.com/oauth2/{serverA-id}</code> → goes in <code>OKTA_ISSUER</code> (backend) and <code>VITE_OKTA_ISSUER</code> (frontend)</li>
+        <li><strong>Metadata URI</strong> (to find the JWKS URL)</li>
+      </ul>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 2 ── -->
+    <section class="step-section" id="step2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div>
+          <h2>Create Auth Server B — MCP / Exchange</h2>
+          <div class="step-sub">Performs OBO token exchange for the PointGuardAI MCP Gateway</div>
+        </div>
+      </div>
+      <div class="nav-path">
+        <span>Security</span><span class="sep">→</span>
+        <span>API</span><span class="sep">→</span>
+        <span>Authorization Servers</span><span class="sep">→</span>
+        <span class="last">Add Authorization Server</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Name</td><td><code>SecureBank-MCPExchange</code></td></tr>
+            <tr><td>Audience</td><td><code>api://banking-mcp</code></td></tr>
+            <tr><td>Description</td><td>Performs OBO token exchange for the PointGuardAI MCP Gateway</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Save</strong>. Note the server's:</p>
+      <ul>
+        <li><strong>Issuer</strong>: <code>https://demo-arbind-lochan-mishra.okta.com/oauth2/{serverB-id}</code> → goes in <code>OKTA_MCP_ISSUER</code> (backend)</li>
+        <li><strong>Token endpoint</strong>: <code>https://demo-arbind-lochan-mishra.okta.com/oauth2/{serverB-id}/v1/token</code> → goes in PG Gateway OBO config <code>token_url</code></li>
+      </ul>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 3 ── -->
+    <section class="step-section" id="step3">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div>
+          <h2>Establish Trust — Server B trusts Server A</h2>
+          <div class="step-sub">Allows Server B to accept Auth Server A tokens in an OBO exchange</div>
+        </div>
+      </div>
+      <ol class="steps-list">
+        <li>In the Okta admin console, open <strong>Security → API</strong>, click on <code>SecureBank-MCPExchange</code> (Server B).</li>
+        <li>Click the <strong>Trusted Servers</strong> tab.</li>
+        <li>Click <strong>Add Server</strong>, find <code>SecureBank-UserAuth</code> (Server A), select it, click <strong>Add</strong>.</li>
+        <li>Click <strong>Done</strong>.</li>
+      </ol>
+      <div class="callout note">
+        <div class="callout-icon">ℹ</div>
+        <div><strong>Why this matters:</strong> When the PointGuardAI Gateway sends a user's Auth Server A token to Server B's <code>/v1/token</code> endpoint for OBO exchange, Server B will validate the incoming token against Server A's JWKS before issuing the exchanged token.</div>
+      </div>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 4 ── -->
+    <section class="step-section" id="step4">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div>
+          <h2>Add Banking Scopes to Both Servers</h2>
+          <div class="step-sub">Repeat on Auth Server A and Auth Server B separately</div>
+        </div>
+      </div>
+      <p>For each server: <strong>Scopes tab → Add Scope</strong> for all 10 scopes below.</p>
+      <div class="callout note">
+        <div class="callout-icon">ℹ</div>
+        <div>Leave <strong>User consent</strong>: Optional for all. Tick <strong>Include in public metadata</strong>.</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Scope</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>accounts:balance:read</code></td><td>View account balances</td></tr>
+            <tr><td><code>accounts:read</code></td><td>List and view accounts</td></tr>
+            <tr><td><code>accounts:statements:read</code></td><td>View account statements</td></tr>
+            <tr><td><code>accounts:transactions:read</code></td><td>View transaction history</td></tr>
+            <tr><td><code>accounts:write</code></td><td>Update account settings</td></tr>
+            <tr><td><code>payments:approve</code></td><td>Approve pending payments</td></tr>
+            <tr><td><code>payments:initiate</code></td><td>Create new payments</td></tr>
+            <tr><td><code>payments:read</code></td><td>View payment history</td></tr>
+            <tr><td><code>standing-orders:manage</code></td><td>Create / update / cancel standing orders</td></tr>
+            <tr><td><code>transfers:external:create</code></td><td>Create external (IBAN) transfers</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 5 ── -->
+    <section class="step-section" id="step5">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div>
+          <h2>Add Groups Claim to Both Servers</h2>
+          <div class="step-sub">Repeat on Auth Server A and Auth Server B separately</div>
+        </div>
+      </div>
+      <p>For each server: <strong>Claims tab → Add Claim</strong></p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Name</td><td><code>groups</code></td></tr>
+            <tr><td>Include in token type</td><td>Access Token</td></tr>
+            <tr><td>Value type</td><td>Groups</td></tr>
+            <tr><td>Filter</td><td>Matches regex → <code>.*</code></td></tr>
+            <tr><td>Include in</td><td>Any scope</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Create</strong>.</p>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 6 ── -->
+    <section class="step-section" id="step6">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <div>
+          <h2>Create the OIDC SPA App — SecureBank Frontend</h2>
+          <div class="step-sub">Used by the React banking frontend and the Python agent's PKCE flow</div>
+        </div>
+      </div>
+      <div class="nav-path">
+        <span>Applications</span><span class="sep">→</span>
+        <span>Applications</span><span class="sep">→</span>
+        <span>Create App Integration</span><span class="sep">→</span>
+        <span>OIDC — OpenID Connect</span><span class="sep">→</span>
+        <span class="last">Single-Page Application</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>App integration name</td><td><code>SecureBank Frontend</code></td></tr>
+            <tr><td>Grant type</td><td>Authorization Code (PKCE automatic for SPA)</td></tr>
+            <tr><td>Sign-in redirect URIs</td><td><code>http://localhost:5173/login/callback</code><br><code>http://localhost:8765/callback</code> (Python agent)</td></tr>
+            <tr><td>Sign-out redirect URIs</td><td><code>http://localhost:5173</code></td></tr>
+            <tr><td>Controlled access</td><td>Allow everyone in your organization</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Save</strong>. Copy the <strong>Client ID</strong> — you need it in <code>frontend/.env</code> and <code>agent/.env</code>.</p>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 7 ── -->
+    <section class="step-section" id="step7">
+      <div class="step-header">
+        <div class="step-num">7</div>
+        <div>
+          <h2>Create the API Services App — PointGuardAI Gateway</h2>
+          <div class="step-sub">Used by the gateway to authenticate when performing OBO exchanges at Auth Server B</div>
+        </div>
+      </div>
+      <div class="nav-path">
+        <span>Applications</span><span class="sep">→</span>
+        <span>Applications</span><span class="sep">→</span>
+        <span>Create App Integration</span><span class="sep">→</span>
+        <span class="last">API Services</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>App integration name</td><td><code>PointGuardAI Gateway</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Save</strong>. Then:</p>
+      <ol class="steps-list">
+        <li><strong>General → General Settings → Edit</strong></li>
+        <li>Under <strong>Grant type</strong>, click <strong>Advanced</strong> and tick <strong>Token Exchange</strong>.</li>
+        <li>Leave <strong>Client authentication</strong> on <strong>Client secret</strong>.</li>
+        <li>Click <strong>Save</strong>.</li>
+        <li>Copy the <strong>Client ID</strong> and <strong>Client secret</strong> — these are used in the PG Gateway OBO config.</li>
+      </ol>
+      <div class="callout warn">
+        <div class="callout-icon">⚠</div>
+        <div><strong>NHI subscription required.</strong> Okta's Token Exchange grant for OBO requires an NHI Authentication Token subscription purchased or renewed on or after 14 August 2026. Confirm with your Okta account team before proceeding. Without it, Step 9 will fail with <code>unauthorized_client</code>.</div>
+      </div>
+      <div class="callout warn">
+        <div class="callout-icon">⚠</div>
+        <div><strong>Must be API Services.</strong> Create this as an <strong>API Services</strong> app. An ordinary OIDC web app with Token Exchange enabled uses a different Okta flow that requires an <code>actor_token</code> the gateway does not send.</div>
+      </div>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 8 ── -->
+    <section class="step-section" id="step8">
+      <div class="step-header">
+        <div class="step-num">8</div>
+        <div>
+          <h2>Access Policy on Auth Server A — Frontend Users</h2>
+          <div class="step-sub">Allows end-users to sign in and receive banking-scoped tokens</div>
+        </div>
+      </div>
+      <div class="nav-path">
+        <span>Security</span><span class="sep">→</span>
+        <span>API</span><span class="sep">→</span>
+        <span>SecureBank-UserAuth</span><span class="sep">→</span>
+        <span>Access Policies</span><span class="sep">→</span>
+        <span class="last">Add New Access Policy</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Policy name</td><td><code>Users to SecureBank</code></td></tr>
+            <tr><td>Assign to</td><td><code>SecureBank Frontend</code> (app F)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Go to Rule</strong>, then <strong>Add Rule</strong>:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Rule name</td><td><code>Auth Code login</code></td></tr>
+            <tr><td>IF Grant type is</td><td>Authorization Code</td></tr>
+            <tr><td>AND User is</td><td>Any user assigned to the app</td></tr>
+            <tr><td>AND Scopes requested include</td><td><code>openid</code>, <code>profile</code>, <code>email</code>, plus any of the 10 banking scopes</td></tr>
+            <tr><td>Token lifetime</td><td>Access token: 1 hour</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Create Rule</strong>, then <strong>Create Policy</strong>.</p>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 9 ── -->
+    <section class="step-section" id="step9">
+      <div class="step-header">
+        <div class="step-num">9</div>
+        <div>
+          <h2>Access Policy on Auth Server B — Gateway OBO Exchange</h2>
+          <div class="step-sub">Allows the PointGuardAI Gateway to exchange tokens on behalf of users</div>
+        </div>
+      </div>
+      <div class="nav-path">
+        <span>Security</span><span class="sep">→</span>
+        <span>API</span><span class="sep">→</span>
+        <span>SecureBank-MCPExchange</span><span class="sep">→</span>
+        <span>Access Policies</span><span class="sep">→</span>
+        <span class="last">Add New Access Policy</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Policy name</td><td><code>Gateway OBO Exchange</code></td></tr>
+            <tr><td>Assign to</td><td><code>PointGuardAI Gateway</code> (app G)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Go to Rule</strong>, then <strong>Add Rule</strong>:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Rule name</td><td><code>Token Exchange</code></td></tr>
+            <tr><td>IF Grant type is</td><td>(click Advanced) → Token Exchange</td></tr>
+            <tr><td>AND User is</td><td>Any user assigned to the app (or the groups that may use the agents)</td></tr>
+            <tr><td>AND Scopes requested include</td><td>The 10 banking scopes</td></tr>
+            <tr><td>Token lifetime</td><td>Access token: 1 hour</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Create Rule</strong>, then <strong>Create Policy</strong>.</p>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Step 10 ── -->
+    <section class="step-section" id="step10">
+      <div class="step-header">
+        <div class="step-num">10</div>
+        <div>
+          <h2>Verify the OBO Exchange Manually</h2>
+          <div class="step-sub">Confirm Auth Server B accepts a token from Auth Server A before wiring the gateway</div>
+        </div>
+      </div>
+      <p>Get a fresh access token for a test user from the banking frontend (or browser DevTools), then run:</p>
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-block-lang">bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre id="curl-code"><span class="ck">export</span> <span class="cv">SERVER_B_TOKEN_URL</span>=<span class="cs">"https://demo-arbind-lochan-mishra.okta.com/oauth2/{serverB-id}/v1/token"</span>
+<span class="ck">export</span> <span class="cv">GW_CLIENT_ID</span>=<span class="cs">"{gatewayAppClientId}"</span>
+<span class="ck">export</span> <span class="cv">GW_CLIENT_SECRET</span>=<span class="cs">"{gatewayAppClientSecret}"</span>
+<span class="ck">export</span> <span class="cv">USER_TOKEN</span>=<span class="cs">"{access token from Auth Server A}"</span>
+
+curl -s -X POST <span class="cs">"$SERVER_B_TOKEN_URL"</span> \
+  -H <span class="cs">"Content-Type: application/x-www-form-urlencoded"</span> \
+  --data-urlencode <span class="cs">"grant_type=urn:ietf:params:oauth:grant-type:token-exchange"</span> \
+  --data-urlencode <span class="cs">"subject_token_type=urn:ietf:params:oauth:token-type:access_token"</span> \
+  --data-urlencode <span class="cs">"requested_token_type=urn:ietf:params:oauth:token-type:access_token"</span> \
+  --data-urlencode <span class="cs">"subject_token=$USER_TOKEN"</span> \
+  --data-urlencode <span class="cs">"client_id=$GW_CLIENT_ID"</span> \
+  --data-urlencode <span class="cs">"client_secret=$GW_CLIENT_SECRET"</span> \
+  --data-urlencode <span class="cs">"audience=api://banking-mcp"</span> \
+  --data-urlencode <span class="cs">"scope=accounts:read accounts:balance:read accounts:transactions:read payments:read"</span></pre>
+      </div>
+
+      <div class="expect-label">Expected response</div>
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-block-lang">json</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>{
+  <span class="cs">"token_type"</span>: <span class="cs">"Bearer"</span>,
+  <span class="cs">"expires_in"</span>: <span class="cv">3600</span>,
+  <span class="cs">"access_token"</span>: <span class="cs">"eyJ..."</span>,
+  <span class="cs">"scope"</span>: <span class="cs">"accounts:read ..."</span>,
+  <span class="cs">"issued_token_type"</span>: <span class="cs">"urn:ietf:params:oauth:token-type:access_token"</span>
+}</pre>
+      </div>
+
+      <p>Decode the new <code>access_token</code> and verify these claims:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Claim</th><th>Expected</th></tr></thead>
+          <tbody>
+            <tr><td class="claim-label">iss</td><td><code>https://demo-arbind-lochan-mishra.okta.com/oauth2/{serverB-id}</code></td></tr>
+            <tr><td class="claim-label">aud</td><td><code>api://banking-mcp</code></td></tr>
+            <tr><td class="claim-label">sub</td><td><strong>The test user's ID</strong> (not the gateway app's client ID)</td></tr>
+            <tr><td class="claim-label">cid</td><td>The gateway app's client ID</td></tr>
+            <tr><td class="claim-label">scp</td><td>The scopes you requested</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── PointGuardAI Gateway ── -->
+    <div class="section-heading" style="margin-top:1rem;">PointGuardAI Gateway Configuration</div>
+    <p style="margin-bottom:1.5rem;color:var(--ink-2)">Follow the onboarding doc §3.5 steps 1–5. Complete all Okta steps above first.</p>
+
+    <!-- PG-1 -->
+    <section class="step-section" id="pg1">
+      <div class="pg-subsection">
+        <h3><span class="pg-label">PG-1</span> Create Gateway API Token</h3>
+        <div class="nav-path">
+          <span>Organization</span><span class="sep">→</span>
+          <span>API Tokens</span><span class="sep">→</span>
+          <span class="last">Create token</span>
+        </div>
+        <p>Copy the token and set it as <code>PG_GATEWAY_TOKEN</code> in <code>agent/.env</code>.</p>
+      </div>
+    </section>
+
+    <!-- PG-2 -->
+    <section class="step-section" id="pg2">
+      <div class="pg-subsection">
+        <h3><span class="pg-label">PG-2</span> Add the Banking MCP Server</h3>
+        <div class="nav-path">
+          <span>MCP</span><span class="sep">→</span>
+          <span>MCP Servers</span><span class="sep">→</span>
+          <span class="last">Add MCP server</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Name</td><td><code>banking</code></td></tr>
+              <tr><td>URL</td><td><code>http://localhost:3001/mcp</code> (or your public URL)</td></tr>
+              <tr><td>Transport</td><td>Streamable HTTP</td></tr>
+              <tr><td>Authentication Type</td><td>Bearer Token</td></tr>
+              <tr><td>Token</td><td>A one-time access token from Auth Server <strong>B</strong> for a test user</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Save and verify tools appear under <strong>MCP → Tools</strong>.</p>
+      </div>
+    </section>
+
+    <!-- PG-3 -->
+    <section class="step-section" id="pg3">
+      <div class="pg-subsection">
+        <h3><span class="pg-label">PG-3</span> Switch to OBO Token Exchange</h3>
+        <p>Edit the same server you created in PG-2:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Authentication Type</td><td>OAuth 2.0</td></tr>
+              <tr><td>Grant Type</td><td>Token Exchange (RFC 8693, On-Behalf-Of User)</td></tr>
+              <tr><td>Issuer URL</td><td>Auth Server <strong>A</strong> issuer: <code>https://demo-arbind-lochan-mishra.okta.com/oauth2/{serverA-id}</code></td></tr>
+              <tr><td>Client ID</td><td>PointGuardAI Gateway app client ID</td></tr>
+              <tr><td>Client Secret</td><td>PointGuardAI Gateway app client secret</td></tr>
+              <tr><td>Token URL</td><td>Auth Server <strong>B</strong> token endpoint: <code>https://demo-arbind-lochan-mishra.okta.com/oauth2/{serverB-id}/v1/token</code></td></tr>
+              <tr><td>Fall back to Client Credentials</td><td>☐ <strong>Unchecked</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Leave <strong>Requested Token Type</strong> and <strong>Subject Token Type</strong> empty — PointGuardAI sets these.</p>
+        <div class="callout note">
+          <div class="callout-icon">ℹ</div>
+          <div><strong>Additional settings PointGuardAI applies</strong> (tell them after you save):
+            <ul style="margin:.5rem 0 0;padding-left:1.2rem;">
+              <li><code>subject_token_source: x-user-token</code></li>
+              <li><code>audience: api://banking-mcp</code> (Auth Server B's audience)</li>
+              <li><code>scopes</code>: the 10 banking scopes</li>
+              <li>Token types: <code>access_token</code> for both subject and requested</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PG-4 -->
+    <section class="step-section" id="pg4">
+      <div class="pg-subsection">
+        <h3><span class="pg-label">PG-4</span> Create Virtual Server</h3>
+        <div class="nav-path">
+          <span>MCP</span><span class="sep">→</span>
+          <span>Virtual Servers</span><span class="sep">→</span>
+          <span class="last">Create virtual server</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Name</td><td><code>banking-agent</code></td></tr>
+              <tr><td>MCP Servers</td><td><code>banking</code> (from PG-2)</td></tr>
+              <tr><td>Associated Tools</td><td>All tools</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Copy the virtual server ID → set as <code>PG_VIRTUAL_SERVER_ID</code> in <code>agent/.env</code>.</p>
+      </div>
+    </section>
+
+    <!-- PG-5 -->
+    <section class="step-section" id="pg5">
+      <div class="pg-subsection">
+        <h3><span class="pg-label">PG-5</span> Write Access Rules</h3>
+        <div class="nav-path">
+          <span>Extensions</span><span class="sep">→</span>
+          <span>Policies</span><span class="sep">→</span>
+          <span>Access Rules</span><span class="sep">→</span>
+          <span class="last">New rule</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Rule name</th><th>Effect</th><th>Condition</th></tr></thead>
+            <tbody>
+              <tr><td>No human, no action</td><td><strong>Deny</strong></td><td>User token present = false</td></tr>
+              <tr><td>Refuse undeclared agents</td><td><strong>Deny</strong></td><td>Agent is not one of <code>banking-agent</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="step-divider"></div>
+
+    <!-- ── Environment Variables ── -->
+    <section class="step-section" id="envvars">
+      <div class="section-heading">Environment Variable Reference</div>
+
+      <div class="env-section">
+        <h3>Backend</h3>
+        <div class="env-path">banking-app/backend/.env</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Variable</th><th>Okta value</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td><code>OKTA_ISSUER</code></td><td>Auth Server <strong>A</strong> issuer URL</td><td>Step 1</td></tr>
+              <tr><td><code>OKTA_AUDIENCE</code></td><td><code>api://banking</code></td><td>Step 1 (audience you set)</td></tr>
+              <tr><td><code>OKTA_MCP_ISSUER</code></td><td>Auth Server <strong>B</strong> issuer URL</td><td>Step 2</td></tr>
+              <tr><td><code>OKTA_MCP_AUDIENCE</code></td><td><code>api://banking-mcp</code></td><td>Step 2 (audience you set)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <h3>Frontend</h3>
+        <div class="env-path">banking-app/frontend/.env</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Variable</th><th>Okta value</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td><code>VITE_OKTA_ISSUER</code></td><td>Auth Server <strong>A</strong> issuer URL</td><td>Step 1</td></tr>
+              <tr><td><code>VITE_OKTA_CLIENT_ID</code></td><td><code>SecureBank Frontend</code> client ID</td><td>Step 6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <h3>Agent</h3>
+        <div class="env-path">agent/.env</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Variable</th><th>Okta value</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td><code>OKTA_ISSUER</code></td><td>Auth Server <strong>A</strong> issuer URL</td><td>Step 1</td></tr>
+              <tr><td><code>OKTA_CLIENT_ID</code></td><td><code>SecureBank Frontend</code> client ID</td><td>Step 6</td></tr>
+              <tr><td><code>PG_GATEWAY_URL</code></td><td>PointGuardAI gateway URL</td><td>Step PG-1</td></tr>
+              <tr><td><code>PG_GATEWAY_TOKEN</code></td><td>PointGuardAI API token</td><td>Step PG-1</td></tr>
+              <tr><td><code>PG_VIRTUAL_SERVER_ID</code></td><td>Virtual server ID</td><td>Step PG-4</td></tr>
+              <tr><td><code>PG_AGENT_NAME</code></td><td><code>banking-agent</code></td><td>Step PG-4</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="callout note">
+        <div class="callout-icon">ℹ</div>
+        <div><strong>Note on <code>USER_TOKEN</code>:</strong> The token the agent puts in <code>x-user-token</code> is an <strong>Auth Server A</strong> access token (obtained via PKCE sign-in). The PointGuardAI Gateway then exchanges it at Auth Server B to get the MCP-scoped token. You never need to manually obtain an Auth Server B token — the gateway does the exchange for you.</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('.code-block-wrap').querySelector('pre');
+  const text = pre.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNodeContents(pre);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    btn.textContent = 'Selected';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+</script>

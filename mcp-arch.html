@@ -1,0 +1,701 @@
+<title>MCP Virtual Server Architecture</title>
+<style>
+  /* ── tokens ──────────────────────────────────────────────────────── */
+  :root {
+    --bg: #f8f9fc;
+    --surface: #ffffff;
+    --border: #e2e6ef;
+    --text: #1a1f36;
+    --muted: #6b7394;
+    --accent: #4f46e5;
+    --accent-soft: #ede9fe;
+    --green: #059669;
+    --green-soft: #d1fae5;
+    --orange: #d97706;
+    --orange-soft: #fef3c7;
+    --red: #dc2626;
+    --red-soft: #fee2e2;
+    --blue: #2563eb;
+    --blue-soft: #dbeafe;
+    --tab-h: 3.5rem;
+    --radius: 10px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d0f1a;
+      --surface: #151829;
+      --border: #252a45;
+      --text: #e4e8f7;
+      --muted: #8890b5;
+      --accent: #818cf8;
+      --accent-soft: #1e1b4b;
+      --green: #34d399;
+      --green-soft: #064e3b;
+      --orange: #fbbf24;
+      --orange-soft: #451a03;
+      --red: #f87171;
+      --red-soft: #450a0a;
+      --blue: #60a5fa;
+      --blue-soft: #1e3a5f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0f1a;
+    --surface: #151829;
+    --border: #252a45;
+    --text: #e4e8f7;
+    --muted: #8890b5;
+    --accent: #818cf8;
+    --accent-soft: #1e1b4b;
+    --green: #34d399;
+    --green-soft: #064e3b;
+    --orange: #fbbf24;
+    --orange-soft: #451a03;
+    --red: #f87171;
+    --red-soft: #450a0a;
+    --blue: #60a5fa;
+    --blue-soft: #1e3a5f;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 0 16px;
+    padding-block: 0;
+  }
+
+  /* ── header ─────────────────────────────────────────────────────── */
+  .page-header {
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  .page-header p {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-top: 4px;
+  }
+
+  /* ── tabs ────────────────────────────────────────────────────────── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .tab-btn {
+    height: var(--tab-h);
+    padding: 0 18px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── diagram container ───────────────────────────────────────────── */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    overflow-x: auto;
+  }
+  .diagram-wrap pre.mermaid {
+    min-width: 600px;
+  }
+
+  /* ── key/legend ──────────────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── callout cards ───────────────────────────────────────────────── */
+  .callouts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    border-left: 3px solid var(--accent);
+  }
+  .callout.green { border-left-color: var(--green); }
+  .callout.orange { border-left-color: var(--orange); }
+  .callout.blue { border-left-color: var(--blue); }
+  .callout.red { border-left-color: var(--red); }
+  .callout h3 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    color: var(--muted);
+  }
+  .callout p {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--text);
+  }
+  .callout code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  /* ── step list ───────────────────────────────────────────────────── */
+  .step-list { margin-top: 28px; display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 0 16px;
+    padding-bottom: 24px;
+    position: relative;
+  }
+  .step:last-child { padding-bottom: 0; }
+  .step::before {
+    content: '';
+    position: absolute;
+    left: 1.25rem;
+    top: 2.5rem;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .step:last-child::before { display: none; }
+  .step-num {
+    width: 2.5rem; height: 2.5rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.875rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .step-body { padding-top: 4px; }
+  .step-body h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+  .step-body p { font-size: 0.875rem; color: var(--muted); line-height: 1.55; }
+  .step-body code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--accent);
+  }
+  .chip {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .chip-green { background: var(--green-soft); color: var(--green); }
+  .chip-blue  { background: var(--blue-soft);  color: var(--blue);  }
+  .chip-orange{ background: var(--orange-soft); color: var(--orange);}
+  .chip-red   { background: var(--red-soft);    color: var(--red);   }
+  .chip-accent{ background: var(--accent-soft); color: var(--accent);}
+
+  /* ── code toggle ─────────────────────────────────────────────────── */
+  .diagram-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+  }
+  .code-toggle-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 13px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--accent);
+    font-family: inherit;
+    transition: background .12s, border-color .12s;
+  }
+  .code-toggle-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .code-view {
+    display: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 18px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre;
+    tab-size: 2;
+  }
+
+  /* ── theme toggle ─────────────────────────────────────────────────── */
+  .theme-toggle {
+    position: fixed;
+    top: 16px; right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: inherit;
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+
+<button class="theme-toggle" onclick="toggleTheme()">Toggle theme</button>
+
+<div class="page-header">
+  <h1>Warden: MCP Virtual Server — Architecture</h1>
+  <p>How the two Okta auth servers, the virtual server proxy, and the banking MCP server fit together.</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('arch', event)">Architecture diagram</button>
+  <button class="tab-btn" onclick="showTab('flow', event)">Request flow</button>
+  <button class="tab-btn" onclick="showTab('steps', event)">Step-by-step</button>
+</div>
+
+<!-- TAB 1 — Architecture diagram -->
+<div id="tab-arch" class="tab-panel active">
+  <div class="diagram-header">
+    <button class="code-toggle-btn" onclick="toggleCode('arch', event)">Show Mermaid code</button>
+  </div>
+  <div class="diagram-wrap" id="arch-diagram">
+    <pre class="mermaid">
+flowchart TB
+  %% ── Browser ─────────────────────────────────────────────────────
+  subgraph BROWSER["Browser  (localhost:5173)"]
+    direction LR
+    USER["User"]
+    FE["React Frontend\nAgent.jsx · mcpProxy.js"]
+  end
+
+  %% ── Okta ─────────────────────────────────────────────────────────
+  subgraph OKTA["Okta Identity Cloud"]
+    direction TB
+    AS_A["Auth Server A — SecureBank-UserAuth\naus18gh5aw7rMbJmT698\naudience: api://banking\nIssues: user access tokens (AT_A)"]
+    AS_B["Auth Server B — SecureBank-MCPExchange\naus18ghjkvi0xPBZD698\naudience: api://banking-mcp\nIssues: OBO tokens (AT_B)"]
+    AS_B -. "Trusted Server — validates AT_A via Auth Server A JWKS before issuing AT_B" .-> AS_A
+  end
+
+  %% ── Virtual Server ───────────────────────────────────────────────
+  subgraph VS["MCP Virtual Server  (localhost:3003)"]
+    direction TB
+    VERIFY["1 JWT Verify\nAuth Server A JWKS\n→ sub · scopes · groups"]
+    POLICIES["2 Cedar Policy Engine\npermit / forbid · priority · audit"]
+    OBO["3 OBO Service  (RFC 8693)\nsubject: AT_A  →  Auth Server B\naudience: api://banking-mcp"]
+    CACHE["Token Cache\nsha256(AT_A) → AT_B\nRedis + in-memory fallback\nproactive refresh @ 80% TTL"]
+    MCPCL["4 MCP Client\nStreamable HTTP · session cache\ninitialization handshake"]
+    VSDB[("SQLite DB\nMCP servers · virtual servers\npolicies · tool assignments\naudit log")]
+
+    VERIFY --> POLICIES
+    POLICIES --> OBO
+    OBO <-->|"cache-first\nread / write"| CACHE
+    OBO --> MCPCL
+    POLICIES --- VSDB
+  end
+
+  %% ── Banking App ──────────────────────────────────────────────────
+  subgraph BANK["Banking App  (localhost:3001)"]
+    direction LR
+    BAPI["REST API\n/api/*\nvalidates: AT_A\naud: api://banking"]
+    MCPSRV["MCP Server\n/mcp\nvalidates: AT_B\naud: api://banking-mcp"]
+  end
+
+  %% ── edges ────────────────────────────────────────────────────────
+  USER -->|"PKCE login"| AS_A
+  AS_A -->|"AT_A  aud:api://banking"| FE
+
+  FE -->|"Agent\nPOST /api/proxy/VS_ID\nBearer AT_A"| VERIFY
+  FE -->|"Direct REST\nBearer AT_A"| BAPI
+
+  VERIFY -->|"JWKS"| AS_A
+
+  OBO -->|"token exchange\nBearer client-creds"| AS_B
+  AS_B -->|"AT_B  aud:api://banking-mcp\nsub: same user"| OBO
+
+  MCPCL -->|"Bearer AT_B\ntools/call"| MCPSRV
+  MCPSRV -->|"JWKS verify"| AS_B
+
+  MCPCL -->|"result"| FE
+
+  %% ── styles ───────────────────────────────────────────────────────
+  classDef auth   fill:#1e1b4b,stroke:#6366f1,color:#c7d2fe
+  classDef vs     fill:#0c1a14,stroke:#059669,color:#6ee7b7
+  classDef bank   fill:#1e293b,stroke:#0ea5e9,color:#bae6fd
+  classDef cache  fill:#1c1004,stroke:#d97706,color:#fde68a
+  classDef db     fill:#1a0a2e,stroke:#a855f7,color:#e9d5ff
+
+  class AS_A,AS_B auth
+  class VERIFY,POLICIES,OBO,MCPCL vs
+  class CACHE cache
+  class VSDB db
+  class BAPI,MCPSRV bank
+    </pre>
+  </div>
+  <pre class="code-view" id="arch-code"></pre>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:#6366f1"></span>Okta Auth Servers</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#059669"></span>VS processing stages</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#d97706"></span>Token cache</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>SQLite database</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#0ea5e9"></span>Banking app endpoints</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#6b7394"></span>Dotted = trust relationship</span>
+  </div>
+
+  <div class="callouts">
+    <div class="callout">
+      <h3>Auth Server A</h3>
+      <p>Signs in users via PKCE. Issues <code>AT_A</code> with <code>aud: api://banking</code>. The frontend and Banking REST API validate these tokens. The virtual server also verifies AT_A (using A's JWKS) as the very first step before any policy check.</p>
+    </div>
+    <div class="callout green">
+      <h3>Auth Server B</h3>
+      <p>Configured to trust Auth Server A (Trusted Servers). Accepts AT_A as a <em>subject_token</em> in an RFC 8693 token exchange and issues <code>AT_B</code> with <code>aud: api://banking-mcp</code>. Only the MCP virtual server ever calls Auth Server B.</p>
+    </div>
+    <div class="callout orange">
+      <h3>OBO Token Cache</h3>
+      <p>Key is <code>sha256(AT_A)</code> — the raw user token is never stored as a key. Backed by Redis, falls back to an in-memory Map. Proactive refresh at 80% of TTL avoids last-second expiry under load.</p>
+    </div>
+    <div class="callout blue">
+      <h3>Cedar Policy Engine</h3>
+      <p>Evaluated before every OBO exchange. Policies can match on <code>scopes</code>, <code>groups</code>, or <code>sub</code>. A <em>forbid</em> at equal or higher priority beats any <em>permit</em>. Default deny if no permit matches. Every decision is written to the audit log.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2 — Request flow (sequence) -->
+<div id="tab-flow" class="tab-panel">
+  <div class="diagram-header">
+    <button class="code-toggle-btn" onclick="toggleCode('flow', event)">Show Mermaid code</button>
+  </div>
+  <div class="diagram-wrap" id="flow-diagram">
+    <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'messageTextColor':'#e2e8f0','loopTextColor':'#e2e8f0','noteBkgColor':'#1e3a8a','noteTextColor':'#bfdbfe','labelTextColor':'#e2e8f0','activationBkgColor':'#312e81','activationBorderColor':'#818cf8','sequenceNumberColor':'#1e1b4b'}}}%%
+sequenceDiagram
+  autonumber
+  participant USER  as User
+  participant FE    as React Frontend
+  participant AS_A  as Auth Server A (UserAuth)
+  participant VS    as Virtual Server
+  participant DB    as SQLite + Cache
+  participant AS_B  as Auth Server B (MCPExchange)
+  participant MCP   as MCP Server
+
+  rect rgb(55,45,120)
+    Note over USER,AS_A: Phase 1 — User login (PKCE, happens once)
+    USER  ->>  AS_A: Authorization Code + PKCE
+    AS_A  -->> FE:   AT_A  [aud: api://banking · scopes: accounts:read …]
+  end
+
+  rect rgb(20,70,40)
+    Note over FE,MCP: Phase 2 — Agent call via virtual server
+    FE    ->>  VS:   POST /api/proxy/VS_ID | Bearer AT_A
+    VS    ->>  AS_A: GET /v1/keys (JWKS — cached 10 min)
+    AS_A  -->> VS:   RSA public key
+    Note over VS: jwt.verify(AT_A, key) — sub · scopes · groups
+    VS    ->>  DB:   Load tool assignments + active policies
+    DB    -->> VS:   tool assigned · permit policy matches
+    VS    ->>  DB:   Write audit log [decision: allow]
+    VS    ->>  DB:   GET obo:sha256(AT_A)
+    DB    -->> VS:   cache miss
+    VS    ->>  AS_B: POST /v1/token — grant_type: token-exchange — subject_token: AT_A — audience: api://banking-mcp
+    Note over AS_B: Trusts Auth Server A — validates AT_A via A JWKS — issues AT_B same sub
+    AS_B  -->> VS:   AT_B  [aud: api://banking-mcp · sub: same user]
+    VS    ->>  DB:   SET obo:sha256(AT_A) to AT_B  (TTL 1 h · refresh at 80%)
+    VS    ->>  MCP:  POST /mcp  initialize — receives mcp-session-id
+    VS    ->>  MCP:  POST /mcp  tools/call: get_accounts | Bearer AT_B
+    Note over MCP: jwt.verify(AT_B, AS_B JWKS) — aud: api://banking-mcp OK
+    MCP   -->> VS:   content text with accounts JSON
+    VS    -->> FE:   JSON result
+    FE    -->> USER: Account cards rendered
+  end
+
+  rect rgb(35,35,80)
+    Note over FE,MCP: Phase 3 — Subsequent calls (cache hit)
+    FE    ->>  VS:   POST /api/proxy/VS_ID  Bearer AT_A
+    VS    ->>  DB:   GET obo:sha256(AT_A)
+    DB    -->> VS:   AT_B  (still fresh)
+    VS    ->>  MCP:  tools/call: get_account_balance  Bearer AT_B
+    MCP   -->> VS:   balance result
+    VS    -->> FE:   Result — no Okta round-trip needed
+  end
+    </pre>
+  </div>
+  <pre class="code-view" id="flow-code"></pre>
+</div>
+
+<!-- TAB 3 — Step-by-step explanation -->
+<div id="tab-steps" class="tab-panel">
+  <div class="step-list">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>User logs in via PKCE <span class="chip chip-green">Auth Server A</span></h3>
+        <p>The React frontend redirects the user to <strong>Auth Server A</strong> (<code>aus18gh5aw7rMbJmT698</code>). After consent, the user gets <strong>AT_A</strong> — an access token with <code>aud: api://banking</code> and all banking scopes (<code>accounts:read</code>, <code>payments:read</code> …). This token is stored in <code>sessionStorage</code> by <code>@okta/okta-auth-js</code>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Agent fires a proxy request <span class="chip chip-accent">mcpProxy.js</span></h3>
+        <p>When the user says "Show my accounts", <code>Agent.jsx</code> calls <code>mcpBanking.getAccounts()</code> in <code>mcpProxy.js</code>. That calls <code>_oktaAuth.getAccessToken()</code> to retrieve AT_A, then posts to <code>POST /api/proxy/&lt;VS_ID&gt;</code> with <code>Authorization: Bearer AT_A</code> and a body of <code>{mcp_server_id, tool_name, arguments}</code>. The frontend never talks to the MCP server directly.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Virtual server verifies AT_A <span class="chip chip-green">Auth Server A JWKS</span></h3>
+        <p>The <code>verifyToken</code> middleware fetches <code>jwks_uri</code> from the virtual server's database record — set to Auth Server A's JWKS endpoint (<code>/aus18gh5aw7rMbJmT698/v1/keys</code>). It calls <code>jwt.verify(AT_A, signingKey)</code> using RS256. On success, <code>req.tokenClaims</code> is populated with <code>sub</code>, <code>scopes</code>, and <code>groups</code>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Cedar policy evaluation <span class="chip chip-blue">SQLite</span></h3>
+        <p>All active policies for this virtual server are loaded from SQLite. The engine evaluates each in priority order. A <em>forbid</em> at equal or higher priority beats any <em>permit</em> (deny-override). Default is deny if no permit matches. Every decision — allow or deny — is written to the <code>audit_log</code> table with the user's sub, scopes, tool name, and matched policy.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h3>OBO token exchange <span class="chip chip-orange">Auth Server B</span></h3>
+        <p>The OBO service first checks the cache with key <code>sha256(AT_A)</code>. On a miss, it calls Auth Server B's token endpoint with RFC 8693 parameters: <code>grant_type: token-exchange</code>, <code>subject_token: AT_A</code>, <code>audience: api://banking-mcp</code>, and the user's banking scopes. Auth Server B trusts Auth Server A — it validates AT_A against A's JWKS and issues <strong>AT_B</strong> with the same <code>sub</code> (user identity preserved) but <code>aud: api://banking-mcp</code>. AT_B is cached at <code>sha256(AT_A)</code> with proactive refresh at 80% of its TTL.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h3>MCP session + tool call <span class="chip chip-accent">MCP Client</span></h3>
+        <p>The MCP client checks its session cache (10-min TTL). On a miss it sends an <code>initialize</code> JSON-RPC request to the MCP server's <code>/mcp</code> endpoint, receives a <code>mcp-session-id</code> header, then fires <code>notifications/initialized</code> (fire-and-forget). The actual <code>tools/call</code> request is sent with <code>Authorization: Bearer AT_B</code> and the session ID. The MCP server validates AT_B against Auth Server B's JWKS and returns the result.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h3>Result returned to frontend <span class="chip chip-green">done</span></h3>
+        <p>The virtual server unpacks <code>result.content[0].text</code> (a JSON string), and returns the full MCP response to the frontend. <code>mcpProxy.js</code> JSON-parses the text and hands the data to <code>Agent.jsx</code> for rendering. For subsequent calls within the same session, steps 5 and 6 are fast: the OBO token is served from cache and the MCP session is reused.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Mermaid init (for standalone use outside the Artifact platform) ────────
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  }
+
+  // ── Mermaid source strings ─────────────────────────────────────────────────
+  // Stored as JS literals and injected via textContent so special characters
+  // are never HTML-parsed — they appear as copyable plain text.
+
+  const ARCH_CODE = `flowchart TB
+  subgraph BROWSER["Browser  (localhost:5173)"]
+    direction LR
+    USER["User"]
+    FE["React Frontend\\nAgent.jsx · mcpProxy.js"]
+  end
+
+  subgraph OKTA["Okta Identity Cloud"]
+    direction TB
+    AS_A["Auth Server A — SecureBank-UserAuth\\naus18gh5aw7rMbJmT698\\naudience: api://banking\\nIssues: user access tokens (AT_A)"]
+    AS_B["Auth Server B — SecureBank-MCPExchange\\naus18ghjkvi0xPBZD698\\naudience: api://banking-mcp\\nIssues: OBO tokens (AT_B)"]
+    AS_B -. "Trusted Server — validates AT_A via Auth Server A JWKS before issuing AT_B" .-> AS_A
+  end
+
+  subgraph VS["MCP Virtual Server  (localhost:3003)"]
+    direction TB
+    VERIFY["1 JWT Verify\\nAuth Server A JWKS\\n→ sub · scopes · groups"]
+    POLICIES["2 Cedar Policy Engine\\npermit / forbid · priority · audit"]
+    OBO["3 OBO Service  (RFC 8693)\\nsubject: AT_A  →  Auth Server B\\naudience: api://banking-mcp"]
+    CACHE["Token Cache\\nsha256(AT_A) → AT_B\\nRedis + in-memory fallback\\nproactive refresh @ 80% TTL"]
+    MCPCL["4 MCP Client\\nStreamable HTTP · session cache\\ninitialization handshake"]
+    VSDB[("SQLite DB\\nMCP servers · virtual servers\\npolicies · tool assignments\\naudit log")]
+
+    VERIFY --> POLICIES
+    POLICIES --> OBO
+    OBO <-->|"cache-first\\nread / write"| CACHE
+    OBO --> MCPCL
+    POLICIES --- VSDB
+  end
+
+  subgraph BANK["Banking App  (localhost:3001)"]
+    direction LR
+    BAPI["REST API\\n/api/*\\nvalidates: AT_A\\naud: api://banking"]
+    MCPSRV["MCP Server\\n/mcp\\nvalidates: AT_B\\naud: api://banking-mcp"]
+  end
+
+  USER -->|"PKCE login"| AS_A
+  AS_A -->|"AT_A  aud:api://banking"| FE
+
+  FE -->|"Agent\\nPOST /api/proxy/VS_ID\\nBearer AT_A"| VERIFY
+  FE -->|"Direct REST\\nBearer AT_A"| BAPI
+
+  VERIFY -->|"JWKS"| AS_A
+
+  OBO -->|"token exchange\\nBearer client-creds"| AS_B
+  AS_B -->|"AT_B  aud:api://banking-mcp\\nsub: same user"| OBO
+
+  MCPCL -->|"Bearer AT_B\\ntools/call"| MCPSRV
+  MCPSRV -->|"JWKS verify"| AS_B
+
+  MCPCL -->|"result"| FE
+
+  classDef auth   fill:#1e1b4b,stroke:#6366f1,color:#c7d2fe
+  classDef vs     fill:#0c1a14,stroke:#059669,color:#6ee7b7
+  classDef bank   fill:#1e293b,stroke:#0ea5e9,color:#bae6fd
+  classDef cache  fill:#1c1004,stroke:#d97706,color:#fde68a
+  classDef db     fill:#1a0a2e,stroke:#a855f7,color:#e9d5ff
+
+  class AS_A,AS_B auth
+  class VERIFY,POLICIES,OBO,MCPCL vs
+  class CACHE cache
+  class VSDB db
+  class BAPI,MCPSRV bank`;
+
+  const FLOW_CODE = `sequenceDiagram
+  autonumber
+  participant USER  as User
+  participant FE    as React Frontend
+  participant AS_A  as Auth Server A (UserAuth)
+  participant VS    as Virtual Server
+  participant DB    as SQLite + Cache
+  participant AS_B  as Auth Server B (MCPExchange)
+  participant MCP   as MCP Server
+
+  rect rgb(30,27,75)
+    Note over USER,AS_A: Phase 1 — User login (PKCE, happens once)
+    USER  ->>  AS_A: Authorization Code + PKCE
+    AS_A  -->> FE:   AT_A  [aud: api://banking · scopes: accounts:read …]
+  end
+
+  rect rgb(12,26,20)
+    Note over FE,MCP: Phase 2 — Agent call via virtual server
+    FE    ->>  VS:   POST /api/proxy/VS_ID | Bearer AT_A
+    VS    ->>  AS_A: GET /v1/keys (JWKS — cached 10 min)
+    AS_A  -->> VS:   RSA public key
+    Note over VS: jwt.verify(AT_A, key) — sub · scopes · groups
+    VS    ->>  DB:   Load tool assignments + active policies
+    DB    -->> VS:   tool assigned · permit policy matches
+    VS    ->>  DB:   Write audit log [decision: allow]
+    VS    ->>  DB:   GET obo:sha256(AT_A)
+    DB    -->> VS:   cache miss
+    VS    ->>  AS_B: POST /v1/token — grant_type: token-exchange — subject_token: AT_A — audience: api://banking-mcp
+    Note over AS_B: Trusts Auth Server A — validates AT_A via A JWKS — issues AT_B same sub
+    AS_B  -->> VS:   AT_B  [aud: api://banking-mcp · sub: same user]
+    VS    ->>  DB:   SET obo:sha256(AT_A) to AT_B  (TTL 1 h · refresh at 80%)
+    VS    ->>  MCP:  POST /mcp  initialize — receives mcp-session-id
+    VS    ->>  MCP:  POST /mcp  tools/call: get_accounts | Bearer AT_B
+    Note over MCP: jwt.verify(AT_B, AS_B JWKS) — aud: api://banking-mcp OK
+    MCP   -->> VS:   content text with accounts JSON
+    VS    -->> FE:   JSON result
+    FE    -->> USER: Account cards rendered
+  end
+
+  rect rgb(20,20,30)
+    Note over FE,MCP: Phase 3 — Subsequent calls (cache hit)
+    FE    ->>  VS:   POST /api/proxy/VS_ID  Bearer AT_A
+    VS    ->>  DB:   GET obo:sha256(AT_A)
+    DB    -->> VS:   AT_B  (still fresh)
+    VS    ->>  MCP:  tools/call: get_account_balance  Bearer AT_B
+    MCP   -->> VS:   balance result
+    VS    -->> FE:   Result — no Okta round-trip needed
+  end`;
+
+  // ── Populate code views via textContent (no HTML parsing) ─────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('arch-code').textContent = ARCH_CODE;
+    document.getElementById('flow-code').textContent = FLOW_CODE;
+  });
+
+  // ── Tab / toggle / theme ──────────────────────────────────────────────────
+  function showTab(id, e) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    (e || event).target.classList.add('active');
+  }
+
+  function toggleCode(id, e) {
+    const diagram = document.getElementById(id + '-diagram');
+    const code    = document.getElementById(id + '-code');
+    const btn     = (e || event).target;
+    const showing = code.style.display === 'block';
+    diagram.style.display = showing ? '' : 'none';
+    code.style.display    = showing ? 'none' : 'block';
+    btn.textContent       = showing ? 'Show Mermaid code' : 'Show diagram';
+  }
+
+  function toggleTheme() {
+    const root = document.documentElement;
+    const cur = root.getAttribute('data-theme');
+    if (!cur || cur === 'light') root.setAttribute('data-theme', 'dark');
+    else root.setAttribute('data-theme', 'light');
+  }
+</script>

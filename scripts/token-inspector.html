@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Token Inspector — SecureBank</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --brand:      #2f1472;
+  --brand-mid:  #4a22a8;
+  --brand-tint: #f1ecfd;
+  --accent:     #da3d0c;
+  --ok:         #1a7f4b;
+  --ok-tint:    #edf7f2;
+  --warn:       #b45309;
+  --warn-tint:  #fffbeb;
+  --err:        #be123c;
+  --err-tint:   #fff1f4;
+  --ink:        #1a1525;
+  --ink-2:      #4a4162;
+  --muted:      #7a72a0;
+  --surface:    #ffffff;
+  --surface-2:  #f8f5ff;
+  --border:     #e4dff5;
+  --code-bg:    #160f32;
+  --code-fg:    #d4c9ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --brand:      #8b6de8;
+    --brand-tint: #1c1238;
+    --accent:     #f07040;
+    --ok:         #34d87c;
+    --ok-tint:    #0a2318;
+    --warn:       #fbbf24;
+    --warn-tint:  #1c1500;
+    --err:        #fb7185;
+    --err-tint:   #1f0510;
+    --ink:        #ede8ff;
+    --ink-2:      #b0a8d4;
+    --muted:      #7a72a0;
+    --surface:    #120d24;
+    --surface-2:  #1a1335;
+    --border:     #2d2450;
+    --code-bg:    #0d0920;
+    --code-fg:    #d4c9ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --brand:      #8b6de8;
+  --brand-tint: #1c1238;
+  --accent:     #f07040;
+  --ok:         #34d87c;
+  --ok-tint:    #0a2318;
+  --warn:       #fbbf24;
+  --warn-tint:  #1c1500;
+  --err:        #fb7185;
+  --err-tint:   #1f0510;
+  --ink:        #ede8ff;
+  --ink-2:      #b0a8d4;
+  --muted:      #7a72a0;
+  --surface:    #120d24;
+  --surface-2:  #1a1335;
+  --border:     #2d2450;
+  --code-bg:    #0d0920;
+  --code-fg:    #d4c9ff;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding-inline: 1rem;
+  padding-block: 1.5rem;
+}
+
+.page { max-width: 860px; margin: 0 auto; }
+
+/* header */
+.hdr {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+.hdr-icon {
+  width: 2.4rem; height: 2.4rem;
+  background: var(--brand);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.hdr h1 { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.hdr p  { margin: .1rem 0 0; font-size: .8rem; color: var(--muted); }
+
+/* paste zone */
+.paste-card {
+  background: var(--surface-2);
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  transition: border-color .2s;
+}
+.paste-card.has-value { border-style: solid; border-color: var(--brand); }
+.paste-card label {
+  display: block;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .5rem;
+}
+textarea {
+  width: 100%;
+  min-height: 110px;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+textarea::placeholder { color: #5a5080; }
+textarea:focus { border-color: var(--brand); }
+
+.paste-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: .75rem;
+  flex-wrap: wrap;
+}
+button {
+  font-family: 'Inter', sans-serif;
+  font-size: .8rem;
+  font-weight: 600;
+  padding: .4rem .9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: opacity .15s, background .15s;
+}
+button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { opacity: .85; }
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--brand-tint); color: var(--brand); }
+
+/* error banner */
+.error-banner {
+  background: var(--err-tint);
+  border: 1px solid var(--err);
+  color: var(--err);
+  border-radius: 8px;
+  padding: .7rem 1rem;
+  font-size: .82rem;
+  margin-bottom: 1.25rem;
+  display: none;
+}
+.error-banner.show { display: block; }
+
+/* result section */
+.results { display: none; flex-direction: column; gap: 1.25rem; }
+.results.show { display: flex; }
+
+/* token field */
+.token-field {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+}
+.token-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .75rem;
+  flex-wrap: wrap;
+}
+.token-field-header h2 {
+  margin: 0;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.copy-btn {
+  background: var(--brand);
+  color: #fff;
+  padding: .35rem .85rem;
+  border-radius: 5px;
+  font-size: .75rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.copy-btn:hover { opacity: .85; }
+.copy-btn.ok { background: var(--ok); }
+
+.token-value {
+  background: var(--code-bg);
+  border-radius: 7px;
+  padding: .75rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem;
+  color: var(--code-fg);
+  word-break: break-all;
+  line-height: 1.6;
+  max-height: 5.5rem;
+  overflow-y: auto;
+}
+
+/* expiry pill */
+.expiry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .25rem .65rem;
+  border-radius: 100px;
+  margin-top: .6rem;
+}
+.expiry-pill.ok   { background: var(--ok-tint);   color: var(--ok); }
+.expiry-pill.warn { background: var(--warn-tint);  color: var(--warn); }
+.expiry-pill.dead { background: var(--err-tint);   color: var(--err); }
+.expiry-dot { width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; }
+
+/* claims card */
+.claims-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.claims-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.claims-card-header h2 {
+  margin: 0;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.claims-table { width: 100%; border-collapse: collapse; }
+.claims-table tr { border-bottom: 1px solid var(--border); }
+.claims-table tr:last-child { border-bottom: none; }
+.claims-table td {
+  padding: .55rem 1.25rem;
+  font-size: .82rem;
+  vertical-align: top;
+}
+.claims-table td:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  color: var(--brand);
+  font-weight: 500;
+  width: 6rem;
+  white-space: nowrap;
+}
+.claims-table td:last-child { color: var(--ink-2); word-break: break-word; }
+.claims-table tr:hover { background: var(--brand-tint); }
+
+/* scopes */
+.scopes-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+.scope-chip {
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem;
+  font-weight: 500;
+  padding: .15rem .5rem;
+  border-radius: 4px;
+}
+
+/* sub highlight */
+.sub-val {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* id_token section (collapsed) */
+.collapsible { margin-top: .5rem; }
+.collapse-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 600;
+  padding: .3rem 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.collapse-toggle:hover { color: var(--brand); }
+.collapse-toggle .arrow { transition: transform .2s; display: inline-block; }
+.collapse-toggle.open .arrow { transform: rotate(90deg); }
+.collapse-body { display: none; margin-top: .75rem; }
+.collapse-body.open { display: block; }
+
+/* empty state */
+.empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: .85rem;
+  padding: 2rem 1rem;
+}
+
+@media (max-width: 500px) {
+  .token-field-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hdr">
+    <div class="hdr-icon">🔍</div>
+    <div>
+      <h1>Token Inspector</h1>
+      <p>Paste an Okta token response JSON to extract and inspect its values</p>
+    </div>
+  </div>
+
+  <!-- Paste zone -->
+  <div class="paste-card" id="pasteCard">
+    <label for="jsonInput">Paste token response JSON</label>
+    <textarea id="jsonInput" placeholder='{ "access_token": "eyJ...", "id_token": "eyJ...", ... }'
+      spellcheck="false"></textarea>
+    <div class="paste-actions">
+      <button class="btn-primary" onclick="parseInput()">Inspect</button>
+      <button class="btn-ghost" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div class="error-banner" id="errBanner"></div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <!-- Access Token -->
+    <div class="token-field">
+      <div class="token-field-header">
+        <h2>access_token</h2>
+        <button class="copy-btn" id="copyAccess" onclick="copyField('accessTokenRaw','copyAccess')">Copy</button>
+      </div>
+      <div class="token-value" id="accessTokenDisplay"></div>
+      <div id="accessExpiry"></div>
+    </div>
+
+    <!-- Access Token Claims -->
+    <div class="claims-card">
+      <div class="claims-card-header">
+        <h2>Access token claims</h2>
+        <span id="accessIss" style="font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
+      </div>
+      <table class="claims-table" id="accessClaims"></table>
+    </div>
+
+    <!-- ID Token (collapsible) -->
+    <div id="idTokenSection" style="display:none;">
+      <div class="token-field">
+        <div class="token-field-header">
+          <h2>id_token</h2>
+          <button class="copy-btn" id="copyId" onclick="copyField('idTokenRaw','copyId')">Copy</button>
+        </div>
+        <div class="token-value" id="idTokenDisplay"></div>
+      </div>
+      <div class="collapsible">
+        <button class="collapse-toggle" id="idToggle" onclick="toggleIdClaims()">
+          <span class="arrow">▶</span> ID token claims
+        </button>
+        <div class="collapse-body" id="idClaimsBody">
+          <div class="claims-card">
+            <table class="claims-table" id="idClaims"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let accessTokenRaw = '';
+let idTokenRaw = '';
+
+function parseInput() {
+  const raw = document.getElementById('jsonInput').value.trim();
+  hideError();
+
+  if (!raw) { showError('Paste a token JSON first.'); return; }
+
+  let data;
+  try { data = JSON.parse(raw); } catch(e) {
+    showError('Invalid JSON: ' + e.message);
+    return;
+  }
+
+  if (!data.access_token) {
+    showError('No access_token found in the JSON.');
+    return;
+  }
+
+  document.getElementById('pasteCard').classList.add('has-value');
+
+  // ── Access token ──────────────────────────────────────────────────────────
+  accessTokenRaw = data.access_token;
+  document.getElementById('accessTokenDisplay').textContent = accessTokenRaw;
+
+  const accessClaims = decodeJwt(accessTokenRaw);
+  renderExpiryPill('accessExpiry', accessClaims);
+  renderClaims('accessClaims', accessClaims, 'access');
+  document.getElementById('accessIss').textContent = shortIss(accessClaims.iss || '');
+
+  // ── ID token ──────────────────────────────────────────────────────────────
+  const idSection = document.getElementById('idTokenSection');
+  if (data.id_token) {
+    idTokenRaw = data.id_token;
+    document.getElementById('idTokenDisplay').textContent = idTokenRaw;
+    const idClaims = decodeJwt(idTokenRaw);
+    renderClaims('idClaims', idClaims, 'id');
+    idSection.style.display = '';
+  } else {
+    idSection.style.display = 'none';
+  }
+
+  document.getElementById('results').classList.add('show');
+}
+
+function decodeJwt(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return {};
+    let b64 = parts[1].replace(/-/g,'+').replace(/_/g,'/');
+    while (b64.length % 4) b64 += '=';
+    return JSON.parse(atob(b64));
+  } catch { return {}; }
+}
+
+function renderExpiryPill(elId, claims) {
+  const el = document.getElementById(elId);
+  if (!claims.exp) { el.innerHTML = ''; return; }
+  const now   = Math.floor(Date.now() / 1000);
+  const diff  = claims.exp - now;
+  const mins  = Math.round(diff / 60);
+  let cls, label;
+  if (diff <= 0) {
+    cls = 'dead'; label = 'Expired ' + Math.abs(mins) + ' min ago';
+  } else if (diff < 300) {
+    cls = 'warn'; label = 'Expires in ' + mins + ' min';
+  } else {
+    cls = 'ok';   label = 'Valid — expires in ' + mins + ' min';
+  }
+  el.innerHTML = `<span class="expiry-pill ${cls}"><span class="expiry-dot"></span>${label}</span>`;
+}
+
+function renderClaims(tableId, claims, type) {
+  const table = document.getElementById(tableId);
+  if (!claims || !Object.keys(claims).length) {
+    table.innerHTML = '<tr><td colspan="2" class="empty">Could not decode claims.</td></tr>';
+    return;
+  }
+
+  const ORDER = type === 'access'
+    ? ['sub','email','name','iss','aud','iat','exp','jti','cid','uid','scp','auth_time']
+    : ['sub','email','name','preferred_username','iss','aud','iat','exp','jti','nonce','amr','idp','auth_time','at_hash'];
+
+  const keys = [...ORDER.filter(k => k in claims), ...Object.keys(claims).filter(k => !ORDER.includes(k))];
+
+  table.innerHTML = keys.map(k => {
+    const v = claims[k];
+    let cell;
+    if (k === 'scp' && Array.isArray(v)) {
+      cell = `<div class="scopes-wrap">${v.map(s => `<span class="scope-chip">${esc(s)}</span>`).join('')}</div>`;
+    } else if (k === 'iat' || k === 'exp' || k === 'auth_time') {
+      const d = new Date(v * 1000);
+      cell = `${esc(String(v))} <span style="color:var(--muted);font-size:.75em">(${d.toLocaleString()})</span>`;
+    } else if (k === 'sub') {
+      cell = `<span class="sub-val">${esc(String(v))}</span>`;
+    } else if (Array.isArray(v)) {
+      cell = v.map(x => `<span class="scope-chip">${esc(String(x))}</span>`).join(' ');
+    } else {
+      cell = esc(String(v));
+    }
+    return `<tr><td>${esc(k)}</td><td>${cell}</td></tr>`;
+  }).join('');
+}
+
+function shortIss(iss) {
+  try {
+    const u = new URL(iss);
+    return u.pathname.replace('/oauth2/','').split('/')[0];
+  } catch { return iss; }
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyField(varName, btnId) {
+  const text = window[varName] || '';
+  const btn = document.getElementById(btnId);
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = 'Copied!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 2000);
+  });
+}
+
+function toggleIdClaims() {
+  const btn  = document.getElementById('idToggle');
+  const body = document.getElementById('idClaimsBody');
+  btn.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+function clearAll() {
+  document.getElementById('jsonInput').value = '';
+  document.getElementById('pasteCard').classList.remove('has-value');
+  document.getElementById('results').classList.remove('show');
+  hideError();
+  accessTokenRaw = '';
+  idTokenRaw = '';
+}
+
+function showError(msg) {
+  const el = document.getElementById('errBanner');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errBanner').classList.remove('show');
+}
+
+// Auto-parse on paste
+document.getElementById('jsonInput').addEventListener('paste', () => {
+  setTimeout(parseInput, 50);
+});
+</script>
+</body>
+</html>

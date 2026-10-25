@@ -1,0 +1,23 @@
+export const oktaConfig = {
+  issuer: import.meta.env.VITE_OKTA_ISSUER || 'https://demo-arbind-lochan-mishra.okta.com/oauth2/default',
+  clientId: import.meta.env.VITE_OKTA_CLIENT_ID,
+  redirectUri: import.meta.env.VITE_OKTA_REDIRECT_URI || (typeof window !== 'undefined' ? window.location.origin + '/login/callback' : 'http://localhost:5173/login/callback'),
+  scopes: [
+    'openid',
+    'profile',
+    'email',
+    'accounts:read',
+    'accounts:balance:read',
+    'accounts:transactions:read',
+    'accounts:statements:read',
+    'accounts:write',
+    'payments:initiate',
+    'payments:approve',
+    'payments:read',
+    'standing-orders:manage',
+    'transfers:external:create',
+  ],
+  pkce: true,
+  responseType: 'code',
+  tokenManager: { storage: 'sessionStorage' },
+};

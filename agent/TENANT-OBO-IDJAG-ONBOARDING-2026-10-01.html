@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>TENANT-OBO-IDJAG-ONBOARDING-2026-10-01</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    /* ---------------------------------------------------------------------
+       PointGuardAI document style.
+
+       Palette lifted from pointguardai.com's compiled stylesheet (2026-09-17):
+       #2f1472 brand purple, #f1ecfd tint, #da3d0c accent, #2b2b2b ink,
+       #f6f6f6 surface. Montserrat is the brand face: named first, falling back
+       to a system stack, because these documents must load ZERO external
+       resources. No font CDN, no logo URL — the wordmark below is inlined as a
+       data URI for the same reason.
+
+       Type scale is a 1.25 modular scale off a 15px base. Vertical rhythm is
+       driven by margins on headings rather than on paragraphs, so sections
+       breathe without the body text drifting apart.
+       --------------------------------------------------------------------- */
+    :root {
+      --ink:#2b2b2b; --muted:#5d6265; --line:#e3e5e5; --line-soft:#eef0f0;
+      --brand:#2f1472; --brand-soft:#6b4bb8; --brand-tint:#f1ecfd;
+      --accent:#da3d0c; --bg:#ffffff; --surface:#f8f8fa; --code-bg:#f5f3fb;
+      --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    }
+
+    /* pandoc paints the root #fdfdfd. The body below is pure white and narrower
+       than the viewport, so leaving it produces a faint off-white band down both
+       margins — a seam, not a design. */
+    html { background: var(--bg); }
+
+    body {
+      font: 15px/1.7 Montserrat, "Maven Pro", -apple-system, "Segoe UI", Roboto,
+            "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--ink); background: var(--bg);
+      max-width: 1040px; margin: 2.5rem auto; padding: 0 1.75rem;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    }
+
+    /* Wordmark, once, at the top of every document. */
+    body::before {
+      content: ""; display: block; width: 164px; height: 60px; margin: 0 0 2.2rem;
+      background: url("data:image/png;base64,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") left center / contain no-repeat;
+    }
+
+    #title-block-header { display: none; }
+
+    /* --- headings ------------------------------------------------------- */
+    h1 {
+      font-size: 2rem; line-height: 1.2; font-weight: 700; letter-spacing: -.02em;
+      color: var(--brand); margin: 0 0 .6rem;
+      padding-bottom: .55rem; border-bottom: 3px solid var(--brand);
+    }
+    /* The lead paragraph after the title carries the date and scope; give it
+       presence so it is read rather than skimmed past. */
+    h1 + p { font-size: 1.05rem; color: var(--muted); margin-top: 0; }
+
+    h2 {
+      font-size: 1.32rem; line-height: 1.3; font-weight: 650; letter-spacing: -.015em;
+      color: var(--brand); margin: 3.2rem 0 1rem;
+      padding-bottom: .35rem; border-bottom: 2px solid var(--brand-tint);
+    }
+    h3 {
+      font-size: 1.06rem; line-height: 1.35; font-weight: 650; letter-spacing: -.01em;
+      color: var(--brand-soft); margin: 2.2rem 0 .7rem;
+    }
+    h4 { font-size: .95rem; font-weight: 650; color: var(--muted); margin: 1.6rem 0 .5rem;
+         text-transform: uppercase; letter-spacing: .06em; }
+
+    p { margin: .85rem 0; }
+    ul, ol { margin: .85rem 0; padding-left: 1.4rem; }
+    li { margin: .35rem 0; }
+    li > ul, li > ol { margin: .3rem 0; }
+
+    /* --- code ----------------------------------------------------------- */
+    code {
+      background: var(--code-bg); border-radius: 4px; padding: .1rem .38rem;
+      font: 12.5px/1.5 var(--mono); color: #3d2a6b;
+      border: 1px solid #e7e1f7;
+    }
+    /* `pre.sourceCode` must be named explicitly: a highlighted fence is wrapped in
+       <div class="sourceCode"><pre class="sourceCode">, and pandoc's own
+       `.sourceCode { background-color: transparent }` outranks a bare `pre`. Without
+       this the 28 highlighted blocks in a typical guide lose their surface fill while
+       the handful of unlabelled fences keep it — the same box, two different colours. */
+    pre, pre.sourceCode {
+      background: var(--surface); border: 1px solid var(--line);
+      border-left: 3px solid var(--brand-soft); border-radius: 6px;
+      padding: 15px 18px; overflow-x: auto;
+      font-size: 12.5px; line-height: 1.6;
+    }
+    pre { margin: 1.3rem 0; }
+    /* pandoc zeroes `pre.sourceCode`'s margin and puts 1em on the wrapper instead;
+       restate our rhythm there so highlighted and plain fences sit the same. */
+    div.sourceCode { margin: 1.3rem 0; }
+    pre code { background: none; border: 0; padding: 0; color: var(--ink); font-size: 12.5px; }
+
+    /* pandoc ships skylighting's pygments-default theme: #007020 keywords, #60a0b0
+       comments (only 2.7:1 on our surface), #ff0000 errors. Rethemed onto the brand
+       palette. `er` is deliberately neutralised — inside a documentation fence it is
+       almost always a lexer artifact (the `…` elisions and the `// ← Shown once`
+       annotation in our JSON samples all land on it) and must not read as an error. */
+    pre code span.kw, pre code span.cf, pre code span.im { color: var(--brand); font-weight: 650; }
+    pre code span.bu, pre code span.ot, pre code span.at { color: var(--brand-soft); font-weight: 400; }
+    pre code span.fu, pre code span.va, pre code span.dt { color: #3d2a6b; }
+    pre code span.st, pre code span.ss, pre code span.ch,
+    pre code span.sc, pre code span.vs                   { color: #1d6a4f; }
+    pre code span.dv, pre code span.bn, pre code span.fl,
+    pre code span.pp                                     { color: #8a4b16; }
+    pre code span.op                                     { color: #6b7280; }
+    pre code span.co, pre code span.cv, pre code span.do,
+    pre code span.an, pre code span.in                   { color: #6f6a7d; font-style: italic; font-weight: 400; }
+    pre code span.al, pre code span.wa                   { color: var(--accent); font-weight: 650; font-style: normal; }
+    pre code span.er                                     { color: inherit; font-weight: inherit; }
+
+    /* --- tables --------------------------------------------------------- */
+    /* Horizontal rules only. Vertical grid lines make a dense table read as a
+       spreadsheet and fight the type. */
+    /* `display: table` undoes pandoc, which sets `display: block; overflow-x: auto` so
+       a wide table can scroll. On a block box the rows are re-wrapped in an anonymous
+       table that shrink-to-fits, so `width: 100%` sizes the <table> element and not the
+       grid inside it: 9 of the 14 tables in the developer guide came out narrower than
+       the column, one at 539px of 1040, header tint stopping mid-line. Our cells wrap
+       (pandoc gives inline code `white-space: pre-wrap`), so nothing needs to scroll. */
+    table { border-collapse: collapse; display: table; width: 100%; margin: 1.4rem 0; font-size: 13.5px; }
+    /* On a phone a table of long identifiers is wider than the screen; let it scroll
+       inside its own box rather than pushing the whole page sideways. Desktop keeps
+       `display: table` for the reason above. */
+    @media (max-width: 640px) { table { display: block; overflow-x: auto; } }
+    /* pandoc rules the row group off with 1px of #1a1a1a top and bottom — the same
+       near-black leak as the <hr> below, just spelled as a border. */
+    tbody { border-top: 0; border-bottom: 0; }
+    th, td { text-align: left; padding: 10px 14px; vertical-align: top;
+             border-bottom: 1px solid var(--line-soft); }
+    th {
+      background: var(--brand-tint); color: var(--brand);
+      font-weight: 650; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+      border-top: 0;                      /* pandoc's #1a1a1a bar above the header row */
+      border-bottom: 2px solid var(--brand); white-space: nowrap;
+    }
+    tbody tr:last-child td { border-bottom: 1px solid var(--line); }
+    td code { font-size: 12px; }
+
+    /* --- callouts ------------------------------------------------------- */
+    blockquote {
+      border-left: 4px solid var(--brand); background: var(--brand-tint);
+      margin: 1.5rem 0; padding: 14px 20px; border-radius: 0 8px 8px 0;
+      color: #3a2a5c;
+    }
+    blockquote p { margin: .4rem 0; }
+    blockquote code { background: #fff; border-color: #ded5f5; }
+
+    /* --- screenshots ---------------------------------------------------- */
+    /* Embedded UI captures are inlined as data URIs and arrive at their natural
+       pixel width, which overflows the text column. Cap them, and give them a
+       hairline frame so a screenshot of a white console page does not bleed into
+       the page background. The italic line pandoc emits after an image is its
+       caption. */
+    p > img { display: block; max-width: 100%; height: auto; margin: 1.4rem auto .5rem;
+              border: 1px solid var(--line); border-radius: 8px; }
+    /* The caption is the <em> that sits in the SAME paragraph as the image, which
+       is why the markdown puts them on consecutive lines with no blank line
+       between. Do NOT reach for `p > em:only-child` here: :only-child counts
+       element children and ignores text, so it also matches an ordinary sentence
+       containing one italic word and throws it onto its own centred line. */
+    p > img + em { display: block; font-size: 12.5px; font-style: normal;
+              color: var(--muted); text-align: center; margin: 0 0 1.6rem; }
+
+    /* --- diagrams ------------------------------------------------------- */
+    figure.diagram { margin: 1.8rem 0; padding: 20px; background: var(--surface);
+                     border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+    figure.diagram svg { display: block; width: 100%; height: auto; min-width: 620px; }
+    /* A diagram wider than the text column would be scaled down by `width: 100%` until
+       its labels are unreadable, and `overflow-x: auto` above could never fire because
+       the svg can't outgrow its figure. `wide` (set by build-doc-html.py, with --dw/--dmin)
+       breaks the figure out towards the viewport and pins the svg to a legible width;
+       whatever still doesn't fit scrolls. Narrow diagrams never get the class. */
+    figure.diagram.wide { --cap: calc(100vw - 4rem);   /* gutter + room for a scrollbar */
+                          box-sizing: border-box;      /* --dw already includes the chrome */
+                          width: min(var(--dw), var(--cap));
+                          margin-left: calc(50% - min(var(--dw), var(--cap)) / 2); }
+    figure.diagram.wide svg { min-width: var(--dmin); }
+
+    /* pandoc's own stylesheet draws the rule as a 1px-tall element with
+       `background-color:#1a1a1a`, not as a border — so resetting the border alone
+       leaves a near-black bar. Clear the background too. */
+    hr { border: 0; height: 1px; background: var(--line); margin: 2.6rem 0; }
+    a { color: var(--brand); text-decoration-color: #c9bce8; text-underline-offset: 2px; }
+    /* `a:visited` is restated because pandoc's own `a:visited { color: #1a1a1a }` is
+       one class more specific than a bare `a` — every followed cross-reference would
+       otherwise turn near-black while its neighbours stayed purple. */
+    a:visited { color: var(--brand); }
+    a:hover { text-decoration-color: var(--brand); }
+
+    /* pandoc hangs the task-list checkbox on a -1.6em margin sized for its own 1.7em
+       list indent; ours is 1.4rem, so the box drifted out past the text margin. */
+    ul.task-list li input[type="checkbox"] { margin-left: -1.4rem; }
+
+    /* --- print / PDF ---------------------------------------------------- */
+    @media print {
+      body { max-width: none; margin: 0; padding: 0; font-size: 10pt; line-height: 1.55; }
+      body::before { width: 132px; height: 48px; margin-bottom: 1.4rem; }
+      h1 { font-size: 18pt; }
+      h2 { font-size: 13pt; margin-top: 1.8rem; break-after: avoid; }
+      h3 { font-size: 11pt; break-after: avoid; }
+      h1, h2, h3, h4 { break-after: avoid-page; }
+      tr, pre, blockquote, figure.diagram { break-inside: avoid; }
+      thead { display: table-header-group; }   /* repeat headers across pages */
+      figure.diagram.wide { width: 100%; margin-left: 0; }
+      figure.diagram.wide svg { min-width: 0; }
+      a { text-decoration: none; }
+      @page { margin: 16mm 14mm; }
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">TENANT-OBO-IDJAG-ONBOARDING-2026-10-01</h1>
+</header>
+<h1
+id="pointguardai-mcp-gateway--onboarding-obo-and-id-jag-for-your-tenant">PointGuardAI
+MCP Gateway — onboarding OBO and ID-JAG for your tenant</h1>
+<p><strong>What we need from you, what we configure, and how you test
+it.</strong> Version 2026-10-01. The console walkthrough (§3.5) and the
+tests (§4) were run end to end for both OBO and ID-JAG on that date.
+Added 2026-10-05: §7, an Okta example for OBO. It follows Okta's
+published steps and our gateway code; it has not yet been run end to end
+against an Okta org in this revision.</p>
+<hr />
+<h2 id="1-what-this-gives-you">1. What this gives you</h2>
+<p>Your AI agents call tools through the PointGuardAI MCP Gateway. With
+OBO or ID-JAG configured, the gateway calls the downstream service
+<strong>as the signed-in user</strong>: never as a shared service
+account, and the agent never holds a credential for that service.</p>
+<p>The gateway decides on <strong>two identities on every
+call</strong>:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Identity</th>
+<th>How it arrives</th>
+<th>How it is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>The human</strong></td>
+<td>a token from your identity provider, sent in the
+<code>x-user-token</code> header</td>
+<td>signature, issuer and audience verified against your IdP's published
+keys</td>
+</tr>
+<tr class="even">
+<td><strong>The agent</strong></td>
+<td>its name, sent in the <code>X-Agent-Token</code> header</td>
+<td>matched against the agents you declare and the rules you
+approve</td>
+</tr>
+</tbody>
+</table>
+<p>You choose one of two mechanisms per downstream service:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>OBO</strong> (RFC 8693 token exchange)</th>
+<th><strong>ID-JAG</strong> (Cross App Access: RFC 8693, then RFC
+7523)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hops</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>Who issues the final token</td>
+<td>your IdP's authorization server</td>
+<td><strong>the downstream service's own</strong> authorization
+server</td>
+</tr>
+<tr class="odd">
+<td>Token the user presents</td>
+<td>an <strong>access token</strong></td>
+<td>an <strong>ID token</strong></td>
+</tr>
+<tr class="even">
+<td>Use it when</td>
+<td>the downstream service trusts tokens from your IdP</td>
+<td>the downstream service runs its own authorization server and
+supports Cross App Access</td>
+</tr>
+</tbody>
+</table>
+<figure class="diagram wide" style="--dw:1420px;--dmin:1382px"><svg id="mmd1" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="background-color: transparent;" viewBox="-50 -10 1885 635" role="graphics-document document" aria-roledescription="sequence"><g><rect x="1562" y="549" fill="#eaeaea" stroke="#666" width="223" height="65" name="M" rx="3" ry="3" class="actor actor-bottom"/><text x="1673.5" y="581.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="1673.5" dy="0">Downstream MCP server</tspan></text></g><g><rect x="1248" y="549" fill="#eaeaea" stroke="#666" width="264" height="65" name="R" rx="3" ry="3" class="actor actor-bottom"/><text x="1380" y="581.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="1380" dy="0">Resource authorization server</tspan></text></g><g><rect x="1048" y="549" fill="#eaeaea" stroke="#666" width="150" height="65" name="I" rx="3" ry="3" class="actor actor-bottom"/><text x="1123" y="581.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="1123" dy="0">Your IdP</tspan></text></g><g><rect x="557.5" y="549" fill="#eaeaea" stroke="#666" width="251" height="65" name="G" rx="3" ry="3" class="actor actor-bottom"/><text x="683" y="581.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="683" dy="0">PointGuardAI MCP Gateway</tspan></text></g><g><rect x="200" y="549" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-bottom"/><text x="275" y="581.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="275" dy="0">Agent</tspan></text></g><g><rect x="0" y="549" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-bottom"/><text x="75" y="581.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g><g><line id="actor5" x1="1673.5" y1="65" x2="1673.5" y2="549" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="M" data-et="life-line" data-id="M"/><g id="root-5" data-et="participant" data-type="participant" data-id="M"><rect x="1562" y="0" fill="#eaeaea" stroke="#666" width="223" height="65" name="M" rx="3" ry="3" class="actor actor-top"/><text x="1673.5" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="1673.5" dy="0">Downstream MCP server</tspan></text></g></g><g><line id="actor4" x1="1380" y1="65" x2="1380" y2="549" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="R" data-et="life-line" data-id="R"/><g id="root-4" data-et="participant" data-type="participant" data-id="R"><rect x="1248" y="0" fill="#eaeaea" stroke="#666" width="264" height="65" name="R" rx="3" ry="3" class="actor actor-top"/><text x="1380" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="1380" dy="0">Resource authorization server</tspan></text></g></g><g><line id="actor3" x1="1123" y1="65" x2="1123" y2="549" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="I" data-et="life-line" data-id="I"/><g id="root-3" data-et="participant" data-type="participant" data-id="I"><rect x="1048" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="I" rx="3" ry="3" class="actor actor-top"/><text x="1123" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="1123" dy="0">Your IdP</tspan></text></g></g><g><line id="actor2" x1="683" y1="65" x2="683" y2="549" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="G" data-et="life-line" data-id="G"/><g id="root-2" data-et="participant" data-type="participant" data-id="G"><rect x="557.5" y="0" fill="#eaeaea" stroke="#666" width="251" height="65" name="G" rx="3" ry="3" class="actor actor-top"/><text x="683" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="683" dy="0">PointGuardAI MCP Gateway</tspan></text></g></g><g><line id="actor1" x1="275" y1="65" x2="275" y2="549" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="A" data-et="life-line" data-id="A"/><g id="root-1" data-et="participant" data-type="participant" data-id="A"><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-top"/><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="275" dy="0">Agent</tspan></text></g></g><g><line id="actor0" x1="75" y1="65" x2="75" y2="549" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="U" data-et="life-line" data-id="U"/><g id="root-0" data-et="participant" data-type="participant" data-id="U"><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-top"/><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">User</tspan></text></g></g><style>#mmd1{font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;fill:#333;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mmd1 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mmd1 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mmd1 .error-icon{fill:#552222;}#mmd1 .error-text{fill:#552222;stroke:#552222;}#mmd1 .edge-thickness-normal{stroke-width:1px;}#mmd1 .edge-thickness-thick{stroke-width:3.5px;}#mmd1 .edge-pattern-solid{stroke-dasharray:0;}#mmd1 .edge-thickness-invisible{stroke-width:0;fill:none;}#mmd1 .edge-pattern-dashed{stroke-dasharray:3;}#mmd1 .edge-pattern-dotted{stroke-dasharray:2;}#mmd1 .marker{fill:#64748b;stroke:#64748b;}#mmd1 .marker.cross{stroke:#64748b;}#mmd1 svg{font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;}#mmd1 p{margin:0;}#mmd1 .actor{stroke:#9370DB;fill:#ECECFF;stroke-width:1;}#mmd1 rect.actor.outer-path[data-look="neo"]{filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mmd1 rect.note[data-look="neo"]{stroke:#aaaa33;fill:#fff5ad;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mmd1 text.actor&gt;tspan{fill:black;stroke:none;}#mmd1 .actor-line{stroke:#9370DB;}#mmd1 .innerArc{stroke-width:1.5;stroke-dasharray:none;}#mmd1 .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:#333;}#mmd1 .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:#333;}#mmd1 [id$="-arrowhead"] path{fill:#333;stroke:#333;}#mmd1 .sequenceNumber{fill:white;}#mmd1 [id$="-sequencenumber"]{fill:#333;}#mmd1 [id$="-crosshead"] path{fill:#333;stroke:#333;}#mmd1 .messageText{fill:#333;stroke:none;}#mmd1 .labelBox{stroke:#9370DB;fill:#ECECFF;filter:none;}#mmd1 .labelText,#mmd1 .labelText&gt;tspan{fill:black;stroke:none;}#mmd1 .loopText,#mmd1 .loopText&gt;tspan{fill:black;stroke:none;}#mmd1 .sectionTitle,#mmd1 .sectionTitle&gt;tspan{fill:black;stroke:none;}#mmd1 .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:#9370DB;fill:#9370DB;}#mmd1 .note{stroke:#aaaa33;fill:#fff5ad;}#mmd1 .noteText,#mmd1 .noteText&gt;tspan{fill:black;stroke:none;font-weight:normal;}#mmd1 .activation0{fill:#f4f4f4;stroke:#666;}#mmd1 .activation1{fill:#f4f4f4;stroke:#666;}#mmd1 .activation2{fill:#f4f4f4;stroke:#666;}#mmd1 .actorPopupMenu{position:absolute;}#mmd1 .actorPopupMenuPanel{position:absolute;fill:#ECECFF;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#mmd1 .actor-man circle,#mmd1 line{fill:#ECECFF;stroke-width:2px;}#mmd1 g rect.rect{filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));stroke:#9370DB;}#mmd1 .node .neo-node{stroke:#9370DB;}#mmd1 [data-look="neo"].node rect,#mmd1 [data-look="neo"].cluster rect,#mmd1 [data-look="neo"].node polygon{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mmd1 [data-look="neo"].node path{stroke:#9370DB;stroke-width:1px;}#mmd1 [data-look="neo"].node .outer-path{filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mmd1 [data-look="neo"].node .neo-line path{stroke:#9370DB;filter:none;}#mmd1 [data-look="neo"].node circle{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mmd1 [data-look="neo"].node circle .state-start{fill:#000000;}#mmd1 [data-look="neo"].icon-shape .icon{fill:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mmd1 [data-look="neo"].icon-shape .icon-neo path{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#mmd1 :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g/><defs><symbol id="mmd1-computer" width="24" height="24"><path transform="scale(.5)" d="M2 2v13h20v-13h-20zm18 11h-16v-9h16v9zm-10.228 6l.466-1h3.524l.467 1h-4.457zm14.228 3h-24l2-6h2.104l-1.33 4h18.45l-1.297-4h2.073l2 6zm-5-10h-14v-7h14v7z"/></symbol></defs><defs><symbol id="mmd1-database" fill-rule="evenodd" clip-rule="evenodd"><path transform="scale(.5)" d="M12.258.001l.256.004.255.005.253.008.251.01.249.012.247.015.246.016.242.019.241.02.239.023.236.024.233.027.231.028.229.031.225.032.223.034.22.036.217.038.214.04.211.041.208.043.205.045.201.046.198.048.194.05.191.051.187.053.183.054.18.056.175.057.172.059.168.06.163.061.16.063.155.064.15.066.074.033.073.033.071.034.07.034.069.035.068.035.067.035.066.035.064.036.064.036.062.036.06.036.06.037.058.037.058.037.055.038.055.038.053.038.052.038.051.039.05.039.048.039.047.039.045.04.044.04.043.04.041.04.04.041.039.041.037.041.036.041.034.041.033.042.032.042.03.042.029.042.027.042.026.043.024.043.023.043.021.043.02.043.018.044.017.043.015.044.013.044.012.044.011.045.009.044.007.045.006.045.004.045.002.045.001.045v17l-.001.045-.002.045-.004.045-.006.045-.007.045-.009.044-.011.045-.012.044-.013.044-.015.044-.017.043-.018.044-.02.043-.021.043-.023.043-.024.043-.026.043-.027.042-.029.042-.03.042-.032.042-.033.042-.034.041-.036.041-.037.041-.039.041-.04.041-.041.04-.043.04-.044.04-.045.04-.047.039-.048.039-.05.039-.051.039-.052.038-.053.038-.055.038-.055.038-.058.037-.058.037-.06.037-.06.036-.062.036-.064.036-.064.036-.066.035-.067.035-.068.035-.069.035-.07.034-.071.034-.073.033-.074.033-.15.066-.155.064-.16.063-.163.061-.168.06-.172.059-.175.057-.18.056-.183.054-.187.053-.191.051-.194.05-.198.048-.201.046-.205.045-.208.043-.211.041-.214.04-.217.038-.22.036-.223.034-.225.032-.229.031-.231.028-.233.027-.236.024-.239.023-.241.02-.242.019-.246.016-.247.015-.249.012-.251.01-.253.008-.255.005-.256.004-.258.001-.258-.001-.256-.004-.255-.005-.253-.008-.251-.01-.249-.012-.247-.015-.245-.016-.243-.019-.241-.02-.238-.023-.236-.024-.234-.027-.231-.028-.228-.031-.226-.032-.223-.034-.22-.036-.217-.038-.214-.04-.211-.041-.208-.043-.204-.045-.201-.046-.198-.048-.195-.05-.19-.051-.187-.053-.184-.054-.179-.056-.176-.057-.172-.059-.167-.06-.164-.061-.159-.063-.155-.064-.151-.066-.074-.033-.072-.033-.072-.034-.07-.034-.069-.035-.068-.035-.067-.035-.066-.035-.064-.036-.063-.036-.062-.036-.061-.036-.06-.037-.058-.037-.057-.037-.056-.038-.055-.038-.053-.038-.052-.038-.051-.039-.049-.039-.049-.039-.046-.039-.046-.04-.044-.04-.043-.04-.041-.04-.04-.041-.039-.041-.037-.041-.036-.041-.034-.041-.033-.042-.032-.042-.03-.042-.029-.042-.027-.042-.026-.043-.024-.043-.023-.043-.021-.043-.02-.043-.018-.044-.017-.043-.015-.044-.013-.044-.012-.044-.011-.045-.009-.044-.007-.045-.006-.045-.004-.045-.002-.045-.001-.045v-17l.001-.045.002-.045.004-.045.006-.045.007-.045.009-.044.011-.045.012-.044.013-.044.015-.044.017-.043.018-.044.02-.043.021-.043.023-.043.024-.043.026-.043.027-.042.029-.042.03-.042.032-.042.033-.042.034-.041.036-.041.037-.041.039-.041.04-.041.041-.04.043-.04.044-.04.046-.04.046-.039.049-.039.049-.039.051-.039.052-.038.053-.038.055-.038.056-.038.057-.037.058-.037.06-.037.061-.036.062-.036.063-.036.064-.036.066-.035.067-.035.068-.035.069-.035.07-.034.072-.034.072-.033.074-.033.151-.066.155-.064.159-.063.164-.061.167-.06.172-.059.176-.057.179-.056.184-.054.187-.053.19-.051.195-.05.198-.048.201-.046.204-.045.208-.043.211-.041.214-.04.217-.038.22-.036.223-.034.226-.032.228-.031.231-.028.234-.027.236-.024.238-.023.241-.02.243-.019.245-.016.247-.015.249-.012.251-.01.253-.008.255-.005.256-.004.258-.001.258.001zm-9.258 20.499v.01l.001.021.003.021.004.022.005.021.006.022.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.023.018.024.019.024.021.024.022.025.023.024.024.025.052.049.056.05.061.051.066.051.07.051.075.051.079.052.084.052.088.052.092.052.097.052.102.051.105.052.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.048.144.049.147.047.152.047.155.047.16.045.163.045.167.043.171.043.176.041.178.041.183.039.187.039.19.037.194.035.197.035.202.033.204.031.209.03.212.029.216.027.219.025.222.024.226.021.23.02.233.018.236.016.24.015.243.012.246.01.249.008.253.005.256.004.259.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.021.224-.024.22-.026.216-.027.212-.028.21-.031.205-.031.202-.034.198-.034.194-.036.191-.037.187-.039.183-.04.179-.04.175-.042.172-.043.168-.044.163-.045.16-.046.155-.046.152-.047.148-.048.143-.049.139-.049.136-.05.131-.05.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.053.083-.051.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.05.023-.024.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.023.01-.022.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.127l-.077.055-.08.053-.083.054-.085.053-.087.052-.09.052-.093.051-.095.05-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.045-.118.044-.12.043-.122.042-.124.042-.126.041-.128.04-.13.04-.132.038-.134.038-.135.037-.138.037-.139.035-.142.035-.143.034-.144.033-.147.032-.148.031-.15.03-.151.03-.153.029-.154.027-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.01-.179.008-.179.008-.181.006-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.006-.179-.008-.179-.008-.178-.01-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.027-.153-.029-.151-.03-.15-.03-.148-.031-.146-.032-.145-.033-.143-.034-.141-.035-.14-.035-.137-.037-.136-.037-.134-.038-.132-.038-.13-.04-.128-.04-.126-.041-.124-.042-.122-.042-.12-.044-.117-.043-.116-.045-.113-.045-.112-.046-.109-.047-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.05-.093-.052-.09-.051-.087-.052-.085-.053-.083-.054-.08-.054-.077-.054v4.127zm0-5.654v.011l.001.021.003.021.004.021.005.022.006.022.007.022.009.022.01.022.011.023.012.023.013.023.015.024.016.023.017.024.018.024.019.024.021.024.022.024.023.025.024.024.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.052.11.051.114.051.119.052.123.05.127.051.131.05.135.049.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.044.171.042.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.022.23.02.233.018.236.016.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.012.241-.015.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.048.139-.05.136-.049.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.051.051-.049.023-.025.023-.024.021-.025.02-.024.019-.024.018-.024.017-.024.015-.023.014-.023.013-.024.012-.022.01-.023.01-.023.008-.022.006-.022.006-.022.004-.021.004-.022.001-.021.001-.021v-4.139l-.077.054-.08.054-.083.054-.085.052-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.044-.118.044-.12.044-.122.042-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.035-.143.033-.144.033-.147.033-.148.031-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.009-.179.009-.179.007-.181.007-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.007-.179-.007-.179-.009-.178-.009-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.031-.146-.033-.145-.033-.143-.033-.141-.035-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.04-.126-.041-.124-.042-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.051-.093-.051-.09-.051-.087-.053-.085-.052-.083-.054-.08-.054-.077-.054v4.139zm0-5.666v.011l.001.02.003.022.004.021.005.022.006.021.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.024.018.023.019.024.021.025.022.024.023.024.024.025.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.051.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.043.171.043.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.021.23.02.233.018.236.017.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.013.241-.014.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.049.139-.049.136-.049.131-.051.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.049.023-.025.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.022.01-.023.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.153l-.077.054-.08.054-.083.053-.085.053-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.048-.105.048-.106.048-.109.046-.111.046-.114.046-.115.044-.118.044-.12.043-.122.043-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.034-.143.034-.144.033-.147.032-.148.032-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.024-.161.024-.162.023-.163.023-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.01-.178.01-.179.009-.179.007-.181.006-.182.006-.182.004-.184.003-.184.001-.185.001-.185-.001-.184-.001-.184-.003-.182-.004-.182-.006-.181-.006-.179-.007-.179-.009-.178-.01-.176-.01-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.023-.162-.023-.161-.024-.159-.024-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.032-.146-.032-.145-.033-.143-.034-.141-.034-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.041-.126-.041-.124-.041-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.048-.105-.048-.102-.048-.1-.05-.097-.049-.095-.051-.093-.051-.09-.052-.087-.052-.085-.053-.083-.053-.08-.054-.077-.054v4.153zm8.74-8.179l-.257.004-.254.005-.25.008-.247.011-.244.012-.241.014-.237.016-.233.018-.231.021-.226.022-.224.023-.22.026-.216.027-.212.028-.21.031-.205.032-.202.033-.198.034-.194.036-.191.038-.187.038-.183.04-.179.041-.175.042-.172.043-.168.043-.163.045-.16.046-.155.046-.152.048-.148.048-.143.048-.139.049-.136.05-.131.05-.126.051-.123.051-.118.051-.114.052-.11.052-.106.052-.101.052-.096.052-.092.052-.088.052-.083.052-.079.052-.074.051-.07.052-.065.051-.06.05-.056.05-.051.05-.023.025-.023.024-.021.024-.02.025-.019.024-.018.024-.017.023-.015.024-.014.023-.013.023-.012.023-.01.023-.01.022-.008.022-.006.023-.006.021-.004.022-.004.021-.001.021-.001.021.001.021.001.021.004.021.004.022.006.021.006.023.008.022.01.022.01.023.012.023.013.023.014.023.015.024.017.023.018.024.019.024.02.025.021.024.023.024.023.025.051.05.056.05.06.05.065.051.07.052.074.051.079.052.083.052.088.052.092.052.096.052.101.052.106.052.11.052.114.052.118.051.123.051.126.051.131.05.136.05.139.049.143.048.148.048.152.048.155.046.16.046.163.045.168.043.172.043.175.042.179.041.183.04.187.038.191.038.194.036.198.034.202.033.205.032.21.031.212.028.216.027.22.026.224.023.226.022.231.021.233.018.237.016.241.014.244.012.247.011.25.008.254.005.257.004.26.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.022.224-.023.22-.026.216-.027.212-.028.21-.031.205-.032.202-.033.198-.034.194-.036.191-.038.187-.038.183-.04.179-.041.175-.042.172-.043.168-.043.163-.045.16-.046.155-.046.152-.048.148-.048.143-.048.139-.049.136-.05.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.05.051-.05.023-.025.023-.024.021-.024.02-.025.019-.024.018-.024.017-.023.015-.024.014-.023.013-.023.012-.023.01-.023.01-.022.008-.022.006-.023.006-.021.004-.022.004-.021.001-.021.001-.021-.001-.021-.001-.021-.004-.021-.004-.022-.006-.021-.006-.023-.008-.022-.01-.022-.01-.023-.012-.023-.013-.023-.014-.023-.015-.024-.017-.023-.018-.024-.019-.024-.02-.025-.021-.024-.023-.024-.023-.025-.051-.05-.056-.05-.06-.05-.065-.051-.07-.052-.074-.051-.079-.052-.083-.052-.088-.052-.092-.052-.096-.052-.101-.052-.106-.052-.11-.052-.114-.052-.118-.051-.123-.051-.126-.051-.131-.05-.136-.05-.139-.049-.143-.048-.148-.048-.152-.048-.155-.046-.16-.046-.163-.045-.168-.043-.172-.043-.175-.042-.179-.041-.183-.04-.187-.038-.191-.038-.194-.036-.198-.034-.202-.033-.205-.032-.21-.031-.212-.028-.216-.027-.22-.026-.224-.023-.226-.022-.231-.021-.233-.018-.237-.016-.241-.014-.244-.012-.247-.011-.25-.008-.254-.005-.257-.004-.26-.001-.26.001z"/></symbol></defs><defs><symbol id="mmd1-clock" width="24" height="24"><path transform="scale(.5)" d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.848 12.459c.202.038.202.333.001.372-1.907.361-6.045 1.111-6.547 1.111-.719 0-1.301-.582-1.301-1.301 0-.512.77-5.447 1.125-7.445.034-.192.312-.181.343.014l.985 6.238 5.394 1.011z"/></symbol></defs><defs><marker id="mmd1-arrowhead" refX="7.9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M -1 0 L 10 5 L 0 10 z"/></marker></defs><defs><marker id="mmd1-crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="4" refY="4.5"><path fill="none" stroke="#000000" stroke-width="1pt" d="M 1,2 L 6,7 M 6,2 L 1,7" style="stroke-dasharray: 0, 0;"/></marker></defs><defs><marker id="mmd1-filled-head" refX="15.5" refY="7" markerWidth="20" markerHeight="28" orient="auto"><path d="M 18,7 L9,13 L14,7 L9,1 Z"/></marker></defs><defs><marker id="mmd1-sequencenumber" refX="15" refY="15" markerWidth="60" markerHeight="40" orient="auto"><circle cx="15" cy="15" r="6"/></marker></defs><defs><marker id="mmd1-solidTopArrowHead" refX="7.9" refY="7.25" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 8 L 0 8 z"/></marker></defs><defs><marker id="mmd1-solidBottomArrowHead" refX="7.9" refY="0.75" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 0 L 0 8 z"/></marker></defs><defs><marker id="mmd1-stickTopArrowHead" refX="7.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 7 7" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><defs><marker id="mmd1-stickBottomArrowHead" refX="7.5" refY="0" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 7 L 7 0" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><text x="598" y="80" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">sign in</text><line x1="82" y1="109" x2="1119" y2="109" class="messageLine0" data-et="message" data-id="i1" data-from="U" data-to="I" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="fill: none;"/><line x1="75" y1="109" x2="75" y2="109" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="75" y="113" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">1</text><text x="701" y="124" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">user token</text><line x1="1128" y1="151" x2="279" y2="151" class="messageLine1" data-et="message" data-id="i2" data-from="I" data-to="A" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="1123" y1="151" x2="1123" y2="151" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="1123" y="155" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">2</text><text x="478" y="166" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">tools/call + x-user-token + X-Agent-Token</text><line x1="282" y1="195" x2="679" y2="195" class="messageLine0" data-et="message" data-id="i3" data-from="A" data-to="G" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="fill: none;"/><line x1="275" y1="195" x2="275" y2="195" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="275" y="199" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">3</text><text x="684" y="210" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">verify user token, evaluate policy</text><path d="M 684,239 C 744,229 744,269 684,259" class="messageLine0" data-et="message" data-id="i4" data-from="G" data-to="G" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" x1="690" style="fill: none;"/><line x1="683" y1="239" x2="683" y2="239" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="683" y="243" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">4</text><text x="902" y="284" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Hop A: token exchange (OBO ends here)</text><line x1="690" y1="313" x2="1119" y2="313" class="messageLine0" data-et="message" data-id="i5" data-from="G" data-to="I" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="fill: none;"/><line x1="683" y1="313" x2="683" y2="313" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="683" y="317" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">5</text><text x="905" y="328" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">OBO: access token · ID-JAG: identity assertion</text><line x1="1128" y1="357" x2="687" y2="357" class="messageLine1" data-et="message" data-id="i6" data-from="I" data-to="G" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="1123" y1="357" x2="1123" y2="357" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="1123" y="361" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">6</text><text x="1030" y="372" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">Hop B (ID-JAG only): redeem the assertion</text><line x1="690" y1="401" x2="1376" y2="401" class="messageLine0" data-et="message" data-id="i7" data-from="G" data-to="R" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="fill: none;"/><line x1="683" y1="401" x2="683" y2="401" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="683" y="405" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">7</text><text x="1033" y="416" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">access token for this user</text><line x1="1385" y1="443" x2="687" y2="443" class="messageLine1" data-et="message" data-id="i8" data-from="R" data-to="G" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="1380" y1="443" x2="1380" y2="443" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="1380" y="447" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">8</text><text x="1177" y="458" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">tool call as the user</text><line x1="690" y1="485" x2="1669.5" y2="485" class="messageLine0" data-et="message" data-id="i9" data-from="G" data-to="M" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="fill: none;"/><line x1="683" y1="485" x2="683" y2="485" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="683" y="489" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">9</text><text x="976" y="500" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">result (after output inspection)</text><line x1="1678.5" y1="529" x2="279" y2="529" class="messageLine1" data-et="message" data-id="i10" data-from="M" data-to="A" stroke-width="2" stroke="none" marker-end="url(#mmd1-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="1673.5" y1="529" x2="1673.5" y2="529" stroke-width="0" marker-start="url(#mmd1-sequencenumber)"/><text x="1673.5" y="533" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">10</text></svg></figure>
+
+<hr />
+<h2 id="2-what-you-need-to-provide">2. What you need to provide</h2>
+<p>Send client secrets through your secure channel, never in email or a
+ticket. The gateway stores them encrypted at rest and <strong>never
+returns them</strong>. Every API and console view shows
+<code>*****</code>.</p>
+<h3 id="21-always-your-identity-provider-the-human-side">2.1 Always:
+your identity provider (the human side)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Item</th>
+<th>Example</th>
+<th>We use it to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><strong>Issuer URL</strong> of the authorization server that issues
+your users' tokens</td>
+<td><code>https://&lt;your-idp&gt;/oauth2/&lt;server-id&gt;</code></td>
+<td>require <code>iss</code> on every user token</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><strong>Discovery URL</strong>
+(<code>/.well-known/openid-configuration</code>) or the <strong>JWKS
+URL</strong></td>
+<td><code>…/v1/keys</code></td>
+<td>verify token signatures</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><strong>Audience</strong> the user token will carry</td>
+<td>OBO: e.g. <code>api://mcp</code> · ID-JAG: your requesting app's
+client ID</td>
+<td>require <code>aud</code></td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><strong>Groups claim name</strong> and the group values that
+matter</td>
+<td><code>groups</code>: <code>mcp-readers</code>,
+<code>mcp-writers</code></td>
+<td>write role-based rules</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><strong>Client claim name</strong></td>
+<td>Okta <code>cid</code>, Entra
+<code>appid</code>/<code>azp</code></td>
+<td>attribute calls to the right client</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><strong>Two test users</strong>, ideally one in each group</td>
+<td><code>reader@example.com</code>,
+<code>writer@example.com</code></td>
+<td>prove the rules decide on the human</td>
+</tr>
+</tbody>
+</table>
+<p>Your users and their passwords stay with you. You sign them in during
+testing (§4). We never need a user's password.</p>
+<h3 id="22-for-each-downstream-service-mcp-server">2.2 For each
+downstream service (MCP server)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Item</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>7</td>
+<td><strong>MCP server URL</strong></td>
+<td>must be reachable from the gateway</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td><strong>Mechanism</strong>: OBO or ID-JAG</td>
+<td>see §1</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td><strong>Scopes</strong> the agents need</td>
+<td>e.g. <code>crm.read crm.write</code></td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td><strong>How the service maps a token to its own user</strong></td>
+<td>the service must accept the exchanged token and know the user it
+names. A user it cannot map is refused <strong>by the service</strong>,
+not by us</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td><strong>A one-time access token for a test user</strong>, valid for
+about an hour</td>
+<td>★ needed <strong>once, at registration</strong>, so the gateway can
+discover the service's tools (§3.2). It is discarded when the server is
+switched to token exchange (§3.5 step 3)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-if-the-service-uses-obo">2.3 If the service uses OBO</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Item</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>12</td>
+<td><strong>Token endpoint</strong> of the authorization server that
+performs the exchange</td>
+<td>must allow the
+<code>urn:ietf:params:oauth:grant-type:token-exchange</code> grant</td>
+</tr>
+<tr class="even">
+<td>13</td>
+<td><strong>A client for the gateway</strong> on that server: client ID
++ client secret</td>
+<td>grants: token exchange (and client credentials if your IdP requires
+it)</td>
+</tr>
+<tr class="odd">
+<td>14</td>
+<td><strong>Audience</strong> of the exchanged token</td>
+<td>the audience the downstream service validates</td>
+</tr>
+<tr class="even">
+<td>15</td>
+<td><strong>Token-endpoint auth method</strong></td>
+<td><code>client_secret_post</code> (default) or
+<code>client_secret_basic</code></td>
+</tr>
+<tr class="odd">
+<td>16</td>
+<td>An <strong>access policy</strong> on that authorization server
+admitting the gateway client and your users</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Using Okta? §7 shows where each of these items is set in the Okta
+Admin Console.</p>
+<h3 id="24-if-the-service-uses-id-jag">2.4 If the service uses
+ID-JAG</h3>
+<p>★ <strong>Check this first:</strong> ID-JAG works only if
+<strong>both</strong> your IdP supports Cross App Access (XAA)
+<strong>and</strong> the downstream service accepts identity assertions
+at its own authorization server. If the service does not support XAA,
+use OBO or delegated consent instead. No gateway configuration can work
+around that.</p>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Item</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>17</td>
+<td><strong>Hop A token endpoint</strong>: your IdP's endpoint that
+issues the identity assertion</td>
+<td>in Okta this is the <strong>org</strong> authorization server
+(<code>https://&lt;org&gt;.okta.com/oauth2/v1/token</code>), not a
+custom one</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td><strong>A requesting app</strong> for the gateway: client ID</td>
+<td>grants <code>authorization_code</code> + <code>refresh_token</code>,
+<code>offline_access</code> allowed, your redirect URI</td>
+</tr>
+<tr class="odd">
+<td>19</td>
+<td><strong>Client authentication for that app</strong>:
+<code>private_key_jwt</code> (Okta requires it) or client secret</td>
+<td>for <code>private_key_jwt</code>, <strong>we generate the key pair
+and give you the public JWK</strong> to register; you send us the
+<strong>key ID</strong> (<code>kid</code>) you registered it under</td>
+</tr>
+<tr class="even">
+<td>20</td>
+<td><strong>The resource app</strong> with Cross App Access enabled</td>
+<td>its <strong>issuer URL</strong> (becomes the assertion's audience)
+and its <strong>audience</strong></td>
+</tr>
+<tr class="odd">
+<td>21</td>
+<td><strong>The XAA connection</strong> from the requesting app to the
+resource app</td>
+<td>resource indicator = the downstream MCP server URL (#7); scopes
+(#9)</td>
+</tr>
+<tr class="even">
+<td>22</td>
+<td><strong>Hop B token endpoint</strong>: the downstream service's
+authorization server</td>
+<td>where the assertion is redeemed for an access token</td>
+</tr>
+<tr class="odd">
+<td>23</td>
+<td><strong>Hop B client</strong>, if that server requires client
+authentication: client ID + secret</td>
+<td>some servers issue a separate client per resource connection. Send
+the <strong>resource-side</strong> one, not the requesting one</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-your-agents-and-your-rules">2.5 Your agents and your
+rules</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Item</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>24</td>
+<td><strong>The agents</strong> that will call through the gateway, with
+a name for each</td>
+<td>we register each one; any undeclared name is refused</td>
+</tr>
+<tr class="even">
+<td>25</td>
+<td><strong>Which agent may call which tools, for which
+groups</strong></td>
+<td>e.g. <em>readers may list but never delete; only the writer agent
+may create</em></td>
+</tr>
+<tr class="odd">
+<td>26</td>
+<td><strong>Whether each agent gets its own endpoint</strong></td>
+<td>recommended: one virtual server per agent, so an agent reaching
+another agent's endpoint is itself a finding</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-what-we-configure">3. What we configure</h2>
+<p>This section shows every setting and where it comes from, so you can
+review it. Most of it is entered in the <strong>MCP Gateway
+console</strong> (§3.5) by your admin or by us. A few settings are not
+in the console yet; PointGuardAI applies those for you.</p>
+<h3 id="31-trust-in-your-idp-gateway-deployment-items-15">3.1 Trust in
+your IdP (gateway deployment, items 1–5)</h3>
+<p>Set once per tenant gateway and applied when the gateway is
+redeployed:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Setting</th>
+<th>From</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>OBO_USER_TOKEN_ISSUER</code></td>
+<td>#1</td>
+</tr>
+<tr class="even">
+<td><code>OBO_USER_TOKEN_JWKS_URL</code></td>
+<td>#2</td>
+</tr>
+<tr class="odd">
+<td><code>OBO_USER_TOKEN_AUDIENCE</code></td>
+<td>#3</td>
+</tr>
+<tr class="even">
+<td><code>OBO_USER_TOKEN_GROUPS_CLAIM</code></td>
+<td>#4 (default <code>groups</code>)</td>
+</tr>
+<tr class="odd">
+<td><code>OBO_USER_TOKEN_CLIENT_CLAIM</code></td>
+<td>#5</td>
+</tr>
+</tbody>
+</table>
+<p>⚠ <strong>One audience per gateway.</strong> If you run OBO and
+ID-JAG side by side, the two user tokens carry different audiences, so
+the audience check has to be relaxed for that gateway. Signature and
+issuer are still verified. A per-provider audience is planned.</p>
+<h3 id="32-each-downstream-service-items-723">3.2 Each downstream
+service (items 7–23)</h3>
+<ol type="1">
+<li><strong>Register the MCP server with the one-time token
+(#11)</strong> so the gateway discovers its tools. A server registered
+directly for OBO or ID-JAG discovers nothing, because there is no user
+at registration time.</li>
+<li><strong>Switch it to the exchange configuration</strong> below. The
+tools stay.</li>
+<li><strong>Create the virtual servers</strong> and attach the tools
+(#26).</li>
+</ol>
+<p>OBO, stored as the MCP server's OAuth configuration:</p>
+<pre class="jsonc"><code>{
+  &quot;grant_type&quot;: &quot;token_exchange&quot;,
+  &quot;token_url&quot;: &quot;&lt;#12&gt;&quot;,
+  &quot;client_id&quot;: &quot;&lt;#13&gt;&quot;,
+  &quot;client_secret&quot;: &quot;&lt;#13, encrypted&gt;&quot;,
+  &quot;audience&quot;: &quot;&lt;#14&gt;&quot;,
+  &quot;scopes&quot;: [&quot;&lt;#9&gt;&quot;],
+  &quot;token_endpoint_auth_method&quot;: &quot;&lt;#15&gt;&quot;,
+  &quot;subject_token_source&quot;: &quot;x-user-token&quot;,
+  &quot;fallback_to_client_credentials&quot;: false
+}</code></pre>
+<p>★ <code>fallback_to_client_credentials</code> stays
+<strong>false</strong>. If it were true, a call with no user would be
+sent to the service under the gateway's <strong>own</strong> identity
+instead of being refused. We leave it off unless you ask for it in
+writing.</p>
+<p>ID-JAG adds the second hop:</p>
+<pre class="jsonc"><code>{
+  &quot;grant_type&quot;: &quot;token_exchange&quot;,
+  &quot;token_url&quot;: &quot;&lt;#17&gt;&quot;,                                    // Hop A: your IdP
+  &quot;client_id&quot;: &quot;&lt;#18&gt;&quot;,
+  &quot;client_private_key&quot;: &quot;&lt;our key, encrypted&gt;&quot;,            // when #19 = private_key_jwt
+  &quot;client_assertion_kid&quot;: &quot;&lt;#19 kid&gt;&quot;,
+  &quot;audience&quot;: &quot;&lt;#20 issuer&gt;&quot;,                              // who validates the assertion
+  &quot;resource&quot;: &quot;&lt;#7&gt;&quot;,                                      // what is accessed
+  &quot;scopes&quot;: [&quot;&lt;#9&gt;&quot;],
+  &quot;subject_token_source&quot;: &quot;x-user-token&quot;,
+  &quot;subject_token_type&quot;: &quot;urn:ietf:params:oauth:token-type:id_token&quot;,
+  &quot;requested_token_type&quot;: &quot;urn:ietf:params:oauth:token-type:id-jag&quot;,
+  &quot;fallback_to_client_credentials&quot;: false,
+  &quot;resource_oauth_config&quot;: {                               // Hop B: the service&#39;s AS
+    &quot;token_url&quot;: &quot;&lt;#22&gt;&quot;,
+    &quot;client_id&quot;: &quot;&lt;#23&gt;&quot;,
+    &quot;client_secret&quot;: &quot;&lt;#23, encrypted&gt;&quot;,
+    &quot;scopes&quot;: [&quot;&lt;#9&gt;&quot;]
+  }
+}</code></pre>
+<h3 id="33-agents-and-rules-items-2426">3.3 Agents and rules (items
+24–26)</h3>
+<p>We register the agents, write the rules, and confirm the policy
+engine is <strong>enforcing</strong> (a deny stops the call) rather than
+observing.</p>
+<h3 id="34-what-you-get-back">3.4 What you get back</h3>
+<p>In the MCP Gateway console (§3.5), or from us:</p>
+<table>
+<tbody>
+<tr class="odd">
+<td><strong>Gateway URL</strong></td>
+<td>your tenant's gateway base URL</td>
+</tr>
+<tr class="even">
+<td><strong>Virtual server URL(s)</strong></td>
+<td><code>&lt;gateway&gt;/servers/&lt;id&gt;/mcp</code>, one per agent
+if #26</td>
+</tr>
+<tr class="odd">
+<td><strong>A gateway API token</strong></td>
+<td>authenticates your agents to the gateway. Created under
+<em>Organization → API Tokens</em>, shown once. A token works only on
+the gateway that issued it</td>
+</tr>
+<tr class="even">
+<td><strong>Tool names</strong></td>
+<td>as discovered, e.g. <code>crm-list-cases</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="35-in-the-mcp-gateway-console">3.5 In the MCP Gateway
+console</h3>
+<p>Sign in to the platform, then open <strong>MCP Gateway</strong> from
+the left navigation. The steps below are in the order that works. Item
+numbers refer to §2.</p>
+<h4 id="step-1-create-an-api-token">Step 1: create an API token</h4>
+<p><strong>Organization → API Tokens → Create token.</strong> Give it a
+name and an expiry in days (required). Copy the token when it is shown:
+it is displayed <strong>once</strong>. Your agents send it as
+<code>Authorization: Bearer &lt;token&gt;</code>. A token works only on
+the gateway that issued it.</p>
+<h4 id="step-2-add-the-mcp-server-first-with-the-one-time-token">Step 2:
+add the MCP server, first with the one-time token</h4>
+<p><strong>MCP → MCP Servers → Add MCP server:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Name</td>
+<td>a short name; it prefixes every tool name</td>
+</tr>
+<tr class="even">
+<td>URL</td>
+<td>#7</td>
+</tr>
+<tr class="odd">
+<td>Transport</td>
+<td><strong>Streamable HTTP</strong> (or SSE, if that is what the server
+speaks)</td>
+</tr>
+<tr class="even">
+<td>Authentication Type</td>
+<td><strong>Bearer Token</strong></td>
+</tr>
+<tr class="odd">
+<td>Token</td>
+<td>the one-time access token, #11</td>
+</tr>
+</tbody>
+</table>
+<p>Save. ★ <strong>Check that the server shows its tools</strong> under
+<strong>MCP → Tools</strong>. If it shows none, the token or URL is
+wrong; fix it now. A server saved directly with Token Exchange discovers
+<strong>no tools</strong>, because there is no user at that moment, and
+tools cannot be added by hand. That is why this step comes first.</p>
+<h4 id="step-3-switch-the-mcp-server-to-token-exchange">Step 3: switch
+the MCP server to token exchange</h4>
+<p>Click <strong>Edit</strong> on the same server. The discovered tools
+are kept.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>OBO</th>
+<th>ID-JAG</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Authentication Type</td>
+<td><strong>OAuth 2.0</strong></td>
+<td><strong>OAuth 2.0</strong></td>
+</tr>
+<tr class="even">
+<td>Grant Type</td>
+<td><strong>Token Exchange (RFC 8693, On-Behalf-Of User)</strong></td>
+<td>same</td>
+</tr>
+<tr class="odd">
+<td>Issuer URL</td>
+<td>#1</td>
+<td>#1</td>
+</tr>
+<tr class="even">
+<td>Client ID</td>
+<td>#13</td>
+<td>#18</td>
+</tr>
+<tr class="odd">
+<td>Client Secret</td>
+<td>#13</td>
+<td>#18, if it uses a secret</td>
+</tr>
+<tr class="even">
+<td>Token URL</td>
+<td>#12</td>
+<td>#17 (Hop A)</td>
+</tr>
+<tr class="odd">
+<td>Requested Token Type</td>
+<td><strong>leave empty</strong></td>
+<td>★ <strong>leave empty</strong>: we set it (see below)</td>
+</tr>
+<tr class="even">
+<td>Subject Token Type</td>
+<td><strong>leave empty</strong></td>
+<td>★ <strong>leave empty</strong>: we set it</td>
+</tr>
+<tr class="odd">
+<td>Fall back to Client Credentials when no user token is available</td>
+<td>☐ <strong>unchecked</strong></td>
+<td>☐ <strong>unchecked</strong></td>
+</tr>
+</tbody>
+</table>
+<p>⚠ Leave the fallback <strong>unchecked</strong>. If it is checked, a
+call with no user is sent to the service under the gateway's own
+identity instead of being refused.</p>
+<p>★ <strong>For ID-JAG, do not fill the two token-type fields.</strong>
+The gateway accepts an ID-JAG configuration only together with its
+second hop, which the console cannot set yet. Filling them makes the
+save fail with <em>"Invalid oauth_config"</em>.</p>
+<p>⚠ Secrets are write-only. After saving, the console shows them as
+<code>*****</code>; that does not mean they were lost.</p>
+<p><strong>Not in the console yet. PointGuardAI sets these on the same
+server after you save:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Setting</th>
+<th>OBO</th>
+<th>ID-JAG</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>User token arrives in <code>x-user-token</code></td>
+<td><strong>Yes</strong></td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr class="even">
+<td>Audience</td>
+<td>#14</td>
+<td>#20, the resource app's issuer</td>
+</tr>
+<tr class="odd">
+<td>Scopes</td>
+<td>#9, if your exchange server needs them</td>
+<td>#9</td>
+</tr>
+<tr class="even">
+<td>Requested and subject token types</td>
+<td>n/a</td>
+<td><strong>Yes</strong> (<code>id-jag</code>,
+<code>id_token</code>)</td>
+</tr>
+<tr class="odd">
+<td><code>resource</code> (#7)</td>
+<td>only if your exchange server requires it</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr class="even">
+<td>Token-endpoint auth method (#15)</td>
+<td>only if not <code>client_secret_post</code></td>
+<td>only if not <code>client_secret_post</code></td>
+</tr>
+<tr class="odd">
+<td>Private key + key ID for <code>private_key_jwt</code> (#19)</td>
+<td>n/a</td>
+<td><strong>Yes</strong>, if #19 = <code>private_key_jwt</code>
+(Okta)</td>
+</tr>
+<tr class="even">
+<td>The second hop: token URL #22, client #23, scopes</td>
+<td>n/a</td>
+<td><strong>Yes</strong></td>
+</tr>
+</tbody>
+</table>
+<p>⛔ <strong>After we have applied these, do not save that MCP server
+in the console again.</strong> A console save replaces the whole OAuth
+configuration and removes the settings above, and every call then fails.
+If you need a change, tell us and we re-apply them. Virtual servers and
+rules can be edited freely.</p>
+<h4 id="step-4-create-the-virtual-servers">Step 4: create the virtual
+servers</h4>
+<p><strong>MCP → Virtual Servers → Create virtual server.</strong>
+Create one per agent (#26):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Name</td>
+<td>e.g. <code>crm-reader-agent</code></td>
+</tr>
+<tr class="even">
+<td>MCP Servers</td>
+<td>tick the server from step 2</td>
+</tr>
+<tr class="odd">
+<td>Associated Tools</td>
+<td>tick only the tools this agent may use</td>
+</tr>
+</tbody>
+</table>
+<p>Its URL, <code>&lt;gateway&gt;/servers/&lt;id&gt;/mcp</code>, is what
+that agent calls.</p>
+<h4 id="step-5-write-the-rules">Step 5: write the rules</h4>
+<p><strong>Extensions → Policies → Access Rules → New rule.</strong>
+Each rule has a name, an effect (<strong>Deny</strong>,
+<strong>Allow</strong> or <strong>Require approval</strong>), an
+optional virtual server, and conditions that must all hold. Write one
+rule per line of #25. Rules that make the negative tests in §4.4
+pass:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Rule name</th>
+<th>Effect</th>
+<th>Virtual server</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>No human, no action</td>
+<td>Deny</td>
+<td>Any server</td>
+<td><strong>User token present</strong> · <em>is false</em></td>
+</tr>
+<tr class="even">
+<td>Refuse undeclared agents</td>
+<td>Deny</td>
+<td>Any server</td>
+<td><strong>Agent</strong> · <em>is not one of</em> · your agent names
+(#24)</td>
+</tr>
+<tr class="odd">
+<td>Readers may not create</td>
+<td>Deny</td>
+<td>the writer's server</td>
+<td><strong>Tool</strong> · <em>is one of</em> · the create tool,
+<strong>and</strong> <strong>User groups</strong> · <em>includes any
+of</em> · <code>mcp-readers</code></td>
+</tr>
+<tr class="even">
+<td>One agent per endpoint</td>
+<td>Deny</td>
+<td>e.g. <code>crm-reader-agent</code></td>
+<td><strong>Agent</strong> · <em>is not one of</em> ·
+<code>crm-reader-agent</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>Check a request</strong> panel on the same page runs the
+same engine as the gateway: pick a virtual server and tool, type an
+agent, user and groups, and it shows the verdict before any agent
+calls.</p>
+<h4 id="step-6-tell-us-you-are-done">Step 6: tell us you are done</h4>
+<p>We then apply the settings from the table at the end of step 3 and
+the IdP trust from §3.1, confirm enforcement is on, and you test
+(§4).</p>
+<hr />
+<h2 id="4-how-you-test-it">4. How you test it</h2>
+<h3 id="41-what-you-need">4.1 What you need</h3>
+<ul>
+<li><p>The values from §3.4.</p></li>
+<li><p><strong>A fresh user token</strong> for a test user (#6),
+obtained by a normal sign-in through your app (authorization code with
+PKCE):</p>
+<ul>
+<li><strong>OBO:</strong> the user's <strong>access token</strong>, with
+the audience from #3.</li>
+<li><strong>ID-JAG:</strong> the user's <strong>ID token</strong>. ID
+tokens are short-lived, so get a fresh one just before testing.</li>
+</ul>
+<p>⚠ Password-grant shortcuts (ROPC) are usually blocked by IdP sign-on
+policies. Use a real sign-in.</p></li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GW</span><span class="op">=</span><span class="st">&quot;https://&lt;your-gateway&gt;&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">VS</span><span class="op">=</span><span class="st">&quot;&lt;virtual-server-id&gt;&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GW_TOKEN</span><span class="op">=</span><span class="st">&quot;&lt;gateway API token&gt;&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">USER_TOKEN</span><span class="op">=</span><span class="st">&quot;&lt;access token (OBO) or ID token (ID-JAG)&gt;&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">AGENT</span><span class="op">=</span><span class="st">&quot;&lt;declared agent name&gt;&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">TOOL</span><span class="op">=</span><span class="st">&quot;&lt;tool name&gt;&quot;</span></span></code></pre></div>
+<h3 id="42-step-1-the-gateway-answers-and-lists-the-tools">4.2 Step 1:
+the gateway answers and lists the tools</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> <span class="at">-X</span> POST <span class="st">&quot;</span><span class="va">$GW</span><span class="st">/servers/</span><span class="va">$VS</span><span class="st">/mcp&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer </span><span class="va">$GW_TOKEN</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Content-Type: application/json&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Accept: application/json, text/event-stream&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;id&quot;:1,&quot;method&quot;:&quot;tools/list&quot;}&#39;</span></span></code></pre></div>
+<p><strong>Expect</strong> the tool names from §3.4.</p>
+<h3 id="43-step-2-the-call-succeeds-as-the-user">4.3 Step 2: the call
+succeeds as the user</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> <span class="at">-X</span> POST <span class="st">&quot;</span><span class="va">$GW</span><span class="st">/servers/</span><span class="va">$VS</span><span class="st">/mcp&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer </span><span class="va">$GW_TOKEN</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;x-user-token: Bearer </span><span class="va">$USER_TOKEN</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;X-Agent-Token: </span><span class="va">$AGENT</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Content-Type: application/json&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Accept: application/json, text/event-stream&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&quot;{</span><span class="dt">\&quot;</span><span class="st">jsonrpc</span><span class="dt">\&quot;</span><span class="st">:</span><span class="dt">\&quot;</span><span class="st">2.0</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">id</span><span class="dt">\&quot;</span><span class="st">:2,</span><span class="dt">\&quot;</span><span class="st">method</span><span class="dt">\&quot;</span><span class="st">:</span><span class="dt">\&quot;</span><span class="st">tools/call</span><span class="dt">\&quot;</span><span class="st">,</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="st">       </span><span class="dt">\&quot;</span><span class="st">params</span><span class="dt">\&quot;</span><span class="st">:{</span><span class="dt">\&quot;</span><span class="st">name</span><span class="dt">\&quot;</span><span class="st">:</span><span class="dt">\&quot;</span><span class="va">$TOOL</span><span class="dt">\&quot;</span><span class="st">,</span><span class="dt">\&quot;</span><span class="st">arguments</span><span class="dt">\&quot;</span><span class="st">:{}}}&quot;</span></span></code></pre></div>
+<p>★ <code>x-user-token</code> must carry the word
+<strong><code>Bearer</code></strong> followed by the token. A bare token
+is refused.</p>
+<p><strong>Expect</strong> real data with <code>"isError": false</code>.
+⚠ A response can be HTTP 200 <strong>and</strong>
+<code>"isError": true</code>. That is a failure; read the message.</p>
+<p><strong>Confirm on the downstream service</strong> that the action
+was recorded against <strong>the test user</strong>, not a service
+account. This is the proof that the delegation worked.</p>
+<h3 id="44-step-3-the-negative-tests-these-are-the-point">4.4 Step 3:
+the negative tests (these are the point)</h3>
+<p>A refusal comes back as <strong>HTTP 200</strong> with
+<code>"isError": true</code> and a message that says why. With the rules
+from §3.5 step 5:</p>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Change</th>
+<th>Expect in the message</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>N1</td>
+<td>remove the <code>x-user-token</code> header</td>
+<td><code>PDP_DENY … Denyed by rule 'No human, no action'</code></td>
+</tr>
+<tr class="even">
+<td>N2</td>
+<td>send an expired or tampered user token</td>
+<td><code>USER_TOKEN_INVALID … X-User-Token verification failed</code></td>
+</tr>
+<tr class="odd">
+<td>N3</td>
+<td>send the <strong>reader</strong> user on a write tool</td>
+<td><code>PDP_DENY … Denyed by rule 'Readers may not create'</code></td>
+</tr>
+<tr class="even">
+<td>N4</td>
+<td>send an <strong>undeclared</strong> agent name</td>
+<td><code>PDP_DENY … Denyed by rule 'Refuse undeclared agents'</code></td>
+</tr>
+<tr class="odd">
+<td>N5</td>
+<td>(#26) send an agent to <strong>another agent's</strong> virtual
+server</td>
+<td><code>PDP_DENY … Denyed by rule 'One agent per endpoint'</code></td>
+</tr>
+<tr class="even">
+<td>N6</td>
+<td>a user who is valid in your IdP but unknown to the downstream
+service</td>
+<td>an error <strong>from the downstream service</strong> (proves the
+user's identity, not ours, reached it)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="45-step-4-the-evidence">4.5 Step 4: the evidence</h3>
+<p>Every call leaves one trace. Ask us for it, or view it in the
+platform console:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Line</th>
+<th>Means</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PDP: ALLOW | subject=&lt;your user&gt;</code></td>
+<td>the policy decided on <strong>the human</strong></td>
+</tr>
+<tr class="even">
+<td><code>Successfully performed RFC 8693 token exchange</code></td>
+<td>Hop A (OBO's only hop)</td>
+</tr>
+<tr class="odd">
+<td><code>Successfully redeemed ID-JAG assertion at resource AS (RFC 7523)</code></td>
+<td>Hop B (ID-JAG only)</td>
+</tr>
+<tr class="even">
+<td><code>PDP_DENY …</code> with the rule name</td>
+<td>a negative test refused for the right reason</td>
+</tr>
+</tbody>
+</table>
+<p>The trace records <strong>which</strong> token was sent upstream. It
+never contains a token or a secret.</p>
+<hr />
+<h2 id="5-troubleshooting">5. Troubleshooting</h2>
+<table>
+<thead>
+<tr class="header">
+<th>You see</th>
+<th>Likely cause</th>
+<th>Who fixes it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>401</strong>
+<code>Invalid authentication credentials</code></td>
+<td>gateway API token from a different gateway, or expired</td>
+<td>us: issue a new token</td>
+</tr>
+<tr class="even">
+<td><strong>403</strong> <code>CSRF validation failed</code></td>
+<td>the <code>Authorization</code> header is missing</td>
+<td>you</td>
+</tr>
+<tr class="odd">
+<td>a call that worked now fails with a token-exchange error</td>
+<td>the MCP server was saved in the console after we applied our
+settings (§3.5 step 3)</td>
+<td>us: re-apply</td>
+</tr>
+<tr class="even">
+<td>console save fails with <code>Invalid oauth_config</code></td>
+<td>ID-JAG token types were filled in the console</td>
+<td>leave them empty (§3.5 step 3)</td>
+</tr>
+<tr class="odd">
+<td><code>no inbound bearer token in x-user-token</code></td>
+<td><code>x-user-token</code> missing, or sent without
+<code>Bearer </code></td>
+<td>you</td>
+</tr>
+<tr class="even">
+<td><code>USER_TOKEN_INVALID</code> /
+<code>Unable to find a signing key</code></td>
+<td>the token is from a different issuer than #1, or the JWKS (#2) is
+unreachable</td>
+<td>check #1–#2 together</td>
+</tr>
+<tr class="odd">
+<td>audience error on the user token</td>
+<td>the token's <code>aud</code> differs from #3 (an ID token's
+<code>aud</code> is the client ID)</td>
+<td>check #3</td>
+</tr>
+<tr class="even">
+<td>refused as an unidentified agent</td>
+<td>the <code>X-Agent-Token</code> name is not in #24</td>
+<td>you or us</td>
+</tr>
+<tr class="odd">
+<td><code>invalid_request: Missing resource</code> (ID-JAG)</td>
+<td>the resource indicator is not set on the XAA connection or our
+config</td>
+<td>check #7 / #21</td>
+</tr>
+<tr class="even">
+<td><code>'requested_token_type' is invalid or not supported</code></td>
+<td>the IdP endpoint does not support ID-JAG (wrong authorization
+server, or XAA not enabled)</td>
+<td>you: check #17 and that XAA is enabled</td>
+</tr>
+<tr class="odd">
+<td><code>invalid_target</code> / <code>invalid_scope</code> at Hop
+A</td>
+<td>no XAA connection between the requesting and resource apps, or wrong
+scopes</td>
+<td>you: check #21</td>
+</tr>
+<tr class="even">
+<td>HTTP 400 at Hop A with no detail</td>
+<td>a client in the wrong place: requesting vs resource client, or wrong
+auth method</td>
+<td>check #18–#19 vs #23</td>
+</tr>
+<tr class="odd">
+<td>the service refuses a valid user</td>
+<td>the service cannot map that user to its own account</td>
+<td>you: the service's user mapping (#10)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-what-to-know-before-you-start">6. What to know before you
+start</h2>
+<ol type="1">
+<li><strong>Agent identity is declared, not yet cryptographically
+verified.</strong> The gateway admits only the agent names you declare
+and enforces rules on them. Verified agent credentials, issued by your
+IdP or by the PointGuardAI control plane, are on the roadmap.</li>
+<li><strong>Configuration is partly self-service.</strong> The MCP
+server, virtual servers, rules and API tokens are in the console (§3.5).
+Trust in your IdP (§3.1) and the settings listed at the end of step 3
+are applied by PointGuardAI. A tenant-facing <em>Identity Providers</em>
+page with a "test this token" check is planned.</li>
+<li><strong>ID-JAG depends on your vendors.</strong> Both your IdP and
+the downstream service must support Cross App Access. Many SaaS services
+do not yet.</li>
+<li><strong>One gateway per tenant.</strong> Your configuration is not
+shared with any other customer.</li>
+</ol>
+<hr />
+<h2 id="7-example-okta-as-your-obo-authorization-server">7. Example:
+Okta as your OBO authorization server</h2>
+<p>This section shows what to set up in Okta so the gateway can exchange
+your user's token for a downstream token (OBO, §2.3). It covers OBO
+only. Values in braces are placeholders: <code>{yourOktaDomain}</code>,
+<code>{authServerId}</code>, and so on.</p>
+<h3 id="71-before-you-start">7.1 Before you start</h3>
+<ul>
+<li>★ <strong>Licensing.</strong> Okta's documentation says on-behalf-of
+token exchange requests are accepted only if your org bought or renewed
+an <strong>NHI Authentication Token</strong> subscription on or after 14
+August 2026. Check this with your Okta account team first. Without it,
+no configuration below works.</li>
+<li><strong>A custom authorization server.</strong> Okta documents OBO
+token exchange on custom authorization servers: the one named
+<code>default</code>, or one you create. Use one of those, not the org
+authorization server (<code>/oauth2/v1/token</code>).</li>
+<li><strong>An Okta admin</strong> who can create app integrations and
+edit authorization servers.</li>
+<li><strong>The downstream MCP server</strong> (#7) accepts access
+tokens from this authorization server and maps the token's
+<code>sub</code> to its own user (#10).</li>
+</ul>
+<p>The example uses <strong>one</strong> authorization server. Both the
+user's token and the exchanged token come from it. §7.3 step 7 covers
+the case where the downstream service trusts a different authorization
+server in the same Okta org.</p>
+<h3 id="72-what-you-create">7.2 What you create</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>In Okta</th>
+<th>Purpose</th>
+<th>Feeds item</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td>A custom authorization server</td>
+<td>issues the user's token and performs the exchange</td>
+<td>#1, #2, #3, #12, #14</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Custom scopes on that server</td>
+<td>what the exchanged token is allowed to do</td>
+<td>#9</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td>A <strong>groups</strong> claim on that server</td>
+<td>lets rules decide on the user's groups</td>
+<td>#4</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td>The <strong>user-facing app</strong> (OIDC)</td>
+<td>your users sign in to it; it obtains the user's access token</td>
+<td>the token in <code>x-user-token</code></td>
+</tr>
+<tr class="odd">
+<td>E</td>
+<td>An <strong>API Services</strong> app for the gateway, with the
+<strong>Token Exchange</strong> grant</td>
+<td>the client the gateway authenticates as when it exchanges</td>
+<td>#13</td>
+</tr>
+<tr class="even">
+<td>F</td>
+<td>Two access policies, each with a rule</td>
+<td>admit D for the sign-in and E for the exchange</td>
+<td>#16</td>
+</tr>
+</tbody>
+</table>
+<h3 id="73-step-by-step-in-the-okta-admin-console">7.3 Step by step in
+the Okta Admin Console</h3>
+<h4 id="step-1-the-authorization-server-a">Step 1: the authorization
+server (A)</h4>
+<p><strong>Security → API → Authorization Servers → Add Authorization
+Server.</strong> Enter a Name, an <strong>Audience</strong> and a
+Description, then save.</p>
+<ul>
+<li><strong>Audience</strong>: a URI that names your MCP APIs, for
+example <code>api://mcp</code>. Okta puts it in the <code>aud</code>
+claim of every access token this server issues. You will send it as #3
+and #14.</li>
+<li>Note the server's <strong>Issuer</strong>
+(<code>https://{yourOktaDomain}/oauth2/{authServerId}</code>) and its
+<strong>Metadata URI</strong>
+(<code>https://{yourOktaDomain}/oauth2/{authServerId}/.well-known/openid-configuration</code>).</li>
+</ul>
+<p>You can use the existing <code>default</code> server instead. Its
+<code>{authServerId}</code> is <code>default</code>. A new org's
+<code>default</code> server may have no access policy; step 6 adds
+one.</p>
+<h4 id="step-2-custom-scopes-b">Step 2: custom scopes (B)</h4>
+<p>On the same server, open <strong>Scopes → Add Scope</strong>. Create
+one scope per kind of access the agents need, for example
+<code>mcp:read</code> and <code>mcp:write</code> (#9).</p>
+<p>⚠ Do not plan on <code>offline_access</code> or the OpenID Connect
+scopes (<code>openid</code>, <code>profile</code>, <code>email</code>)
+for the exchanged token. Okta does not allow them when a service app
+performs the exchange.</p>
+<h4 id="step-3-the-groups-claim-c">Step 3: the groups claim (C)</h4>
+<p>On the same server, open <strong>Claims → Add Claim</strong>:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Name</td>
+<td><code>groups</code> (the gateway reads <code>groups</code> unless
+told otherwise, #4)</td>
+</tr>
+<tr class="even">
+<td>Include in token type</td>
+<td><strong>Access Token</strong></td>
+</tr>
+<tr class="odd">
+<td>Value type</td>
+<td><strong>Groups</strong></td>
+</tr>
+<tr class="even">
+<td>Filter</td>
+<td><strong>Matches regex</strong> <code>.*</code>, or a narrower filter
+that returns only the groups your rules use, for example
+<code>mcp-.*</code></td>
+</tr>
+</tbody>
+</table>
+<p>Okta access tokens do not carry groups unless you add this claim.
+Without it, rules on <strong>User groups</strong> (§3.5 step 5) never
+match.</p>
+<h4 id="step-4-the-user-facing-app-d">Step 4: the user-facing app
+(D)</h4>
+<p><strong>Applications → Applications → Create App Integration → OIDC -
+OpenID Connect</strong>, then <strong>Native Application</strong> (or
+<strong>Single-Page Application</strong> / <strong>Web
+Application</strong>, matching how your users actually sign in). Use
+<strong>Authorization Code</strong> with PKCE. Assign it to the users or
+groups who will use the agents, including both test users (#6).</p>
+<p>This app is not given to the gateway. It only produces the user's
+access token, which your agent sends in <code>x-user-token</code>
+(§4.1).</p>
+<h4 id="step-5-the-gateways-exchange-client-e">Step 5: the gateway's
+exchange client (E)</h4>
+<p><strong>Applications → Applications → Create App Integration → API
+Services → Next.</strong> Name it, for example
+<code>PointGuardAI MCP Gateway</code>, and save. Then:</p>
+<ol type="1">
+<li><strong>General → General Settings → Edit.</strong></li>
+<li>In <strong>Grant type</strong>, click <strong>Advanced</strong> and
+select <strong>Token Exchange</strong>. Save. (On Okta Classic Engine,
+<strong>Token Exchange</strong> is listed directly under <strong>Grant
+type</strong>.)</li>
+<li>Leave <strong>Client authentication</strong> on <strong>Client
+secret</strong>.</li>
+<li>Copy the <strong>Client ID</strong> and the <strong>Client
+secret</strong>. These are #13. Send the secret through your secure
+channel (§2).</li>
+</ol>
+<p>★ Create this as an <strong>API Services</strong> app. In our
+testing, enabling Token Exchange on an ordinary OIDC web app produced a
+different Okta flow that demanded an <code>actor_token</code> the
+gateway does not send.</p>
+<h4 id="step-6-access-policies-and-rules-f">Step 6: access policies and
+rules (F)</h4>
+<p>On the authorization server, open <strong>Access Policies → Add New
+Access Policy</strong>. Create two policies:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Policy</th>
+<th>Assign to: The following clients</th>
+<th>Rule (<strong>Add Rule</strong>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Users to MCP</code></td>
+<td>the user-facing app (D)</td>
+<td><strong>IF Grant type is</strong>: Authorization Code · <strong>AND
+User is</strong>: Any user assigned to the app · <strong>AND Scopes
+requested</strong>: the scopes the sign-in asks for (at least
+<code>openid</code>)</td>
+</tr>
+<tr class="even">
+<td><code>Gateway exchange</code></td>
+<td>the gateway app (E)</td>
+<td><strong>IF Grant type is</strong>: click <strong>Advanced</strong>,
+select <strong>Token Exchange</strong> · <strong>AND User is</strong>:
+Any user assigned to the app, or the groups that may use the agents ·
+<strong>AND Scopes requested</strong>: the scopes from step 2</td>
+</tr>
+</tbody>
+</table>
+<p>Save each rule with <strong>Create rule</strong>.</p>
+<p>⚠ Okta's OBO guide shows these policies with the scope condition
+only. We list the grant type and user conditions too, because the rule
+dialog offers them; confirm they are set as above when you save.</p>
+<h4
+id="step-7-optional-the-downstream-service-trusts-a-second-authorization-server">Step
+7 (optional): the downstream service trusts a second authorization
+server</h4>
+<p>If the downstream service validates tokens from a
+<strong>different</strong> custom authorization server in the same Okta
+org:</p>
+<ol type="1">
+<li>Open that second server: <strong>Security → API →</strong> edit it
+<strong>→ Trusted servers → Add Server</strong>, find the server from
+step 1, <strong>Add</strong>, <strong>Done</strong>.</li>
+<li>Add steps 2 and 6 (<code>Gateway exchange</code> only) on the
+<strong>second</strong> server.</li>
+<li>Then #12 is the second server's token endpoint and #14 is the second
+server's audience. #1–#3 stay those of the first server, because that is
+where the user's token comes from.</li>
+</ol>
+<h3 id="74-values-to-send-us-and-where-each-one-goes">7.4 Values to send
+us, and where each one goes</h3>
+<p>Every value below is read by the <strong>PointGuardAI MCP
+Gateway</strong>. Your agents need only the user's access token from app
+D (sent in <code>x-user-token</code>) and the gateway values from §3.4.
+The PointGuardAI control plane reads nothing from Okta for OBO.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Item</th>
+<th>Okta value</th>
+<th>Gateway setting</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>#1</td>
+<td>Issuer:
+<code>https://{yourOktaDomain}/oauth2/{authServerId}</code></td>
+<td><code>OBO_USER_TOKEN_ISSUER</code>, and <strong>Issuer URL</strong>
+in the console (§3.5 step 3)</td>
+</tr>
+<tr class="even">
+<td>#2</td>
+<td><code>https://{yourOktaDomain}/oauth2/{authServerId}/v1/keys</code>
+(the <code>jwks_uri</code> in the Metadata URI)</td>
+<td><code>OBO_USER_TOKEN_JWKS_URL</code></td>
+</tr>
+<tr class="odd">
+<td>#3</td>
+<td>the server's Audience, e.g. <code>api://mcp</code></td>
+<td><code>OBO_USER_TOKEN_AUDIENCE</code></td>
+</tr>
+<tr class="even">
+<td>#4</td>
+<td><code>groups</code> (step 3)</td>
+<td><code>OBO_USER_TOKEN_GROUPS_CLAIM</code></td>
+</tr>
+<tr class="odd">
+<td>#5</td>
+<td><code>cid</code> (Okta's client claim)</td>
+<td><code>OBO_USER_TOKEN_CLIENT_CLAIM</code>. ★ Set it: the gateway's
+default is <code>client_id</code>, which Okta does not use</td>
+</tr>
+<tr class="even">
+<td>#9</td>
+<td>the scopes from step 2, e.g. <code>mcp:read mcp:write</code></td>
+<td>MCP server OAuth configuration <code>scopes</code></td>
+</tr>
+<tr class="odd">
+<td>#12</td>
+<td><code>https://{yourOktaDomain}/oauth2/{authServerId}/v1/token</code></td>
+<td><code>token_url</code>, <strong>Token URL</strong> in the
+console</td>
+</tr>
+<tr class="even">
+<td>#13</td>
+<td>Client ID and secret of app E</td>
+<td><code>client_id</code>, <code>client_secret</code>, <strong>Client
+ID</strong> / <strong>Client Secret</strong> in the console</td>
+</tr>
+<tr class="odd">
+<td>#14</td>
+<td>the server's Audience (or the second server's, step 7)</td>
+<td><code>audience</code></td>
+</tr>
+<tr class="even">
+<td>#15</td>
+<td>Client secret</td>
+<td>the gateway sends the client ID and secret in the request body
+(<code>client_secret_post</code>) for the exchange</td>
+</tr>
+</tbody>
+</table>
+<p>The gateway sends Okta exactly these form fields on each exchange:
+<code>grant_type=urn:ietf:params:oauth:grant-type:token-exchange</code>,
+<code>subject_token</code> (the user's access token),
+<code>subject_token_type</code> and <code>requested_token_type</code>
+(both <code>urn:ietf:params:oauth:token-type:access_token</code>, the
+default when the console fields are left empty), <code>client_id</code>,
+<code>client_secret</code>, <code>audience</code> and
+<code>scope</code>. These match Okta's OBO request.</p>
+<p>For attribution the gateway reads <code>email</code>, falling back to
+<code>sub</code>, from the user's token. Okta access tokens carry the
+user's login in <code>sub</code>, so no extra claim is needed.</p>
+<h3 id="75-check-okta-before-you-call-the-gateway">7.5 Check Okta before
+you call the gateway</h3>
+<p>Run the exchange yourself, the same way the gateway will. Use a fresh
+access token for a test user from app D.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OKTA_TOKEN_URL</span><span class="op">=</span><span class="st">&quot;https://{yourOktaDomain}/oauth2/{authServerId}/v1/token&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GW_CLIENT_ID</span><span class="op">=</span><span class="st">&quot;{gatewayAppClientId}&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GW_CLIENT_SECRET</span><span class="op">=</span><span class="st">&quot;{gatewayAppClientSecret}&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">USER_TOKEN</span><span class="op">=</span><span class="st">&quot;{user access token from app D}&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> <span class="at">-X</span> POST <span class="st">&quot;</span><span class="va">$OKTA_TOKEN_URL</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Accept: application/json&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Content-Type: application/x-www-form-urlencoded&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;grant_type=urn:ietf:params:oauth:grant-type:token-exchange&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;subject_token_type=urn:ietf:params:oauth:token-type:access_token&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;requested_token_type=urn:ietf:params:oauth:token-type:access_token&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;subject_token=</span><span class="va">$USER_TOKEN</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;client_id=</span><span class="va">$GW_CLIENT_ID</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;client_secret=</span><span class="va">$GW_CLIENT_SECRET</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;audience=api://mcp&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--data-urlencode</span> <span class="st">&quot;scope=mcp:read mcp:write&quot;</span></span></code></pre></div>
+<p><strong>Expect</strong> HTTP 200 with:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;token_type&quot;</span><span class="fu">:</span> <span class="st">&quot;Bearer&quot;</span><span class="fu">,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;expires_in&quot;</span><span class="fu">:</span> <span class="dv">3600</span><span class="fu">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;access_token&quot;</span><span class="fu">:</span> <span class="st">&quot;eyJ…&quot;</span><span class="fu">,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope&quot;</span><span class="fu">:</span> <span class="st">&quot;mcp:read mcp:write&quot;</span><span class="fu">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;issued_token_type&quot;</span><span class="fu">:</span> <span class="st">&quot;urn:ietf:params:oauth:token-type:access_token&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Decode the new <code>access_token</code> (its payload only) and
+check:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Claim</th>
+<th>Must be</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>iss</code></td>
+<td><code>https://{yourOktaDomain}/oauth2/{authServerId}</code></td>
+</tr>
+<tr class="even">
+<td><code>aud</code></td>
+<td>your audience (#14)</td>
+</tr>
+<tr class="odd">
+<td><code>sub</code></td>
+<td><strong>the test user</strong>, not the gateway app</td>
+</tr>
+<tr class="even">
+<td><code>cid</code></td>
+<td>the gateway app's client ID (E)</td>
+</tr>
+<tr class="odd">
+<td><code>scp</code></td>
+<td>the scopes you asked for</td>
+</tr>
+</tbody>
+</table>
+<p>Also decode the <strong>user's</strong> token and check
+<code>iss</code> (#1), <code>aud</code> (#3), <code>cid</code> (app D)
+and <code>groups</code> (step 3). Then run the tests in §4.</p>
+<h3 id="76-when-the-okta-side-fails">7.6 When the Okta side fails</h3>
+<p>Through the gateway, a refused exchange appears as
+<code>identity provider rejected the exchange</code> with the HTTP
+status only. The curl in §7.5 shows Okta's own <code>error</code> and
+<code>error_description</code>, so start there. The codes below are the
+standard OAuth ones; Okta's description text varies.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Okta <code>error</code></th>
+<th>Likely cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>invalid_client</code></td>
+<td>wrong client ID or secret, or the secret was rotated</td>
+<td>re-copy #13 from app E</td>
+</tr>
+<tr class="even">
+<td><code>unauthorized_client</code></td>
+<td><strong>Token Exchange</strong> is not enabled on app E, or E is not
+an API Services app</td>
+<td>step 5</td>
+</tr>
+<tr class="odd">
+<td><code>invalid_scope</code></td>
+<td>a requested scope does not exist on the server, or is
+<code>openid</code>/<code>offline_access</code></td>
+<td>step 2; send only the custom scopes</td>
+</tr>
+<tr class="even">
+<td><code>access_denied</code></td>
+<td>no access policy assigned to app E, or its rule does not allow Token
+Exchange, this user or these scopes</td>
+<td>step 6, <code>Gateway exchange</code></td>
+</tr>
+<tr class="odd">
+<td><code>invalid_grant</code></td>
+<td>the user's token is expired, or comes from a server that is neither
+this one nor one of its trusted servers</td>
+<td>get a fresh token from app D; step 7 for a second server</td>
+</tr>
+<tr class="even">
+<td>an error saying <code>actor_token</code> is missing</td>
+<td>Token Exchange was enabled on a non-API-Services app</td>
+<td>create app E as API Services (step 5)</td>
+</tr>
+<tr class="odd">
+<td>HTTP 200, but the service refuses the token</td>
+<td><code>aud</code> or <code>scp</code> is not what the downstream
+service expects</td>
+<td>check #14 and #9 against what the service validates</td>
+</tr>
+<tr class="even">
+<td>gateway: <code>USER_TOKEN_INVALID</code></td>
+<td>the user's token is not from #1, or <code>aud</code> is not #3</td>
+<td>§5; a token from the org server (<code>/oauth2/v1/…</code>) has the
+wrong issuer</td>
+</tr>
+<tr class="odd">
+<td>gateway: group rules never match</td>
+<td>no <code>groups</code> claim in the user's access token</td>
+<td>step 3</td>
+</tr>
+<tr class="even">
+<td>gateway: wrong client in the decision record</td>
+<td><code>OBO_USER_TOKEN_CLIENT_CLAIM</code> not set to
+<code>cid</code></td>
+<td>§7.4, #5</td>
+</tr>
+<tr class="odd">
+<td><code>access_denied</code> or <code>unauthorized_client</code>
+although steps 5 and 6 are correct</td>
+<td>the org may lack the subscription Okta requires for OBO</td>
+<td>§7.1: ask your Okta account team</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
