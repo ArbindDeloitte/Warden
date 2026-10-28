@@ -1,140 +1,237 @@
-# SecureBank — Banking Application with OBO Identity Delegation
+# SecureBank — MCP + Warden Demo
 
-A full-stack banking application demonstrating **OAuth 2.0 On-Behalf-Of (OBO) token exchange** via the PointGuardAI MCP Gateway. An AI agent operates on behalf of a signed-in user without ever holding that user's credentials.
+A full-stack banking application demonstrating **OAuth 2.0 On-Behalf-Of (OBO) token exchange** and **AI agent security** with the **Warden MCP Gateway**.
+
+An AI agent operates on behalf of a signed-in user. Warden performs the OBO token exchange so the agent never holds user credentials, enforces Cedar-style access policies, and runs a bidirectional interceptor pipeline that blocks prompt injection and masks PII before any data reaches the LLM.
+
+---
 
 ## Architecture
 
 ```
-User → Banking Frontend (React/Okta) ─────────────────────→ Banking Backend (Express/SQLite)
-                │                                                       ↑
-                │ (copies access token)                                 │ (OBO-exchanged token)
-                ↓                                                       │
-           Python Agent ──→ PointGuardAI MCP Gateway ──→ Banking MCP Server
-                              (OBO exchange via Okta)
+User ──► React Frontend (Okta PKCE) ──► Banking REST API  :3001
+                                               │
+Agent ──► Warden Gateway :3003                 │
+            │  ① verify API key                │
+            │  ② verify user JWT               │
+            │  ③ inbound intercept scan        │
+            │  ④ Cedar policy check            │
+            │  ⑤ OBO token exchange (Okta)    │
+            │  ⑥ forward to MCP endpoint ─────┘
+            │  ⑦ outbound intercept scan
+            └──► masked/filtered response ──► Agent / Frontend
 ```
 
 ### Components
 
-| Component | Location | Port | Description |
-|-----------|----------|------|-------------|
-| Banking Backend + MCP | `banking-app/backend/` | 3001 | Express API + MCP server (SQLite) |
-| Banking Frontend | `banking-app/frontend/` | 5173 | React + Okta OIDC |
-| Python Agent | `agent/` | — | CLI agent using PointGuardAI Gateway |
+| Component | Directory | Port | Runtime |
+|---|---|---|---|
+| Banking Backend + MCP Server | `banking-app/backend/` | 3001 | Node.js 22.5+ (ESM) |
+| Banking Frontend | `banking-app/frontend/` | 5173 | React + Vite |
+| Warden (MCP Virtual Server) | `mcp-virtual-server/` | 3003 | Node.js (CJS) |
+| Python Agent | `agent/` | — | Python 3.11+ |
+| PII Analyzer (local Presidio) | `presidio-server/` | 5001 | Python (waitress) |
 
-### Token Flow (OBO)
-
-1. **User signs in** to the banking frontend via Okta (Authorization Code + PKCE)
-2. **Frontend** gets an access token (`aud: api://banking`) and calls the banking API directly
-3. **Agent** gets the user's access token (PKCE flow or manual paste)
-4. **Agent → PointGuardAI Gateway**: sends MCP tool call with:
-   - `Authorization: Bearer <PG_GATEWAY_TOKEN>` — gateway auth
-   - `x-user-token: Bearer <user_access_token>` — user's identity for OBO
-   - `X-Agent-Token: banking-agent` — agent identity for policy enforcement
-5. **Gateway → Okta**: performs RFC 8693 token exchange (OBO) → new access token with user's identity
-6. **Gateway → Banking MCP Server**: calls with OBO-exchanged token
-7. **MCP Server** validates token, executes tool **as the user**, returns result
+---
 
 ## Quick Start
 
-### Prerequisites
-- Node.js 22.5+ (for built-in `node:sqlite`)
-- Python 3.11+
-- An Okta developer org (see [OKTA_SETUP.md](./OKTA_SETUP.md))
-- A PointGuardAI MCP Gateway instance (see [OKTA_SETUP.md](./OKTA_SETUP.md))
-
-### 1. Backend
+### 1. Banking Backend
 
 ```bash
 cd banking-app/backend
-cp .env.example .env
-# Edit .env: set OKTA_ISSUER, OKTA_AUDIENCE, FRONTEND_URL
+cp .env.example .env   # fill in OKTA_ISSUER, OKTA_AUDIENCE
 npm install
-npm start
-# → http://localhost:3001
+npm run dev            # http://localhost:3001
 ```
 
-### 2. Frontend
+### 2. Banking Frontend
 
 ```bash
 cd banking-app/frontend
-cp .env.example .env
-# Edit .env: set VITE_OKTA_CLIENT_ID (from Okta setup)
 npm install
-npm run dev
-# → http://localhost:5173
+npm run dev            # http://localhost:5173
 ```
 
-### 3. Python Agent
+### 3. Warden Gateway
+
+```bash
+cd mcp-virtual-server
+cp .env.example .env   # fill in PORT, REDIS_URL, ADMIN_API_TOKEN, Okta OBO credentials
+npm install
+npm run dev            # http://localhost:3003
+```
+
+> **Redis**: Warden uses Redis for OBO token caching. If Redis is unavailable, Warden falls back gracefully (tokens fetched live every call). Set `socket.reconnectStrategy: false` in `src/services/tokenCache.js` to avoid startup hangs.
+
+### 4. PII Analyzer (optional — enhances Presidio scanner)
+
+```bash
+cd presidio-server
+pip install flask waitress
+py -3 server.py        # http://localhost:5001
+```
+
+### 5. Python Agent
 
 ```bash
 cd agent
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env: set PG_GATEWAY_URL, PG_GATEWAY_TOKEN, PG_VIRTUAL_SERVER_ID
-# Set USER_TOKEN or OKTA_CLIENT_ID for PKCE flow
+cp .env.example .env   # fill in PG_GATEWAY_URL, PG_GATEWAY_TOKEN, PG_VIRTUAL_SERVER_ID, ANTHROPIC_API_KEY
 python agent.py
 ```
 
-## Okta Configuration
+---
 
-See **[OKTA_SETUP.md](./OKTA_SETUP.md)** for step-by-step instructions to configure:
-- Custom scopes (banking permissions)
-- Groups claim
-- User-facing OIDC app (frontend + agent)
-- API Services app (PointGuardAI Gateway OBO client)
-- Access policies
+## Warden — The Security Layer
 
-### Scopes
+Warden is a self-hosted MCP gateway that sits between the AI agent and the banking MCP server. Every tool call passes through it.
 
-| Scope | Description |
-|-------|-------------|
-| `accounts:read` | List and view accounts |
-| `accounts:balance:read` | View account balances |
-| `accounts:transactions:read` | View transaction history |
-| `accounts:statements:read` | View account statements |
-| `accounts:write` | Update account settings |
-| `payments:initiate` | Create new payments |
-| `payments:approve` | Approve pending payments |
-| `payments:read` | View payment history |
-| `standing-orders:manage` | Create/update/cancel standing orders |
-| `transfers:external:create` | Create external (IBAN) transfers |
+### What Warden Does
 
-## MCP Tools
+| Feature | Description |
+|---|---|
+| **API key enforcement** | Per-virtual-server API keys gate access |
+| **JWT verification** | Validates Okta access tokens on every call |
+| **OBO token exchange** | RFC 8693 — exchanges user AT-A for MCP-scoped AT-B |
+| **Cedar-style policies** | Deny-by-default; permit rules specify tool, scope, group conditions |
+| **Bidirectional interceptors** | Inbound (user → LLM) and outbound (MCP response → user) scans |
+| **Audit log** | Every proxied call recorded in SQLite |
 
-The banking MCP server exposes these tools (called by the agent via the gateway):
+### Interceptor Pipeline
 
-| Tool | Required Scope | Description |
-|------|---------------|-------------|
-| `get_accounts` | accounts:read | List user's accounts |
-| `get_account_balance` | accounts:balance:read | Get account balance |
-| `get_transactions` | accounts:transactions:read | List transactions |
-| `get_statements` | accounts:statements:read | Get statements |
-| `list_payments` | payments:read | List payments |
-| `initiate_payment` | payments:initiate | Create a payment |
-| `approve_payment` | payments:approve | Approve payment |
-| `create_standing_order` | standing-orders:manage | Create standing order |
-| `manage_standing_order` | standing-orders:manage | Update/cancel order |
-| `create_external_transfer` | transfers:external:create | External IBAN transfer |
+```
+User message ──► [Inbound Scan] ──► Policy Check ──► MCP Tool Call
+                     │                                      │
+                  BLOCK / MASK / WARN           [Outbound Scan]
+                                                      │
+                                               BLOCK / MASK / WARN
+                                                      │
+                                              Response to caller
+```
 
-## PointGuardAI Gateway Setup
+**Scanners** (both run per call):
 
-Follow the onboarding doc (§3.5) to configure the gateway:
+| Scanner | Location | Detects |
+|---|---|---|
+| `RegexScanner` | In-process Node.js | SSN, IBAN, credit cards, email, phone, prompt injection patterns |
+| `PresidioScanner` | HTTP → `localhost:5001` | Same + extensible to NER entities (PERSON, ORG, LOC) with spaCy |
 
-1. **Step 1**: Create a gateway API token
-2. **Step 2**: Add the banking MCP server with a one-time access token at `http://localhost:3001/mcp`
-3. **Step 3**: Switch to OBO (Token Exchange) with your Okta credentials
-4. **Step 4**: Create virtual server `banking-agent`
-5. **Step 5**: Write access rules (no user token → deny, undeclared agents → deny)
+**Rule actions**: `block` (403), `mask` (replace matched spans with `[REDACTED: TYPE]`), `warn` (pass + log), `allow`.
 
-## Security Notes
+**Demo rules configured on `banking-vs`**:
 
-- The banking backend validates **every** JWT against Okta's JWKS — no shared secrets
-- The MCP server and REST API share the same JWT validation; the OBO-exchanged token and the user's direct token both carry the user's `sub`
-- `fallback_to_client_credentials` is **false** — the gateway never calls the banking server as itself
-- Agent identity (`X-Agent-Token`) is enforced by the PointGuardAI policy engine
+| Priority | Rule | Scanner | Action | Score threshold |
+|---|---|---|---|---|
+| 100 | Block Prompt Injection | regex | block | ≥ 0.5 |
+| 80 | Mask PII — SSN, Cards, IBAN | regex | mask | ≥ 0.7 |
+| 60 | Mask Named Entities (Presidio) | presidio | mask | ≥ 0.6 |
+| 10 | Audit Low-Confidence Flags | * | warn | ≥ 0.3 |
 
-## Development Notes
+### OBO Token Flow
 
-- First run seeds the SQLite database with demo data (1 user, 3 accounts, 30 transactions, etc.)
-- Real users are created on first login: the backend reads the Okta `sub` claim and creates a user record with fresh accounts
-- The demo user (seed data) uses `okta_sub = 'demo-user-seed'` and is only visible if you hit the API without a token (for development inspection)
+```
+Frontend user AT  (aud: api://banking)
+        │
+        └──► Warden OBO exchange (RFC 8693, Okta)
+                    │
+                    └──► MCP OBO token  (aud: api://banking-mcp)
+                                │
+                                └──► Banking MCP server (/mcp)
+                                     decodes sub → getOrCreateUser()
+```
+
+---
+
+## Dual Auth Model (Banking Backend)
+
+| Path | Auth | Middleware |
+|---|---|---|
+| `GET/POST /api/*` | Full Okta JWT verification (JWKS) | `verifyToken` → extracts `sub`, `email`, `groups`, `scp` |
+| `POST /mcp` | Trusts gateway; base64-decodes JWT payload only | `decodeMcpToken` → `getOrCreateUser(db, sub)` |
+
+The MCP endpoint trusts Warden as the trust boundary. No crypto verification — the OBO exchange already validated the token upstream.
+
+---
+
+## Environment Variables
+
+### Banking Backend (`banking-app/backend/.env`)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OKTA_ISSUER` | — | Okta authorization server URL |
+| `OKTA_AUDIENCE` | `api://banking` | Expected token audience |
+| `FRONTEND_URL` | `http://localhost:5173` | CORS allowed origin |
+| `DB_PATH` | `banking.db` | SQLite file location |
+| `PORT` | `3001` | Server port |
+
+### Warden (`mcp-virtual-server/.env`)
+
+| Variable | Purpose |
+|---|---|
+| `PORT` | Gateway port (default 3003) |
+| `REDIS_URL` | Redis connection (optional — falls back gracefully) |
+| `ADMIN_API_TOKEN` | Bearer token for Warden admin API |
+| `JWT_SECRET` / Okta vars | Token verification config |
+
+### Python Agent (`agent/.env`)
+
+| Variable | Purpose |
+|---|---|
+| `PG_GATEWAY_URL` | Warden base URL |
+| `PG_GATEWAY_TOKEN` | Warden API token |
+| `PG_VIRTUAL_SERVER_ID` | Virtual server ID |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `USER_TOKEN` | Pre-set Okta user token (skips interactive login) |
+
+---
+
+## Project Structure
+
+```
+.
+├── banking-app/
+│   ├── backend/          # Express + MCP server (Node.js ESM)
+│   │   ├── src/
+│   │   │   ├── mcp/server.js        # MCP tool definitions
+│   │   │   ├── routes/              # REST API routes
+│   │   │   ├── middleware/auth.js   # Okta JWT verification
+│   │   │   ├── db.js                # node:sqlite wrapper
+│   │   │   └── seed.js              # Demo data seeder
+│   │   └── index.js                 # Express app + MCP endpoint
+│   └── frontend/         # React + Vite + Okta PKCE
+│       └── src/
+│           ├── oktaConfig.js
+│           ├── services/api.js      # REST client
+│           └── services/mcpProxy.js # In-browser MCP demo
+├── mcp-virtual-server/   # Warden gateway (Node.js CJS)
+│   └── src/
+│       ├── routes/proxy.js          # Main proxy endpoint
+│       ├── services/
+│       │   ├── oboService.js        # RFC 8693 OBO exchange
+│       │   ├── tokenCache.js        # Redis-backed token cache
+│       │   ├── policyEngine.js      # Cedar-style evaluator
+│       │   └── mcpClient.js         # Per-user MCP session manager
+│       └── interceptors/
+│           ├── InterceptorPipeline.js
+│           ├── ActionEngine.js      # Rule evaluator + mask applier
+│           └── scanners/
+│               ├── RegexScanner.js  # Pattern-based PII + injection
+│               └── PresidioScanner.js # Local HTTP PII analyzer
+├── presidio-server/
+│   └── server.py         # Local PII analyzer (regex, no Docker/spaCy)
+├── agent/                # Python Claude agent
+│   ├── agent.py
+│   └── token_helper.py   # Okta PKCE flow
+└── CLAUDE.md             # Claude Code guidance
+```
+
+---
+
+## Known Constraints
+
+- **Python 3.14 + spaCy**: spaCy's Cython extensions overflow on Python 3.14's integer representation. The local Presidio server uses pure regex — it detects structured PII (SSN, IBAN, credit cards) but not free-text locations or person names. spaCy NER requires Python 3.11 or 3.12.
+- **Redis optional**: If Redis is unavailable, OBO tokens are fetched live on every call (~200 ms overhead). Set `reconnectStrategy: false` to prevent startup hangs.
+- **No external AI safety APIs**: The interceptor stack is fully self-hosted by design — no Azure Content Safety, Lakera Guard, or OpenAI Moderation API.
+- **MCP session isolation**: Sessions are keyed by `url + sha256(oboToken[:16])` — each user gets their own MCP session bound to their database identity.

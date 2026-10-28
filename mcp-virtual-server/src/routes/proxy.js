@@ -162,7 +162,12 @@ router.post('/:virtualServerId', async (req, res) => {
   // If res was already sent (auth failed mid-verify), stop here
   if (res.headersSent) return;
 
-  const { sub, jti, scopes, groups } = req.tokenClaims || {};
+  // sub/groups come from AT_A (user identity — stable, doesn't change with OBO).
+  // scopes intentionally NOT used for policy here; we re-evaluate after OBO so
+  // Cedar sees the actual scopes on the token that will hit the MCP server (AT_B).
+  const { sub, jti, groups } = req.tokenClaims || {};
+  // Keep AT_A scopes only for audit trail — not for policy evaluation.
+  const atAScopes = req.tokenClaims?.scopes || [];
 
   // Check if the tool is assigned to this virtual server
   const toolAssignment = db.prepare(`
@@ -179,39 +184,13 @@ router.post('/:virtualServerId', async (req, res) => {
   if (!toolAssignment) {
     writeAudit({
       virtualServerId, mcpServerId: mcp_server_id, toolName: tool_name,
-      sub, jti, scopes, groups, decision: 'deny', reason: 'Tool not assigned to this virtual server',
+      sub, jti, scopes: atAScopes, groups, decision: 'deny', reason: 'Tool not assigned to this virtual server',
       payload: toolArgs,
     });
     return res.status(403).json({ error: 'Tool not permitted on this virtual server' });
   }
 
-  // Evaluate policies
-  const policies = db.prepare('SELECT * FROM policies WHERE virtual_server_id = ? AND is_active = 1').all(virtualServerId);
-  const policyResult = evaluatePolicies(policies, {
-    mcpServerId: mcp_server_id,
-    toolName: tool_name,
-    scopes: scopes || [],
-    groups: groups || [],
-    sub: sub || '',
-  });
-
-  writeAudit({
-    virtualServerId, mcpServerId: mcp_server_id, toolName: tool_name,
-    sub, jti, scopes, groups,
-    decision: policyResult.decision,
-    matchedPolicyId: policyResult.policyId,
-    reason: policyResult.reason,
-    payload: toolArgs,
-  });
-
-  if (policyResult.decision !== 'allow') {
-    return res.status(403).json({
-      error: 'Access denied by policy',
-      reason: policyResult.reason,
-    });
-  }
-
-  // Inbound interceptor scan (before MCP call)
+  // Inbound interceptor scan (before OBO — no token needed, scans arguments only)
   const inboundText = JSON.stringify(toolArgs || {});
   try {
     const inbound = await pipeline.run(inboundText, 'inbound', virtualServerId);
@@ -222,7 +201,10 @@ router.post('/:virtualServerId', async (req, res) => {
     console.warn('[Proxy] Inbound interceptor error (continuing):', err.message);
   }
 
-  // OBO exchange (skipped when virtual server has require_obo = 0)
+  // OBO exchange (skipped when virtual server has require_obo = 0).
+  // Must happen BEFORE Cedar policy evaluation so policies run against AT_B's
+  // actual scopes, not AT_A's. Okta may downscope the OBO token, so evaluating
+  // Cedar against AT_A scopes would give a false pass for scopes AT_B doesn't hold.
   let oboToken;
   if (virtualServer.require_obo !== 0) {
     try {
@@ -237,6 +219,38 @@ router.post('/:virtualServerId', async (req, res) => {
   } else {
     // Direct proxy mode — forward with original user token
     oboToken = req.accessToken;
+  }
+
+  // Decode AT_B to extract the scopes that will actually reach the MCP server.
+  const { extractTokenClaims } = require('../services/oboService');
+  const oboClaims = extractTokenClaims(oboToken);
+  const oboScopes = oboClaims.scopes || [];
+
+  // Evaluate Cedar policies using AT_B scopes (accurate) + sub/groups from AT_A (identity).
+  // This ensures a scope-based policy cannot pass when Okta has downscoped the OBO token.
+  const policies = db.prepare('SELECT * FROM policies WHERE virtual_server_id = ? AND is_active = 1').all(virtualServerId);
+  const policyResult = evaluatePolicies(policies, {
+    mcpServerId: mcp_server_id,
+    toolName: tool_name,
+    scopes: oboScopes,
+    groups: groups || [],
+    sub: sub || '',
+  });
+
+  writeAudit({
+    virtualServerId, mcpServerId: mcp_server_id, toolName: tool_name,
+    sub, jti, scopes: oboScopes, groups,
+    decision: policyResult.decision,
+    matchedPolicyId: policyResult.policyId,
+    reason: policyResult.reason,
+    payload: toolArgs,
+  });
+
+  if (policyResult.decision !== 'allow') {
+    return res.status(403).json({
+      error: 'Access denied by policy',
+      reason: policyResult.reason,
+    });
   }
 
   // Forward to MCP

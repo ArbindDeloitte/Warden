@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Warden</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='fg' x1='4' y1='2' x2='20' y2='22' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23818cf8'/%3E%3Cstop offset='1' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M12 2L4 6V12C4 16.4 7.4 20.5 12 22C16.6 20.5 20 16.4 20 12V6L12 2Z' fill='url(%23fg)'/%3E%3Crect x='9' y='12' width='6' height='5' rx='1' fill='white' opacity='.92'/%3E%3Cpath d='M10 12V10.5a2 2 0 0 1 4 0V12' stroke='white' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='14.3' r='.75' fill='%236366f1'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <style>
@@ -79,10 +80,12 @@
       margin-bottom: 8px;
     }
     .sidebar-logo .logo-icon {
-      width: 30px; height: 30px; border-radius: 8px;
-      background: var(--accent-dim); border: 1px solid rgba(99,102,241,.25);
+      width: 32px; height: 32px; border-radius: 9px;
+      background: linear-gradient(135deg, rgba(99,102,241,.18) 0%, rgba(99,102,241,.08) 100%);
+      border: 1px solid rgba(99,102,241,.3);
+      box-shadow: 0 0 0 3px rgba(99,102,241,.06), inset 0 1px 0 rgba(255,255,255,.06);
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px; flex-shrink: 0;
+      flex-shrink: 0;
     }
     .sidebar-logo .logo-text {
       font-size: 15px; font-weight: 700; letter-spacing: -.3px;
@@ -294,14 +297,38 @@
 
     /* ── Policy builder ────────────────────────────────────── */
     .condition-row {
-      display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px;
-      align-items: center; margin-bottom: 8px;
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 10px; padding: 10px 12px;
+      margin-bottom: 8px; transition: border-color .15s;
     }
-    .condition-row select, .condition-row input {
-      background: var(--surface2); border: 1px solid var(--border-strong);
-      border-radius: var(--radius); padding: 7px 10px; color: var(--text);
-      font-size: 13px; font-family: var(--font); outline: none;
+    .condition-row:hover { border-color: var(--border-strong); }
+    .cond-left { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .cond-select-row { display: flex; align-items: center; gap: 8px; }
+    .cond-select {
+      flex: 1; background: var(--surface3); border: 1px solid var(--border);
+      border-radius: 7px; padding: 6px 10px; color: var(--text);
+      font-size: 12.5px; font-family: var(--font); outline: none; min-width: 0;
+      transition: border-color .15s;
     }
+    .cond-select:focus { border-color: var(--accent); }
+    .tok-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
+      letter-spacing: .04em; white-space: nowrap; flex-shrink: 0;
+    }
+    .tok-badge.atb { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
+    .tok-badge.ata { background: rgba(168,85,247,.12); color: #c084fc; border: 1px solid rgba(168,85,247,.25); }
+    .tok-badge.not { background: rgba(239,68,68,.1);   color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+    .cond-hint-text { font-size: 11px; color: var(--text-3); padding-left: 2px; line-height: 1.4; }
+    .cond-value {
+      width: 200px; flex-shrink: 0; background: var(--surface3); border: 1px solid var(--border);
+      border-radius: 7px; padding: 6px 10px; color: var(--text);
+      font-size: 12.5px; font-family: var(--font); outline: none;
+      transition: border-color .15s;
+    }
+    .cond-value:focus { border-color: var(--accent); }
+    .action-row-policy { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
     .action-row-policy { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
 
     /* ── Tab pills ─────────────────────────────────────────── */
@@ -354,7 +381,20 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">⬡</div>
+      <div class="logo-icon">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="warden-grad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#a5b4fc"/>
+              <stop offset="1" stop-color="#6366f1"/>
+            </linearGradient>
+          </defs>
+          <path d="M12 2L4 6V12C4 16.4 7.4 20.5 12 22C16.6 20.5 20 16.4 20 12V6L12 2Z" fill="url(#warden-grad)"/>
+          <rect x="9" y="11.8" width="6" height="5.2" rx="1.2" fill="white" opacity="0.92"/>
+          <path d="M10.2 11.8V10.4a1.8 1.8 0 0 1 3.6 0v1.4" stroke="white" stroke-width="1.35" fill="none" stroke-linecap="round"/>
+          <circle cx="12" cy="14.4" r="0.75" fill="#6366f1"/>
+        </svg>
+      </div>
       <div>
         <div class="logo-text">Warden</div>
         <span class="logo-sub">AI Gateway</span>
@@ -2870,37 +2910,37 @@ sequenceDiagram
           <rect x="222" y="236" width="42" height="16" rx="4" style="fill:rgba(16,185,129,.15)"/>
           <text x="243" y="248" text-anchor="middle" style="font-size:9px;font-weight:700;fill:#10b981">SYNC</text>
 
-          <!-- 03 Cedar Policies -->
+          <!-- 03 Inbound Scan (moved before OBO) -->
           <rect x="40" y="281" width="220" height="42" rx="8"
-                style="fill:var(--surface2);stroke:rgba(16,185,129,.3);stroke-width:1"/>
-          <text x="56" y="303" style="font-size:11px;font-weight:700;fill:var(--text-1)">03  Cedar Policies</text>
-          <text x="56" y="317" style="font-size:10px;fill:var(--text-3)">Permit / forbid · deny-by-default</text>
-          <rect x="222" y="289" width="42" height="16" rx="4" style="fill:rgba(16,185,129,.15)"/>
-          <text x="243" y="301" text-anchor="middle" style="font-size:9px;font-weight:700;fill:#10b981">SYNC</text>
-
-          <!-- 04 Interceptor -->
-          <rect x="40" y="334" width="220" height="42" rx="8"
                 style="fill:var(--surface2);stroke:rgba(245,158,11,.3);stroke-width:1"/>
-          <text x="56" y="356" style="font-size:11px;font-weight:700;fill:var(--text-1)">04  Inbound Scan</text>
-          <text x="56" y="370" style="font-size:10px;fill:var(--text-3)">Regex · Embedding · PII scanner</text>
-          <rect x="222" y="342" width="42" height="16" rx="4" style="fill:rgba(245,158,11,.15)"/>
-          <text x="243" y="354" text-anchor="middle" style="font-size:9px;font-weight:700;fill:#f59e0b">SCAN</text>
+          <text x="56" y="303" style="font-size:11px;font-weight:700;fill:var(--text-1)">03  Inbound Scan</text>
+          <text x="56" y="317" style="font-size:10px;fill:var(--text-3)">Regex · Embedding · PII scanner</text>
+          <rect x="222" y="289" width="42" height="16" rx="4" style="fill:rgba(245,158,11,.15)"/>
+          <text x="243" y="301" text-anchor="middle" style="font-size:9px;font-weight:700;fill:#f59e0b">SCAN</text>
 
-          <!-- 05 OBO Exchange -->
-          <rect x="40" y="387" width="220" height="56" rx="8"
+          <!-- 04 OBO Exchange (moved before Cedar) -->
+          <rect x="40" y="334" width="220" height="56" rx="8"
                 style="fill:var(--surface2);stroke:rgba(59,130,246,.5);stroke-width:1.5"/>
-          <text x="56" y="409" style="font-size:11px;font-weight:700;fill:#3b82f6">05  OBO Exchange</text>
-          <text x="56" y="423" style="font-size:10px;fill:var(--text-3)">sha256(AT_A) · Redis/Memory</text>
-          <text x="56" y="436" style="font-size:10px;fill:var(--text-3)">RFC 8693 · AT_A → AT_B</text>
-          <rect x="222" y="395" width="42" height="16" rx="4" style="fill:rgba(59,130,246,.15)"/>
-          <text x="243" y="407" text-anchor="middle" style="font-size:9px;font-weight:700;fill:#3b82f6">OBO</text>
+          <text x="56" y="356" style="font-size:11px;font-weight:700;fill:#3b82f6">04  OBO Exchange</text>
+          <text x="56" y="370" style="font-size:10px;fill:var(--text-3)">sha256(AT_A) · Redis/Memory</text>
+          <text x="56" y="383" style="font-size:10px;fill:var(--text-3)">RFC 8693 · AT_A → AT_B</text>
+          <rect x="222" y="342" width="42" height="16" rx="4" style="fill:rgba(59,130,246,.15)"/>
+          <text x="243" y="354" text-anchor="middle" style="font-size:9px;font-weight:700;fill:#3b82f6">OBO</text>
 
-          <!-- Token cache callout -->
-          <rect x="280" y="393" width="140" height="44" rx="8"
+          <!-- Token cache callout (next to OBO at y=334) -->
+          <rect x="280" y="340" width="140" height="44" rx="8"
                 style="fill:rgba(59,130,246,.06);stroke:rgba(59,130,246,.25);stroke-width:1;stroke-dasharray:4 2"/>
-          <text x="350" y="411" text-anchor="middle" style="font-size:10px;font-weight:700;fill:#3b82f6">Token Cache</text>
-          <text x="350" y="425" text-anchor="middle" style="font-size:10px;fill:var(--text-3)">Redis → in-memory</text>
-          <text x="350" y="437" text-anchor="middle" style="font-size:10px;fill:var(--text-3)">sha256(AT_A) → AT_B</text>
+          <text x="350" y="358" text-anchor="middle" style="font-size:10px;font-weight:700;fill:#3b82f6">Token Cache</text>
+          <text x="350" y="372" text-anchor="middle" style="font-size:10px;fill:var(--text-3)">Redis → in-memory</text>
+          <text x="350" y="384" text-anchor="middle" style="font-size:10px;fill:var(--text-3)">sha256(AT_A) → AT_B</text>
+
+          <!-- 05 Cedar Policies (now uses AT_B scopes — after OBO) -->
+          <rect x="40" y="401" width="220" height="42" rx="8"
+                style="fill:var(--surface2);stroke:rgba(16,185,129,.3);stroke-width:1"/>
+          <text x="56" y="423" style="font-size:11px;font-weight:700;fill:var(--text-1)">05  Cedar Policies</text>
+          <text x="56" y="437" style="font-size:10px;fill:var(--text-3)">AT_B scopes · sub · groups</text>
+          <rect x="222" y="409" width="42" height="16" rx="4" style="fill:rgba(16,185,129,.15)"/>
+          <text x="243" y="421" text-anchor="middle" style="font-size:9px;font-weight:700;fill:#10b981">SYNC</text>
 
           <!-- 06 MCP Tool Call -->
           <rect x="40" y="454" width="220" height="42" rx="8"
@@ -2934,19 +2974,19 @@ sequenceDiagram
           <text x="588" y="434" style="font-size:10px;fill:var(--text-3)">RFC 8693 On-Behalf-Of</text>
           <text x="588" y="450" style="font-size:10px;fill:#10b981;font-weight:600">→ issues AT_B  aud: api://banking-mcp</text>
 
-          <!-- Arrow: OBO Exchange → Okta AS_B (RFC 8693) -->
-          <path d="M 260,415 C 350,415 490,400 568,400"
+          <!-- Arrow: OBO Exchange → Okta AS_B (RFC 8693) — OBO now at y=334-390 -->
+          <path d="M 260,362 C 350,362 490,385 568,390"
                 style="fill:none;stroke:#3b82f6;stroke-width:1.5;marker-end:url(#arr-blue)"
                 class="am-flow"/>
-          <rect x="356" y="396" width="78" height="16" rx="4" style="fill:var(--surface)"/>
-          <text x="395" y="408" text-anchor="middle" style="font-size:9px;fill:#3b82f6;font-weight:700">RFC 8693</text>
+          <rect x="356" y="358" width="78" height="16" rx="4" style="fill:var(--surface)"/>
+          <text x="395" y="370" text-anchor="middle" style="font-size:9px;fill:#3b82f6;font-weight:700">RFC 8693</text>
 
-          <!-- Arrow: Okta AS_B → Token Cache (AT_B) -->
-          <path d="M 568,440 C 490,440 450,440 422,435"
+          <!-- Arrow: Okta AS_B → Token Cache (AT_B) — cache now at y=340 -->
+          <path d="M 568,420 C 490,410 450,380 422,368"
                 style="fill:none;stroke:#10b981;stroke-width:1.5;marker-end:url(#arr-green)"
                 class="am-flow-rev"/>
-          <rect x="458" y="440" width="50" height="16" rx="4" style="fill:var(--surface)"/>
-          <text x="483" y="452" text-anchor="middle" style="font-size:9px;fill:#10b981;font-weight:700">AT_B</text>
+          <rect x="458" y="398" width="50" height="16" rx="4" style="fill:var(--surface)"/>
+          <text x="483" y="410" text-anchor="middle" style="font-size:9px;fill:#10b981;font-weight:700">AT_B</text>
 
           <!-- ── Banking MCP Server ── -->
           <rect x="570" y="490" width="230" height="56" rx="12"
@@ -3126,66 +3166,11 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6...
         ],
       },
       {
-        id:'cedar-policies', num:'03', label:'Cedar Policies', sublabel:'Permit / forbid evaluation',
-        badge:'SYNC', badgeColor:'#10b981', featured:false,
-        eyebrow:'Stage 03 — Authorization',
-        title:'Cedar Policy Engine',
-        subtitle:'Deny-by-default policy evaluation — every tool call must match an active permit policy with no overriding forbid',
-        stats:[
-          {label:'Latency', value:'<1ms',   cls:'accent'},
-          {label:'Mode',    value:'SYNC',   cls:'accent'},
-          {label:'Store',   value:'SQLite', cls:''},
-          {label:'Default', value:'DENY',   cls:'amber'},
-        ],
-        sections:[
-          {
-            type:'items', title:'WHAT HAPPENS',
-            items:[
-              'All active policies for this VS loaded from SQLite in one query (in-process, synchronous)',
-              'Policies sorted by priority descending — highest number evaluated first',
-              'forbid effects checked before permit — an explicit forbid always wins',
-              'Context evaluated per-policy: mcpServerId, toolName, scopes[], groups[], sub',
-              'Deny-by-default: if no permit matched → decision is deny',
-              'Decision + matched policy ID written to audit_log table (synchronous)',
-            ],
-          },
-          {
-            type:'code', title:'EXAMPLE POLICY + EVALUATION',
-            code:`// Policy stored in DB (policy_json column):
-{
-  "effect": "permit",
-  "priority": 10,
-  "conditions": {
-    "mcpServerId": "banking-mcp",
-    "toolName": "*",
-    "requireScopes": ["banking:read"],
-    "requireGroups": ["BankingUsers"]
-  }
-}
-
-// Evaluation result (written to audit_log):
-{
-  "decision":       "allow",
-  "matchedPolicy":  "policy_abc123",
-  "reason":         "Permit: BankingUsers with banking:read scope"
-}`,
-          },
-          {
-            type:'decisions', title:'DECISION LOGIC',
-            decisions:[
-              {label:'Permit matched, no forbid override',   outcome:'ALLOW', color:'#10b981', note:'Continue to Inbound Scan'},
-              {label:'No permit policy matches the context', outcome:'DENY',  color:'#ef4444', note:'403 — deny (default)'},
-              {label:'Forbid policy matched (any priority)', outcome:'DENY',  color:'#ef4444', note:'403 — explicitly forbidden'},
-            ],
-          },
-        ],
-      },
-      {
-        id:'inbound-scan', num:'04', label:'Inbound Scan', sublabel:'Content interceptor — tool args',
+        id:'inbound-scan', num:'03', label:'Inbound Scan', sublabel:'Content interceptor — tool args',
         badge:'SCAN', badgeColor:'#f59e0b', featured:false,
-        eyebrow:'Stage 04 — Content Safety (Inbound)',
+        eyebrow:'Stage 03 — Content Safety (Inbound)',
         title:'Inbound Interceptor',
-        subtitle:'Tool arguments scanned through local plugin chain before the token exchange or MCP call happens',
+        subtitle:'Tool arguments scanned through local plugin chain before any Okta or MCP network call — blocks prompt injection and masks PII at the earliest possible point',
         stats:[
           {label:'Latency',  value:'1–50ms',       cls:''},
           {label:'Mode',     value:'ASYNC',         cls:'amber'},
@@ -3228,18 +3213,18 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6...
           {
             type:'decisions', title:'DECISION LOGIC',
             decisions:[
-              {label:'All scanners pass (score below rule threshold)', outcome:'PASS',  color:'#10b981', note:'Continue to OBO Exchange'},
-              {label:'Any scanner returns mask action',                outcome:'MASK',  color:'#f59e0b', note:'Redacted args forwarded'},
-              {label:'Any scanner returns block action',               outcome:'BLOCK', color:'#ef4444', note:'403 — intercepted: true'},
+              {label:'All scanners pass (score below rule threshold)', outcome:'PASS',  color:'#10b981', note:'Continue to OBO Exchange (step 04)'},
+              {label:'Any scanner returns mask action',                outcome:'MASK',  color:'#f59e0b', note:'Redacted args forwarded to OBO'},
+              {label:'Any scanner returns block action',               outcome:'BLOCK', color:'#ef4444', note:'403 — intercepted: true (no Okta call)'},
               {label:'Scanner plugin throws an error',                 outcome:'PASS*', color:'#6b7280', note:'Log degraded=true → continue'},
             ],
           },
         ],
       },
       {
-        id:'obo-exchange', num:'05', label:'OBO Exchange', sublabel:'RFC 8693  ·  AT_A → AT_B',
+        id:'obo-exchange', num:'04', label:'OBO Exchange', sublabel:'RFC 8693  ·  AT_A → AT_B',
         badge:'OBO', badgeColor:'#3b82f6', featured:true,
-        eyebrow:'Stage 05 — Token Exchange (Core)',
+        eyebrow:'Stage 04 — Token Exchange (Core)',
         title:'OBO Token Exchange',
         subtitle:'RFC 8693 On-Behalf-Of — swaps the user\'s AT_A (aud: api://banking) for an MCP-scoped AT_B (aud: api://banking-mcp) without ever touching the user\'s credentials',
         stats:[
@@ -3259,6 +3244,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6...
               'AT_B carries the same sub/email as AT_A but with aud: api://banking-mcp',
               'AT_B cached for expires_in seconds; proactive refresh fires at 80% of TTL to avoid expiry mid-flight',
               'If require_obo = 0 on the Virtual Server: step skipped entirely, AT_A forwarded as-is',
+              'AT_B scopes decoded by Warden and passed to Cedar policy evaluation (next stage) — Cedar sees the real scopes on the token that will hit the MCP server, not the broader AT_A scope set',
             ],
           },
           {
@@ -3303,10 +3289,73 @@ TTL:   expires_in × 0.8 = 2880s  (80% of 3600s)`,
           {
             type:'decisions', title:'DECISION LOGIC',
             decisions:[
-              {label:'sha256(AT_A) found in Redis or in-memory cache',outcome:'HIT',  color:'#3b82f6', note:'Return cached AT_B (<1ms) — skip Okta'},
-              {label:'Cache miss → Okta token exchange succeeds',      outcome:'PASS', color:'#10b981', note:'Cache AT_B → proceed with new token'},
+              {label:'sha256(AT_A) found in Redis or in-memory cache',outcome:'HIT',  color:'#3b82f6', note:'Return cached AT_B (<1ms) — skip Okta → Cedar next'},
+              {label:'Cache miss → Okta token exchange succeeds',      outcome:'PASS', color:'#10b981', note:'Cache AT_B → Cedar policy check with AT_B scopes'},
               {label:'Okta returns error (invalid_grant, etc.)',        outcome:'FAIL', color:'#ef4444', note:'502 — OBO exchange failed'},
-              {label:'require_obo = 0 on Virtual Server',              outcome:'SKIP', color:'#6b7280', note:'AT_A forwarded directly (direct-proxy mode)'},
+              {label:'require_obo = 0 on Virtual Server',              outcome:'SKIP', color:'#6b7280', note:'AT_A forwarded; Cedar evaluates AT_A scopes directly'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'cedar-policies', num:'05', label:'Cedar Policies', sublabel:'AT_B scopes · deny-by-default',
+        badge:'SYNC', badgeColor:'#10b981', featured:false,
+        eyebrow:'Stage 05 — Authorization',
+        title:'Cedar Policy Engine',
+        subtitle:'Deny-by-default policy evaluated against the OBO token (AT_B) — Cedar sees the actual scopes the MCP call will carry, not the user\'s broader AT_A scope set. A scope present in AT_A but downscoped out of AT_B cannot pass a requireScopes check.',
+        stats:[
+          {label:'Latency', value:'<1ms',   cls:'accent'},
+          {label:'Mode',    value:'SYNC',   cls:'accent'},
+          {label:'Store',   value:'SQLite', cls:''},
+          {label:'Default', value:'DENY',   cls:'amber'},
+        ],
+        sections:[
+          {
+            type:'items', title:'WHAT HAPPENS',
+            items:[
+              'OBO token (AT_B) already in hand — scopes decoded from its payload (base64, no re-verify needed)',
+              'All active policies for this VS loaded from SQLite in one query (in-process, synchronous)',
+              'Policies sorted by priority descending — highest number evaluated first',
+              'forbid effects checked before permit — an explicit forbid always wins',
+              'Context evaluated per-policy: mcpServerId, toolName, oboScopes[], groups[], sub',
+              'sub and groups come from AT_A (identity is stable); scopes come from AT_B (the actual execution token)',
+              'Deny-by-default: if no permit matched → decision is deny',
+              'Decision + matched policy ID written to audit_log (synchronous)',
+            ],
+          },
+          {
+            type:'code', title:'EXAMPLE POLICY + EVALUATION',
+            code:`// Policy stored in DB (policy_json column):
+{
+  "effect": "permit",
+  "priority": 10,
+  "conditions": {
+    "mcpServerId": "banking-mcp",
+    "toolName": "*",
+    "requireScopes": ["banking:read"],
+    "requireGroups": ["BankingUsers"]
+  }
+}
+
+// AT_A had: ["banking:read", "banking:transfer"]
+// AT_B has:  ["banking:read"]  ← Okta downscoped on OBO
+
+// Cedar evaluates against AT_B scopes:
+{
+  "decision":       "allow",        ← banking:read present in AT_B ✓
+  "matchedPolicy":  "policy_abc123",
+  "reason":         "Permit: BankingUsers with banking:read scope"
+}
+
+// If policy required "banking:transfer" → DENY (not in AT_B)
+// even though AT_A had it — correct behaviour`,
+          },
+          {
+            type:'decisions', title:'DECISION LOGIC',
+            decisions:[
+              {label:'Permit matched, no forbid override',   outcome:'ALLOW', color:'#10b981', note:'Continue to MCP Tool Call'},
+              {label:'No permit policy matches the context', outcome:'DENY',  color:'#ef4444', note:'403 — deny (default)'},
+              {label:'Forbid policy matched (any priority)', outcome:'DENY',  color:'#ef4444', note:'403 — explicitly forbidden'},
             ],
           },
         ],
@@ -4568,7 +4617,7 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     <button class="btn btn-ghost btn-sm" onclick="addActionRow()">＋ Add Action</button>
     <div style="border-top:1px solid var(--border);margin:16px 0"></div>
     <h2>Conditions (all must pass)</h2>
-    <p style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">Leave empty to match any token.</p>
+    <p style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">Leave empty to match any token. <strong style="color:var(--accent)">OBO Scope</strong> conditions check the AT_B token (post-exchange scopes), not the user's original AT_A.</p>
     <div id="pol-conditions"></div>
     <button class="btn btn-ghost btn-sm" onclick="addConditionRow()">＋ Add Condition</button>
     <div class="modal-footer">
@@ -5264,29 +5313,82 @@ function addActionRow(existing = null) {
 }
 
 const CONDITION_TYPES = [
-  { value: 'scope_contains',     label: 'Scope contains' },
-  { value: 'scope_contains_any', label: 'Scope contains any' },
-  { value: 'scope_contains_all', label: 'Scope contains all' },
-  { value: 'group_contains',     label: 'Group contains' },
-  { value: 'group_contains_any', label: 'Group contains any' },
-  { value: 'group_contains_all', label: 'Group contains all' },
-  { value: 'sub_equals',         label: 'User sub equals' },
-  { value: 'sub_in',             label: 'User sub in list' },
-  { value: 'not_scope_contains', label: 'Scope does NOT contain' },
-  { value: 'not_group_contains', label: 'Group does NOT contain' },
+  // ── OBO Scope (AT_B) conditions ─────────────────────────────
+  { value: 'scope_contains',     label: 'OBO Scope (AT_B) contains',
+    hint: 'Checks the OBO token scopes — not the user\'s original AT_A scope set',
+    badge: 'AT_B', badgeCls: 'atb', color: '#6366f1', placeholder: 'e.g. banking:read' },
+  { value: 'scope_contains_any', label: 'OBO Scope (AT_B) contains any',
+    hint: 'Pass if AT_B carries at least one of the listed scopes (comma-separated)',
+    badge: 'AT_B', badgeCls: 'atb', color: '#6366f1', placeholder: 'e.g. banking:read, banking:write' },
+  { value: 'scope_contains_all', label: 'OBO Scope (AT_B) contains all',
+    hint: 'Pass only if AT_B carries every listed scope',
+    badge: 'AT_B', badgeCls: 'atb', color: '#6366f1', placeholder: 'e.g. banking:read, banking:write' },
+  { value: 'not_scope_contains', label: 'OBO Scope (AT_B) does NOT contain',
+    hint: 'Forbid when AT_B holds this scope — useful for blocking elevated permissions',
+    badge: 'NOT', badgeCls: 'not', color: '#ef4444', placeholder: 'e.g. banking:admin' },
+  // ── User identity (AT_A) conditions ─────────────────────────
+  { value: 'group_contains',     label: 'User group contains',
+    hint: 'Group from AT_A — identity is preserved through OBO, unaffected by downscoping',
+    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. BankingUsers' },
+  { value: 'group_contains_any', label: 'User group contains any',
+    hint: 'Pass if user belongs to at least one listed group (comma-separated)',
+    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. BankingUsers, Admins' },
+  { value: 'group_contains_all', label: 'User group contains all',
+    hint: 'Pass only if user belongs to every listed group',
+    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. BankingUsers, MFA-Required' },
+  { value: 'not_group_contains', label: 'User group does NOT contain',
+    hint: 'Forbid when user is a member of this group',
+    badge: 'NOT', badgeCls: 'not', color: '#ef4444', placeholder: 'e.g. ExternalContractors' },
+  { value: 'sub_equals',         label: 'User sub equals',
+    hint: 'Exact match on the user\'s subject identifier (sub claim from AT_A)',
+    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. 00u1x2y3z4a5b6c7d8' },
+  { value: 'sub_in',             label: 'User sub in list',
+    hint: 'Pass if user sub matches any entry in a comma-separated list',
+    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. user1@co, user2@co' },
 ];
 
 function addConditionRow(existing = null) {
   const row = document.createElement('div');
   row.className = 'condition-row';
+  const sel = CONDITION_TYPES.find(ct => ct.value === existing?.type) || CONDITION_TYPES[0];
+  row.style.borderLeftColor = sel.color;
   row.innerHTML = `
-    <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;outline:none">
-      ${CONDITION_TYPES.map(ct => `<option value="${ct.value}" ${existing?.type === ct.value ? 'selected' : ''}>${ct.label}</option>`).join('')}
-    </select>
-    <input placeholder="Value (e.g. banking:read)" value="${existing?.value || existing?.values?.join(', ') || ''}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;outline:none;grid-column:span 2" />
-    <button onclick="this.parentElement.remove()" class="btn btn-danger btn-sm btn-icon">✕</button>
+    <div class="cond-left">
+      <div class="cond-select-row">
+        <select class="cond-select" onchange="updateConditionHint(this)">
+          ${CONDITION_TYPES.map(ct =>
+            `<option value="${ct.value}"
+              data-hint="${ct.hint}"
+              data-badge="${ct.badge}"
+              data-badge-cls="${ct.badgeCls}"
+              data-color="${ct.color}"
+              data-placeholder="${ct.placeholder}"
+              ${existing?.type === ct.value ? 'selected' : ''}
+            >${ct.label}</option>`
+          ).join('')}
+        </select>
+        <span class="tok-badge ${sel.badgeCls}">${sel.badge}</span>
+      </div>
+      <span class="cond-hint-text">${sel.hint}</span>
+    </div>
+    <input class="cond-value"
+      placeholder="${sel.placeholder}"
+      value="${existing?.value || existing?.values?.join(', ') || ''}" />
+    <button onclick="this.closest('.condition-row').remove()"
+      class="btn btn-danger btn-sm btn-icon" style="align-self:center;flex-shrink:0">✕</button>
   `;
   document.getElementById('pol-conditions').appendChild(row);
+}
+
+function updateConditionHint(selectEl) {
+  const opt = selectEl.options[selectEl.selectedIndex];
+  const row = selectEl.closest('.condition-row');
+  row.style.borderLeftColor = opt.dataset.color;
+  row.querySelector('.cond-hint-text').textContent = opt.dataset.hint;
+  row.querySelector('.cond-value').placeholder = opt.dataset.placeholder;
+  const badge = row.querySelector('.tok-badge');
+  badge.textContent = opt.dataset.badge;
+  badge.className = `tok-badge ${opt.dataset.badgeCls}`;
 }
 
 async function savePolicy() {
