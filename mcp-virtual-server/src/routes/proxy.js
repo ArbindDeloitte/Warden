@@ -169,6 +169,14 @@ router.post('/:virtualServerId', async (req, res) => {
   // Keep AT_A scopes only for audit trail — not for policy evaluation.
   const atAScopes = req.tokenClaims?.scopes || [];
 
+  // Resolve which pipeline features are enabled for this virtual server.
+  // Default all-on so existing VSes without the column keep working.
+  const featuresRaw = virtualServer.features_enabled;
+  let enabledFeatures;
+  try { enabledFeatures = featuresRaw ? JSON.parse(featuresRaw) : ['interceptors', 'policy']; }
+  catch { enabledFeatures = ['interceptors', 'policy']; }
+  const featureOn = (f) => enabledFeatures.includes(f);
+
   // Check if the tool is assigned to this virtual server
   const toolAssignment = db.prepare(`
     SELECT vst.*, ms.url AS mcp_url, ms.name AS mcp_name,
@@ -191,14 +199,16 @@ router.post('/:virtualServerId', async (req, res) => {
   }
 
   // Inbound interceptor scan (before OBO — no token needed, scans arguments only)
-  const inboundText = JSON.stringify(toolArgs || {});
-  try {
-    const inbound = await pipeline.run(inboundText, 'inbound', virtualServerId);
-    if (inbound.action === 'block') {
-      return res.status(403).json({ error: 'Request blocked by interceptor', reason: inbound.reason, intercepted: true });
+  if (featureOn('interceptors')) {
+    const inboundText = JSON.stringify(toolArgs || {});
+    try {
+      const inbound = await pipeline.run(inboundText, 'inbound', virtualServerId);
+      if (inbound.action === 'block') {
+        return res.status(403).json({ error: 'Request blocked by interceptor', reason: inbound.reason, intercepted: true });
+      }
+    } catch (err) {
+      console.warn('[Proxy] Inbound interceptor error (continuing):', err.message);
     }
-  } catch (err) {
-    console.warn('[Proxy] Inbound interceptor error (continuing):', err.message);
   }
 
   // OBO exchange (skipped when virtual server has require_obo = 0).
@@ -227,15 +237,20 @@ router.post('/:virtualServerId', async (req, res) => {
   const oboScopes = oboClaims.scopes || [];
 
   // Evaluate Cedar policies using AT_B scopes (accurate) + sub/groups from AT_A (identity).
-  // This ensures a scope-based policy cannot pass when Okta has downscoped the OBO token.
-  const policies = db.prepare('SELECT * FROM policies WHERE virtual_server_id = ? AND is_active = 1').all(virtualServerId);
-  const policyResult = evaluatePolicies(policies, {
-    mcpServerId: mcp_server_id,
-    toolName: tool_name,
-    scopes: oboScopes,
-    groups: groups || [],
-    sub: sub || '',
-  });
+  // When policy evaluation is disabled for this VS, auto-allow and skip Cedar entirely.
+  let policyResult;
+  if (featureOn('policy')) {
+    const policies = db.prepare('SELECT * FROM policies WHERE virtual_server_id = ? AND is_active = 1').all(virtualServerId);
+    policyResult = evaluatePolicies(policies, {
+      mcpServerId: mcp_server_id,
+      toolName: tool_name,
+      scopes: oboScopes,
+      groups: groups || [],
+      sub: sub || '',
+    });
+  } else {
+    policyResult = { decision: 'allow', reason: 'Policy evaluation disabled for this virtual server' };
+  }
 
   writeAudit({
     virtualServerId, mcpServerId: mcp_server_id, toolName: tool_name,
@@ -245,6 +260,39 @@ router.post('/:virtualServerId', async (req, res) => {
     reason: policyResult.reason,
     payload: toolArgs,
   });
+
+  if (policyResult.decision === 'approval') {
+    const { ttl_minutes, timeout_action } = policyResult.approvalConfig;
+    const ticketId = uuidv4();
+    const expiresAt = new Date(Date.now() + ttl_minutes * 60 * 1000).toISOString();
+    try {
+      db.prepare(`
+        INSERT INTO approval_tickets
+          (id, virtual_server_id, mcp_server_id, tool_name, tool_arguments,
+           user_sub, user_jti, user_groups, user_token, matched_policy_id,
+           ttl_minutes, timeout_action, expires_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `).run(
+        ticketId, virtualServerId, mcp_server_id, tool_name,
+        JSON.stringify(toolArgs || {}), sub || null, jti || null,
+        JSON.stringify(groups || []), req.accessToken,
+        policyResult.policyId, ttl_minutes, timeout_action, expiresAt
+      );
+    } catch (err) {
+      console.error('[Proxy] Failed to create approval ticket:', err.message);
+      done();
+      return res.status(500).json({ error: 'Failed to queue approval ticket' });
+    }
+    done();
+    return res.status(202).json({
+      status: 'pending_approval',
+      ticket_id: ticketId,
+      poll_url: `/api/approvals/${ticketId}/status`,
+      expires_at: expiresAt,
+      timeout_action,
+      message: `Tool call requires admin approval. Poll /api/approvals/${ticketId}/status for updates.`,
+    });
+  }
 
   if (policyResult.decision !== 'allow') {
     return res.status(403).json({
@@ -271,26 +319,25 @@ router.post('/:virtualServerId', async (req, res) => {
 
   // Outbound interceptor scan (before returning to caller)
   // Scan only the human-readable text content, not the raw JSON envelope.
-  // Masking raw JSON corrupts the structure when replacements land inside
-  // JSON string values or span structural characters.
-  try {
-    const textItems = extractMcpTextItems(result);
-    if (textItems.length > 0) {
-      const combinedText = textItems.map(t => t.text).join('\n\n---\n\n');
-      const outbound = await pipeline.run(combinedText, 'outbound', virtualServerId);
-      if (outbound.action === 'block') {
-        done();
-        return res.status(403).json({ error: 'Response blocked by interceptor', reason: outbound.reason, intercepted: true });
+  if (featureOn('interceptors')) {
+    try {
+      const textItems = extractMcpTextItems(result);
+      if (textItems.length > 0) {
+        const combinedText = textItems.map(t => t.text).join('\n\n---\n\n');
+        const outbound = await pipeline.run(combinedText, 'outbound', virtualServerId);
+        if (outbound.action === 'block') {
+          done();
+          return res.status(403).json({ error: 'Response blocked by interceptor', reason: outbound.reason, intercepted: true });
+        }
+        if (outbound.action === 'mask' && outbound.text !== combinedText) {
+          const maskedResult = injectMcpTextItems(result, outbound.text, textItems);
+          done();
+          return res.json(maskedResult);
+        }
       }
-      if (outbound.action === 'mask' && outbound.text !== combinedText) {
-        // Distribute masked text back into individual content items
-        const maskedResult = injectMcpTextItems(result, outbound.text, textItems);
-        done();
-        return res.json(maskedResult);
-      }
+    } catch (err) {
+      console.warn('[Proxy] Outbound interceptor error (continuing):', err.message);
     }
-  } catch (err) {
-    console.warn('[Proxy] Outbound interceptor error (continuing):', err.message);
   }
 
   done();

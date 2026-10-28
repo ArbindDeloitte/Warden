@@ -30,8 +30,9 @@ function evaluatePolicies(policies, context) {
     .filter((p) => p.is_active)
     .sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-  let matchedPermit = null;
-  let matchedForbid = null;
+  let matchedPermit   = null;
+  let matchedApproval = null;
+  let matchedForbid   = null;
 
   for (const policy of activePolicies) {
     let policyDef;
@@ -48,30 +49,44 @@ function evaluatePolicies(policies, context) {
 
     if (policy.effect === 'forbid' && !matchedForbid) {
       matchedForbid = policy;
+    } else if (policy.effect === 'approval' && !matchedApproval) {
+      matchedApproval = { policy, policyDef };
     } else if (policy.effect === 'permit' && !matchedPermit) {
       matchedPermit = policy;
     }
   }
 
-  // Forbid with priority >= permit wins; otherwise permit wins
-  if (matchedForbid) {
-    const forbidPriority = matchedForbid.priority || 0;
-    const permitPriority = matchedPermit ? (matchedPermit.priority || 0) : -1;
-    if (forbidPriority >= permitPriority) {
-      return {
-        decision: 'deny',
-        policyId: matchedForbid.id,
-        reason: `Denied by policy "${matchedForbid.name}"`,
-      };
+  // Forbid at priority >= best positive match always wins
+  const bestPositivePriority = Math.max(
+    matchedPermit   ? (matchedPermit.priority   || 0) : -1,
+    matchedApproval ? (matchedApproval.policy.priority || 0) : -1,
+  );
+  if (matchedForbid && (matchedForbid.priority || 0) >= bestPositivePriority) {
+    return { decision: 'deny', policyId: matchedForbid.id, reason: `Denied by policy "${matchedForbid.name}"` };
+  }
+
+  // Between permit and approval, higher priority wins
+  if (matchedPermit && matchedApproval) {
+    if ((matchedPermit.priority || 0) >= (matchedApproval.policy.priority || 0)) {
+      return { decision: 'allow', policyId: matchedPermit.id, reason: `Permitted by policy "${matchedPermit.name}"` };
     }
   }
 
-  if (matchedPermit) {
+  if (matchedApproval) {
+    const cfg = matchedApproval.policyDef.approval_config || {};
     return {
-      decision: 'allow',
-      policyId: matchedPermit.id,
-      reason: `Permitted by policy "${matchedPermit.name}"`,
+      decision: 'approval',
+      policyId: matchedApproval.policy.id,
+      reason: `Approval required by policy "${matchedApproval.policy.name}"`,
+      approvalConfig: {
+        ttl_minutes:    typeof cfg.ttl_minutes    === 'number' ? cfg.ttl_minutes    : 30,
+        timeout_action: cfg.timeout_action === 'approve' ? 'approve' : 'deny',
+      },
     };
+  }
+
+  if (matchedPermit) {
+    return { decision: 'allow', policyId: matchedPermit.id, reason: `Permitted by policy "${matchedPermit.name}"` };
   }
 
   return { decision: 'deny', policyId: null, reason: 'No matching permit policy (default deny)' };

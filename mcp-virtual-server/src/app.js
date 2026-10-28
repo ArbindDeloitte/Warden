@@ -7,27 +7,37 @@ const path = require('path');
 
 const mcpRegistry = require('./routes/mcpRegistry');
 const virtualServers = require('./routes/virtualServers');
-const policies = require('./routes/policies');
+const tokenPolicies = require('./routes/tokenPolicies');
 const proxy = require('./routes/proxy');
 const audit = require('./routes/audit');
 const interceptors = require('./routes/interceptors');
 const apiKeys = require('./routes/apiKeys');
+const approvalsRouter = require('./routes/approvals');
+const { processExpiredTickets } = require('./routes/approvals');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve static assets with caching, but never cache index.html so UI changes take effect immediately
+app.use(express.static(path.join(__dirname, '../public'), { etag: false }));
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-store');
+  }
+  next();
+});
 
 // API routes
 app.use('/api/mcp', mcpRegistry);
 app.use('/api/virtual-servers', virtualServers);
-app.use('/api/policies', policies);
+app.use('/api/token-policies', tokenPolicies);
 app.use('/api/proxy', proxy);
 app.use('/api/audit', audit);
 app.use('/api/interceptors', interceptors);
 app.use('/api/keys', apiKeys);
+app.use('/api/approvals', approvalsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -51,6 +61,9 @@ app.use((err, req, res, next) => {
   if (err.detail) body.detail = err.detail;
   res.status(err.status || 500).json(body);
 });
+
+// Background job: expire pending approval tickets every 30 seconds
+setInterval(processExpiredTickets, 30 * 1000);
 
 const server = app.listen(PORT, () => {
   console.log(`\n✅ MCP Virtual Server running on http://localhost:${PORT}`);

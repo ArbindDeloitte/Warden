@@ -13,6 +13,31 @@ const WARDEN_BASE = import.meta.env.VITE_WARDEN_URL || 'http://localhost:3003';
 const CHAT_VS_ID  = import.meta.env.VITE_WARDEN_CHAT_VS_ID || '35250de9-689d-4284-a197-0aca282c2c4d';
 
 /**
+ * Thrown by callTool when the virtual server returns 202 pending_approval.
+ * Carry ticket metadata so the caller can show status and start polling.
+ */
+export class ApprovalPendingError extends Error {
+  constructor(data) {
+    super('Tool call pending admin approval');
+    this.name = 'ApprovalPendingError';
+    this.ticketId = data.ticket_id;
+    this.pollUrl = data.poll_url;
+    this.expiresAt = data.expires_at;
+    this.timeoutAction = data.timeout_action;
+    this.approvalMessage = data.message;
+  }
+}
+
+/**
+ * Poll the Warden approval status endpoint for a given ticket.
+ * Returns the raw JSON from GET /api/approvals/:id/status.
+ */
+export async function pollApprovalStatus(ticketId) {
+  const res = await fetch(`${WARDEN_BASE}/api/approvals/${ticketId}/status`);
+  return res.json();
+}
+
+/**
  * Scan a chat message through Warden's interceptor pipeline.
  * Returns { action: 'allow'|'mask'|'block'|'warn', text, reason }.
  * Fails open (allow) if Warden is unreachable.
@@ -60,6 +85,11 @@ export async function callTool(toolName, args = {}) {
   });
 
   const data = await response.json();
+
+  // 202 = tool call queued for admin approval
+  if (data?.status === 'pending_approval') {
+    throw new ApprovalPendingError(data);
+  }
 
   if (!response.ok) {
     const msg = data.reason || data.error || `Proxy call failed (${response.status})`;

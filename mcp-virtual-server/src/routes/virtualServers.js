@@ -35,45 +35,53 @@ router.get('/:id', (req, res) => {
   res.json({ ...server, tools, policies });
 });
 
+function parseFeatures(raw) {
+  const DEFAULT = ['interceptors', 'policy'];
+  if (!raw) return DEFAULT;
+  try { return Array.isArray(raw) ? raw : JSON.parse(raw); } catch { return DEFAULT; }
+}
+
 // Create a virtual server
 router.post('/', (req, res) => {
-  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo } = req.body;
+  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, features_enabled } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   const id = uuidv4();
   db.prepare(`
-    INSERT INTO virtual_servers (id, name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO virtual_servers (id, name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, features_enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, name, description || null, okta_issuer || null, okta_client_id || null,
     okta_client_secret || null, okta_audience || null, jwks_uri || null,
-    require_obo === false || require_obo === 0 ? 0 : 1);
+    require_obo === false || require_obo === 0 ? 0 : 1,
+    JSON.stringify(parseFeatures(features_enabled)));
 
   res.status(201).json({ id, name });
 });
 
 // Update a virtual server
 router.put('/:id', (req, res) => {
-  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, is_active, require_obo } = req.body;
+  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, is_active, require_obo, features_enabled } = req.body;
   const server = db.prepare('SELECT id FROM virtual_servers WHERE id = ?').get(req.params.id);
   if (!server) return res.status(404).json({ error: 'Virtual server not found' });
 
   const secretUpdate = okta_client_secret && okta_client_secret !== '***' ? okta_client_secret : null;
   const oboVal = require_obo === false || require_obo === 0 ? 0 : 1;
+  const featuresJson = JSON.stringify(parseFeatures(features_enabled));
 
   if (secretUpdate) {
     db.prepare(`
       UPDATE virtual_servers SET name=?, description=?, okta_issuer=?, okta_client_id=?,
-        okta_client_secret=?, okta_audience=?, jwks_uri=?, is_active=?, require_obo=? WHERE id=?
+        okta_client_secret=?, okta_audience=?, jwks_uri=?, is_active=?, require_obo=?, features_enabled=? WHERE id=?
     `).run(name, description || null, okta_issuer || null, okta_client_id || null,
       secretUpdate, okta_audience || null, jwks_uri || null,
-      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, req.params.id);
+      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, featuresJson, req.params.id);
   } else {
     db.prepare(`
       UPDATE virtual_servers SET name=?, description=?, okta_issuer=?, okta_client_id=?,
-        okta_audience=?, jwks_uri=?, is_active=?, require_obo=? WHERE id=?
+        okta_audience=?, jwks_uri=?, is_active=?, require_obo=?, features_enabled=? WHERE id=?
     `).run(name, description || null, okta_issuer || null, okta_client_id || null,
       okta_audience || null, jwks_uri || null,
-      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, req.params.id);
+      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, featuresJson, req.params.id);
   }
 
   res.json({ ok: true });

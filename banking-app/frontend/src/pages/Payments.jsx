@@ -267,8 +267,8 @@ export default function Payments() {
               <tbody>
                 {payments.map((pmt, idx) => {
                   const id = pmt.paymentId || pmt.id;
-                  const date = pmt.createdAt || pmt.instructedDateTime || pmt.date;
-                  const toName = pmt.creditorAccount?.name || pmt.toName || pmt.recipientName || '';
+                  const date = pmt.initiated_at || pmt.createdAt || pmt.instructedDateTime || pmt.date;
+                  const toName = pmt.to_name || pmt.creditorAccount?.name || pmt.toName || pmt.recipientName || '';
                   const amount = pmt.instructedAmount?.amount || pmt.amount?.amount || pmt.amount || 0;
                   const currency = pmt.instructedAmount?.currency || pmt.amount?.currency || pmt.currency || 'USD';
                   const status = pmt.status || 'pending';

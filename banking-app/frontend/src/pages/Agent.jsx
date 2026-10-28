@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useOktaAuth } from '@okta/okta-react';
 import { banking } from '../services/api.js';
-import { mcpBanking, scanMessage } from '../services/mcpProxy.js';
+import { mcpBanking, scanMessage, ApprovalPendingError, pollApprovalStatus } from '../services/mcpProxy.js';
 
 // ── format helpers ────────────────────────────────────────────────────────────
 function fmtCurrency(amount, currency = 'USD') {
@@ -112,7 +112,7 @@ function PaymentList({ payments, onApprove }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
       {payments.map((pmt, i) => {
         const id = pmt.paymentId || pmt.id;
-        const to = pmt.creditorAccount?.name || pmt.toName || pmt.recipientName || 'Unknown';
+        const to = pmt.to_name || pmt.creditorAccount?.name || pmt.toName || pmt.recipientName || 'Unknown';
         const amt = pmt.instructedAmount?.amount || pmt.amount?.amount || pmt.amount || 0;
         const cur = pmt.instructedAmount?.currency || pmt.amount?.currency || pmt.currency || 'USD';
         const status = (pmt.status || 'unknown').toLowerCase();
@@ -278,6 +278,9 @@ export default function Agent() {
   const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [cachedAccounts, setCachedAccounts] = useState(null);
+  // Approval polling: { ticketId, msgId, toolName }
+  const [approvalPolling, setApprovalPolling] = useState(null);
+  const approvalIntervalRef = useRef(null);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -286,8 +289,124 @@ export default function Agent() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // Poll approval status every 5 seconds
+  useEffect(() => {
+    if (!approvalPolling) {
+      if (approvalIntervalRef.current) {
+        clearInterval(approvalIntervalRef.current);
+        approvalIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const { ticketId, msgId, toolName } = approvalPolling;
+
+    const check = async () => {
+      try {
+        const status = await pollApprovalStatus(ticketId);
+
+        if (status.status === 'executed') {
+          clearInterval(approvalIntervalRef.current);
+          approvalIntervalRef.current = null;
+          setApprovalPolling(null);
+          // Use the tool_name from the ticket (more reliable than extracting from message)
+          const resolvedTool = status.tool_name || toolName;
+          const { type, content, data } = parseMcpResult(status.result, resolvedTool);
+          updateMsgFull(msgId, { content, type, data });
+        } else if (status.status === 'denied') {
+          clearInterval(approvalIntervalRef.current);
+          approvalIntervalRef.current = null;
+          setApprovalPolling(null);
+          updateMsg(msgId, `🚫 **Denied** — Your request to \`${toolName}\` was denied by an admin.`);
+        } else if (status.status === 'expired') {
+          clearInterval(approvalIntervalRef.current);
+          approvalIntervalRef.current = null;
+          setApprovalPolling(null);
+          const autoAction = status.timeout_action === 'approve' ? 'auto-approved' : 'auto-denied';
+          updateMsg(msgId, `⏱ **Timed out** — The approval window expired and the request was ${autoAction}.`);
+        }
+        // pending / approved (executing) → keep polling
+      } catch {
+        // Network blip — keep polling silently
+      }
+    };
+
+    approvalIntervalRef.current = setInterval(check, 5000);
+    // Run once immediately too
+    check();
+
+    return () => {
+      if (approvalIntervalRef.current) {
+        clearInterval(approvalIntervalRef.current);
+        approvalIntervalRef.current = null;
+      }
+    };
+  }, [approvalPolling]);
+
   function addMsg(role, type, content, data = null) {
     setMessages(prev => [...prev, makeMsg(role, type, content, data)]);
+  }
+
+  function updateMsg(msgId, newContent) {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: newContent } : m));
+  }
+
+  function updateMsgFull(msgId, updates) {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, ...updates } : m));
+  }
+
+  // Parse a stored MCP result (from an approval ticket) into { type, content, data }
+  // for rich rendering, the same way a normal agent response would look.
+  function parseMcpResult(rawResult, toolName) {
+    try {
+      const text = rawResult?.result?.content?.[0]?.text;
+      if (!text) return { type: 'text', content: `✅ **Approved & executed** \`${toolName}\``, data: null };
+      const parsed = JSON.parse(text);
+      if (parsed?.error) return { type: 'text', content: `❌ **Execution error** — ${parsed.error}`, data: null };
+
+      // Accounts list
+      if (Array.isArray(parsed) && parsed.length && (parsed[0]?.account_number !== undefined || parsed[0]?.accountNumber !== undefined || parsed[0]?.balance !== undefined)) {
+        return {
+          type: 'accounts',
+          content: `✅ **Approved & executed** — here are your accounts (${parsed.length}):`,
+          data: { accounts: parsed },
+        };
+      }
+      // Payments list
+      if (Array.isArray(parsed) && parsed.length && (parsed[0]?.to_name !== undefined || parsed[0]?.toName !== undefined)) {
+        return {
+          type: 'payments',
+          content: `✅ **Approved & executed** — here are your payments (${parsed.length}):`,
+          data: { payments: parsed },
+        };
+      }
+      // Transactions list
+      if (Array.isArray(parsed) && parsed.length && (parsed[0]?.transaction_date !== undefined || parsed[0]?.bookingDateTime !== undefined || parsed[0]?.description !== undefined)) {
+        return {
+          type: 'transactions',
+          content: `✅ **Approved & executed** — here are your transactions:`,
+          data: { transactions: parsed },
+        };
+      }
+      // Balance object
+      if (!Array.isArray(parsed) && (parsed?.balance !== undefined || parsed?.available_balance !== undefined)) {
+        const bal = parsed.balance ?? parsed.available_balance ?? 0;
+        const cur = parsed.currency || 'USD';
+        return { type: 'text', content: `✅ **Balance:** ${fmtCurrency(bal, cur)}`, data: null };
+      }
+      // Initiate / approve payment success
+      if (!Array.isArray(parsed) && parsed?.id && (parsed?.status !== undefined)) {
+        return { type: 'text', content: `✅ **Approved & executed** — \`${toolName}\` completed. Status: **${parsed.status}**`, data: null };
+      }
+      // Fallback
+      return {
+        type: 'text',
+        content: `✅ **Approved & executed** — \`${toolName}\`\n\n\`\`\`\n${JSON.stringify(parsed, null, 2).slice(0, 500)}\n\`\`\``,
+        data: null,
+      };
+    } catch {
+      return { type: 'text', content: `✅ **Approved & executed** — \`${toolName}\``, data: null };
+    }
   }
 
   async function send(text) {
@@ -326,7 +445,22 @@ export default function Agent() {
         await handleIntent(processText);
       }
     } catch (err) {
-      addMsg('agent', 'text', `Sorry, something went wrong: ${err.message}`);
+      if (err instanceof ApprovalPendingError) {
+        // Show a persistent polling bubble
+        const toolName = err.approvalMessage?.match(/`([^`]+)`/)?.[1] || 'tool call';
+        const msgId = `${Date.now()}-approval`;
+        const expiresIn = err.expiresAt
+          ? Math.round((new Date(err.expiresAt.includes('Z') || err.expiresAt.includes('+') ? err.expiresAt : err.expiresAt + 'Z').getTime() - Date.now()) / 60000)
+          : '?';
+        setMessages(prev => [...prev, {
+          id: msgId, role: 'agent', type: 'text',
+          content: `⏳ **Awaiting Admin Approval**\n\nYour request has been queued for admin review. I'll update this message automatically every 5 seconds.\n\n• **Ticket:** \`${err.ticketId}\`\n• **Expires in:** ~${expiresIn} min\n• **On timeout:** ${err.timeoutAction === 'approve' ? 'auto-approve ✅' : 'auto-deny 🚫'}\n\nAn admin must approve in the Warden dashboard.`,
+          data: null, ts: new Date(),
+        }]);
+        setApprovalPolling({ ticketId: err.ticketId, msgId, toolName });
+      } else {
+        addMsg('agent', 'text', `Sorry, something went wrong: ${err.message}`);
+      }
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -690,7 +824,7 @@ export default function Agent() {
           </div>
         </div>
         <button
-          onClick={() => { setMessages([WELCOME_MSG]); setPendingAction(null); setCachedAccounts(null); }}
+          onClick={() => { setMessages([WELCOME_MSG]); setPendingAction(null); setCachedAccounts(null); setApprovalPolling(null); }}
           style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 7, padding: '6px 14px', fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit', fontWeight: 500 }}
         >
           New Chat

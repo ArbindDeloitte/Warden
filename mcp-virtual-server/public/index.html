@@ -405,8 +405,9 @@
     <button class="nav-item" data-page="dashboard">
       <span class="icon">⬡</span> Dashboard
     </button>
-    <button class="nav-item" data-page="audit">
-      <span class="icon">📋</span> Audit Log
+    <button class="nav-item" data-page="approvals" id="nav-approvals">
+      <span class="icon">⏳</span> Approvals
+      <span id="approvals-badge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;min-width:16px;text-align:center"></span>
     </button>
 
     <div class="nav-section-label">Corridor</div>
@@ -418,7 +419,7 @@
       <span class="icon">🗂</span> Virtual Server
     </button>
     <button class="nav-item" data-page="policies">
-      <span class="icon">🛡</span> Policies
+      <span class="icon">🛡</span> Token Policies
     </button>
     <button class="nav-item" data-page="tools">
       <span class="icon">🔧</span> Tools
@@ -431,6 +432,9 @@
     </button>
     <button class="nav-item" data-page="keys">
       <span class="icon">🔑</span> Keys
+    </button>
+    <button class="nav-item" data-page="audit">
+      <span class="icon">📋</span> Audit Log
     </button>
 
     <div class="nav-section-label">Docs</div>
@@ -457,7 +461,7 @@
         <div class="stat-tile"><div class="val" id="stat-mcp">—</div><div class="label">MCP Servers</div></div>
         <div class="stat-tile"><div class="val" id="stat-vs">—</div><div class="label">Corridors</div></div>
         <div class="stat-tile"><div class="val" id="stat-tools">—</div><div class="label">Tools Synced</div></div>
-        <div class="stat-tile"><div class="val" id="stat-policies">—</div><div class="label">Active Policies</div></div>
+        <div class="stat-tile"><div class="val" id="stat-policies">—</div><div class="label">Token Policies</div></div>
       </div>
       <div class="form-row">
         <div class="card">
@@ -506,7 +510,7 @@
 
     <!-- POLICIES -->
     <div class="page" id="page-policies">
-      <h1>Policies</h1>
+      <h1>Token Policies</h1>
       <p class="subtitle">Cedar-style access control policies evaluated on every proxy call.</p>
       <div class="action-row">
         <div style="display:flex;gap:10px;align-items:center">
@@ -515,7 +519,7 @@
             <option value="">All</option>
           </select>
         </div>
-        <button class="btn btn-primary" onclick="openPolicyModal()">＋ New Policy</button>
+        <button class="btn btn-primary" onclick="openPolicyModal()">＋ New Token Policy</button>
       </div>
       <div class="card">
         <table id="policy-table">
@@ -4500,6 +4504,269 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     </script>
     </div><!-- end page-interceptors -->
 
+    <!-- ═══════════════════════════════════════════════════════════
+         APPROVALS PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-approvals">
+    <style>
+      .appr-header { margin-bottom: 24px; }
+      .appr-header h1 { font-size: 20px; font-weight: 700; letter-spacing: -.2px; }
+      .appr-header p  { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+
+      .appr-filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+      .appr-filter-btn { padding: 5px 14px; border-radius: 100px; border: 1px solid var(--border-strong); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; transition: all .15s; }
+      .appr-filter-btn:hover { background: var(--surface2); }
+      .appr-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+      .appr-table-wrap { border: 1px solid var(--border-strong); border-radius: 12px; overflow: hidden; }
+      .appr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .appr-table th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text-2); border-bottom: 1px solid var(--border-strong); background: var(--surface); }
+      .appr-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+      .appr-table tr:last-child td { border-bottom: none; }
+      .appr-table tr:hover td { background: var(--surface2); }
+
+      .appr-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: .2px; }
+      .appr-badge.pending  { background: rgba(245,158,11,.15); color: #f59e0b; }
+      .appr-badge.approved { background: rgba(34,197,94,.15);  color: #22c55e; }
+      .appr-badge.denied   { background: rgba(239,68,68,.15);  color: #ef4444; }
+      .appr-badge.executed { background: rgba(99,102,241,.15); color: #6366f1; }
+      .appr-badge.expired  { background: var(--surface2); color: var(--text-muted); }
+
+      .appr-timer { font-size: 12px; font-family: 'JetBrains Mono','Fira Code',monospace; color: var(--text-2); }
+      .appr-timer.urgent { color: #ef4444; font-weight: 700; }
+
+      .appr-actions { display: flex; gap: 6px; }
+      .btn-approve { background: #22c55e; color: #fff; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+      .btn-approve:hover { background: #16a34a; }
+      .btn-deny    { background: #ef4444; color: #fff; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+      .btn-deny:hover { background: #dc2626; }
+      .btn-detail  { background: var(--surface2); color: var(--text); border: 1px solid var(--border-strong); padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+
+      .appr-empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+      .appr-empty .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+      /* Detail modal */
+      .appr-detail-pre { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 12px; overflow: auto; max-height: 220px; white-space: pre; }
+      .appr-detail-row { display: flex; gap: 12px; margin-bottom: 10px; }
+      .appr-detail-label { width: 110px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-2); padding-top: 2px; }
+      .appr-detail-val { font-size: 13px; }
+    </style>
+
+    <div class="appr-header">
+      <h1>⏳ Approval Queue</h1>
+      <p>MCP tool calls held pending admin review. Approve to execute; deny to reject.</p>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div class="appr-filters">
+        <button class="appr-filter-btn active" onclick="setApprFilter('pending',this)">Pending</button>
+        <button class="appr-filter-btn" onclick="setApprFilter('all',this)">All</button>
+        <button class="appr-filter-btn" onclick="setApprFilter('executed',this)">Executed</button>
+        <button class="appr-filter-btn" onclick="setApprFilter('denied',this)">Denied</button>
+        <button class="appr-filter-btn" onclick="setApprFilter('expired',this)">Expired</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadApprovals()" style="margin-left:auto">↻ Refresh</button>
+    </div>
+
+    <div class="appr-table-wrap">
+      <table class="appr-table">
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>MCP Server</th>
+            <th>User (sub)</th>
+            <th>Status</th>
+            <th>Time Remaining</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appr-tbody">
+          <tr><td colspan="7" class="appr-empty"><div class="empty-icon">⏳</div>Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Ticket detail modal -->
+    <div class="modal-overlay" id="appr-detail-modal" style="display:none" onclick="if(event.target===this)closeApprDetail()">
+      <div class="modal" style="max-width:560px">
+        <h2 id="appr-detail-title">Ticket Detail</h2>
+        <div id="appr-detail-body"></div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeApprDetail()">Close</button>
+          <button class="btn-deny" id="appr-detail-deny-btn" onclick="apprDetailDecide('deny')" style="display:none">🚫 Deny</button>
+          <button class="btn-approve" id="appr-detail-approve-btn" onclick="apprDetailDecide('approve')" style="display:none">✅ Approve</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    let apprFilter = 'pending';
+    let apprTickets = [];
+    let apprTimerInterval = null;
+    let apprDetailTicketId = null;
+
+    function setApprFilter(f, btn) {
+      apprFilter = f;
+      document.querySelectorAll('.appr-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadApprovals();
+    }
+
+    async function loadApprovals() {
+      try {
+        const qs = apprFilter === 'all' ? '' : `?status=${apprFilter}`;
+        apprTickets = await api('/approvals' + qs);
+        renderApprovals();
+      } catch (e) {
+        document.getElementById('appr-tbody').innerHTML =
+          `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:20px">${e.message}</td></tr>`;
+      }
+    }
+
+    function renderApprovals() {
+      const tbody = document.getElementById('appr-tbody');
+      if (!apprTickets.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="appr-empty"><div class="empty-icon">✅</div>No tickets found</div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = apprTickets.map(t => {
+        const statusBadge = `<span class="appr-badge ${t.status}">${statusLabel(t.status)}</span>`;
+        const timer = t.status === 'pending' ? timerHtml(t.time_remaining_seconds) : '—';
+        const actions = t.status === 'pending'
+          ? `<div class="appr-actions">
+               <button class="btn-approve" onclick="quickDecide('${t.id}','approve')">✅ Approve</button>
+               <button class="btn-deny" onclick="quickDecide('${t.id}','deny')">🚫 Deny</button>
+               <button class="btn-detail" onclick="openApprDetail('${t.id}')">Detail</button>
+             </div>`
+          : `<button class="btn-detail" onclick="openApprDetail('${t.id}')">Detail</button>`;
+        return `<tr>
+          <td><code style="font-size:12px">${esc(t.tool_name)}</code></td>
+          <td style="font-size:12px;color:var(--text-2)">${esc(t.mcp_server_id)}</td>
+          <td style="font-size:12px;color:var(--text-2);max-width:140px;overflow:hidden;text-overflow:ellipsis">${esc(t.user_sub||'—')}</td>
+          <td>${statusBadge}</td>
+          <td class="appr-timer ${t.status==='pending'&&t.time_remaining_seconds<120?'urgent':''}" data-ticket-id="${t.id}">${timer}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${fmtAge(t.created_at)}</td>
+          <td>${actions}</td>
+        </tr>`;
+      }).join('');
+
+      // Start countdown ticker for pending tickets
+      if (apprTimerInterval) clearInterval(apprTimerInterval);
+      if (apprTickets.some(t => t.status === 'pending')) {
+        apprTimerInterval = setInterval(tickCountdowns, 1000);
+      }
+    }
+
+    function tickCountdowns() {
+      document.querySelectorAll('[data-ticket-id]').forEach(el => {
+        const id = el.dataset.ticketId;
+        const t = apprTickets.find(x => x.id === id);
+        if (!t || t.status !== 'pending') return;
+        t.time_remaining_seconds = Math.max(0, t.time_remaining_seconds - 1);
+        el.textContent = timerHtml(t.time_remaining_seconds).replace(/<[^>]+>/g, '');
+        el.className = 'appr-timer' + (t.time_remaining_seconds < 120 ? ' urgent' : '');
+        if (t.time_remaining_seconds === 0) loadApprovals();
+      });
+    }
+
+    function timerHtml(secs) {
+      if (secs <= 0) return '00:00';
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      const pad = n => String(n).padStart(2, '0');
+      return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    }
+
+    function statusLabel(s) {
+      return { pending: '⏳ Pending', approved: '✅ Approved', denied: '🚫 Denied', executed: '🚀 Executed', expired: '💀 Expired' }[s] || s;
+    }
+
+    function toUtcDate(iso) {
+      if (!iso) return new Date(0);
+      // SQLite datetime('now') → "2024-01-01 12:00:00" (space, no Z).
+      // new Date needs "T" separator and "Z" suffix for reliable UTC parsing.
+      if (iso.includes('Z') || iso.includes('+')) return new Date(iso);
+      return new Date(iso.trim().replace(' ', 'T') + 'Z');
+    }
+    function fmtAge(iso) {
+      const diff = Date.now() - toUtcDate(iso).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1) return 'just now';
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h ago`;
+      return `${Math.floor(h / 24)}d ago`;
+    }
+
+    async function quickDecide(id, action) {
+      if (!confirm(`${action === 'approve' ? 'Approve' : 'Deny'} this ticket?`)) return;
+      try {
+        await api(`/approvals/${id}/decide`, { method: 'POST', body: { action } });
+        loadApprovals();
+        refreshApprovalsBadge();
+      } catch (e) { alert(e.message); }
+    }
+
+    async function openApprDetail(id) {
+      apprDetailTicketId = id;
+      const t = apprTickets.find(x => x.id === id) || await api('/approvals/' + id);
+      document.getElementById('appr-detail-title').textContent = `Ticket: ${t.tool_name}`;
+      document.getElementById('appr-detail-body').innerHTML = `
+        <div class="appr-detail-row"><div class="appr-detail-label">Status</div><div class="appr-detail-val"><span class="appr-badge ${t.status}">${statusLabel(t.status)}</span></div></div>
+        <div class="appr-detail-row"><div class="appr-detail-label">Tool</div><div class="appr-detail-val"><code>${esc(t.tool_name)}</code></div></div>
+        <div class="appr-detail-row"><div class="appr-detail-label">MCP Server</div><div class="appr-detail-val">${esc(t.mcp_server_id)}</div></div>
+        <div class="appr-detail-row"><div class="appr-detail-label">User Sub</div><div class="appr-detail-val" style="font-size:12px">${esc(t.user_sub||'—')}</div></div>
+        <div class="appr-detail-row"><div class="appr-detail-label">Expires At</div><div class="appr-detail-val" style="font-size:12px">${t.expires_at} (TTL ${t.ttl_minutes}m, on timeout: ${t.timeout_action})</div></div>
+        ${t.decided_by ? `<div class="appr-detail-row"><div class="appr-detail-label">Decided By</div><div class="appr-detail-val">${esc(t.decided_by)} at ${t.decided_at}</div></div>` : ''}
+        <div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--text-2)">Tool Arguments</div>
+        <pre class="appr-detail-pre">${esc(JSON.stringify(t.tool_arguments, null, 2))}</pre>
+        ${t.result ? `<div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--text-2)">Result</div><pre class="appr-detail-pre">${esc(JSON.stringify(t.result, null, 2))}</pre>` : ''}
+        ${t.exec_error ? `<div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:#ef4444">Execution Error</div><pre class="appr-detail-pre" style="color:#ef4444">${esc(t.exec_error)}</pre>` : ''}
+      `;
+      const approveBtn = document.getElementById('appr-detail-approve-btn');
+      const denyBtn = document.getElementById('appr-detail-deny-btn');
+      approveBtn.style.display = t.status === 'pending' ? '' : 'none';
+      denyBtn.style.display    = t.status === 'pending' ? '' : 'none';
+      document.getElementById('appr-detail-modal').style.display = 'flex';
+    }
+
+    function closeApprDetail() {
+      document.getElementById('appr-detail-modal').style.display = 'none';
+      apprDetailTicketId = null;
+    }
+
+    async function apprDetailDecide(action) {
+      if (!apprDetailTicketId) return;
+      await quickDecide(apprDetailTicketId, action);
+      closeApprDetail();
+    }
+
+    async function refreshApprovalsBadge() {
+      try {
+        const { count } = await api('/approvals/pending-count');
+        const badge = document.getElementById('approvals-badge');
+        if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+        else badge.style.display = 'none';
+      } catch {}
+    }
+
+    function onPolicyEffectChange() {
+      const v = document.getElementById('pol-effect').value;
+      document.getElementById('pol-approval-config').style.display = v === 'approval' ? '' : 'none';
+    }
+
+    function esc(s) {
+      if (s === null || s === undefined) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Auto-refresh badge every 30 seconds
+    setInterval(refreshApprovalsBadge, 30000);
+    </script>
+    </div><!-- end page-approvals -->
+
   </main>
 </div>
 
@@ -4565,6 +4832,23 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
         </div>
       </div>
     </div>
+    <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Pipeline Features</div>
+    <div style="display:grid;gap:8px">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+        <input type="checkbox" id="vs-feat-interceptors" checked style="width:16px;height:16px;margin-top:2px;accent-color:#10b981;flex-shrink:0;cursor:pointer">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">🛡 Interceptors</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Run inbound and outbound scanner pipeline (Regex + Presidio PII detection, masking, blocking). When disabled, tool arguments and responses pass through unscanned.</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+        <input type="checkbox" id="vs-feat-policy" checked style="width:16px;height:16px;margin-top:2px;accent-color:#8b5cf6;flex-shrink:0;cursor:pointer">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">🔒 Token Policy Evaluation</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Evaluate Cedar-style permit/forbid/approval policies and OBO token scopes. When disabled, all tool calls are auto-allowed (audit logging and OBO exchange still run).</div>
+        </div>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeVsModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveVs()">Save</button>
@@ -4591,7 +4875,7 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
 <!-- MODAL: Policy Editor -->
 <div class="modal-overlay" id="policy-modal">
   <div class="modal" style="width:640px">
-    <h2 id="policy-modal-title">New Policy</h2>
+    <h2 id="policy-modal-title">New Token Policy</h2>
     <div class="form-row">
       <div class="form-group"><label>Policy Name</label><input id="pol-name" placeholder="Allow banking reads" /></div>
       <div class="form-group">
@@ -4602,14 +4886,33 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     <div class="form-row">
       <div class="form-group">
         <label>Effect</label>
-        <select id="pol-effect">
+        <select id="pol-effect" onchange="onPolicyEffectChange()">
           <option value="permit">✅ Permit</option>
           <option value="forbid">🚫 Forbid</option>
+          <option value="approval">⏳ Approval Required</option>
         </select>
       </div>
       <div class="form-group"><label>Priority (higher wins)</label><input id="pol-priority" type="number" value="0" min="0" max="9999" /></div>
     </div>
     <div class="form-group"><label>Description</label><input id="pol-desc" placeholder="Optional description" /></div>
+    <div id="pol-approval-config" style="display:none;background:var(--surface2);border:1px solid var(--border-strong);border-radius:10px;padding:14px 16px;margin:8px 0 4px">
+      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:10px;display:flex;align-items:center;gap:6px">⏳ Approval Queue Settings</div>
+      <div class="form-row" style="gap:12px">
+        <div class="form-group" style="flex:1">
+          <label>TTL (minutes)</label>
+          <input id="pol-ttl" type="number" value="30" min="1" max="10080" placeholder="30" />
+          <small style="color:var(--text-muted)">How long the ticket stays pending</small>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>On Timeout</label>
+          <select id="pol-timeout-action">
+            <option value="deny">🚫 Auto-Deny</option>
+            <option value="approve">✅ Auto-Approve</option>
+          </select>
+          <small style="color:var(--text-muted)">Action when TTL expires</small>
+        </div>
+      </div>
+    </div>
     <div style="border-top:1px solid var(--border);margin:16px 0"></div>
     <h2>Actions (tools this policy applies to)</h2>
     <p style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">Leave empty to match all tools on all servers.</p>
@@ -4669,6 +4972,7 @@ function handleRoute() {
   if (page === 'simulate')        loadSimulateDropdowns();
   if (page === 'interceptors')    loadInterceptorsPage();
   if (page === 'keys')            loadKeys();
+  if (page === 'approvals')       loadApprovals();
   if (page === 'mcp-architecture') initMcaMermaid();
   if (page === 'mcp-flow') initMcpFlow();
   if (page !== 'tools')           closeDrawer();
@@ -5029,7 +5333,7 @@ async function loadVirtualServers() {
     card.innerHTML = `
       <div class="card-header">
         <div>
-          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span></div>
+          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span>${(() => { const f = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })(); const tags = []; if (f.includes('interceptors')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">🛡 Intercept</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🛡 Intercept</span>'); if (f.includes('policy')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">🔒 Token Policy</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🔒 Token Policy</span>'); return ' ' + tags.join(' '); })()}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Proxy: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px">POST /api/proxy/${vs.id}</code></div>
         </div>
         <div style="display:flex;gap:8px">
@@ -5045,8 +5349,13 @@ async function loadVirtualServers() {
           ${detail.tools.length ? `<div class="tag-list">${detail.tools.map(t => `<span class="tag">${t.mcp_server_name}: ${t.tool_name === '*' ? 'All' : t.tool_name}</span>`).join('')}</div>` : '<span style="color:var(--text-muted);font-size:12.5px">No tools assigned</span>'}
         </div>
         <div>
-          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Policies (${detail.policies.length})</div>
-          ${detail.policies.length ? `<div class="tag-list">${detail.policies.map(p => `<span class="tag ${p.effect === 'permit' ? 'badge-green' : 'badge-red'}">${p.effect === 'permit' ? '✓' : '✗'} ${p.name}</span>`).join('')}</div>` : '<span style="color:var(--text-muted);font-size:12.5px">No policies — all calls denied by default</span>'}
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Token Policies (${detail.policies.length})</div>
+          ${detail.policies.length ? `<div class="tag-list">${detail.policies.map(p => {
+            const cls = p.effect === 'permit' ? 'badge-green' : p.effect === 'approval' ? '' : 'badge-red';
+            const icon = p.effect === 'permit' ? '✓' : p.effect === 'approval' ? '⏳' : '✗';
+            const style = p.effect === 'approval' ? 'style="background:rgba(245,158,11,.15);color:#f59e0b"' : '';
+            return `<span class="tag ${cls}" ${style}>${icon} ${p.name}</span>`;
+          }).join('')}</div>` : '<span style="color:var(--text-muted);font-size:12.5px">No policies — all calls denied by default</span>'}
         </div>
       </div>
     `;
@@ -5059,6 +5368,8 @@ function openVsModal() {
   document.getElementById('vs-modal-title').textContent = 'New Virtual Server';
   ['vs-name','vs-desc','vs-issuer','vs-client-id','vs-client-secret','vs-audience','vs-jwks'].forEach(f => document.getElementById(f).value = '');
   document.getElementById('vs-require-obo').checked = true;
+  document.getElementById('vs-feat-interceptors').checked = true;
+  document.getElementById('vs-feat-policy').checked = true;
   document.getElementById('vs-modal').classList.add('open');
 }
 
@@ -5074,6 +5385,9 @@ async function editVs(id) {
   document.getElementById('vs-audience').value = vs.okta_audience || '';
   document.getElementById('vs-jwks').value = vs.jwks_uri || '';
   document.getElementById('vs-require-obo').checked = vs.require_obo !== 0;
+  const vsFeatures = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })();
+  document.getElementById('vs-feat-interceptors').checked = vsFeatures.includes('interceptors');
+  document.getElementById('vs-feat-policy').checked = vsFeatures.includes('policy');
   document.getElementById('vs-modal').classList.add('open');
 }
 
@@ -5089,6 +5403,10 @@ async function saveVs() {
     okta_audience: document.getElementById('vs-audience').value,
     jwks_uri: document.getElementById('vs-jwks').value,
     require_obo: document.getElementById('vs-require-obo').checked ? 1 : 0,
+    features_enabled: [
+      document.getElementById('vs-feat-interceptors').checked ? 'interceptors' : null,
+      document.getElementById('vs-feat-policy').checked ? 'policy' : null,
+    ].filter(Boolean),
   };
   try {
     if (editingVsId) await api('/virtual-servers/' + editingVsId, { method: 'PUT', body });
@@ -5177,6 +5495,19 @@ async function loadMcpToolsForAssign() {
 }
 
 // ─── POLICIES ─────────────────────────────────────────────────────────────────
+function effectBadge(p) {
+  if (p.effect === 'permit') {
+    return `<span class="badge badge-green">✅ Permit</span>`;
+  }
+  if (p.effect === 'approval') {
+    const cfg = (typeof p.policy_json === 'string' ? JSON.parse(p.policy_json || '{}') : (p.policy_json || {})).approval_config || {};
+    const ttl = cfg.ttl_minutes || 30;
+    const onExpire = cfg.timeout_action === 'approve' ? '✅ auto-approve' : '🚫 auto-deny';
+    return `<span class="badge" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);white-space:nowrap">⏳ Approval · ${ttl}m · ${onExpire}</span>`;
+  }
+  return `<span class="badge badge-red">🚫 Forbid</span>`;
+}
+
 async function loadPolicies() {
   const vsId = document.getElementById('policy-vs-filter').value;
   const sel = document.getElementById('policy-vs-filter');
@@ -5186,7 +5517,7 @@ async function loadPolicies() {
     sel.innerHTML += `<option value="${vs.id}" ${currentVal === vs.id ? 'selected' : ''}>${vs.name}</option>`;
   });
 
-  const policies = vsId ? await api('/policies/virtual-server/' + vsId) : await loadAllPolicies();
+  const policies = vsId ? await api('/token-policies/virtual-server/' + vsId) : await loadAllPolicies();
   const tbody = document.querySelector('#policy-table tbody');
   tbody.innerHTML = '';
 
@@ -5201,7 +5532,7 @@ async function loadPolicies() {
     tr.innerHTML = `
       <td><strong>${p.name}</strong>${p.description ? `<br><span style="font-size:12px;color:var(--text-muted)">${p.description}</span>` : ''}</td>
       <td>${vs ? vs.name : p.virtual_server_id}</td>
-      <td><span class="badge ${p.effect === 'permit' ? 'badge-green' : 'badge-red'}">${p.effect === 'permit' ? '✅ Permit' : '🚫 Forbid'}</span></td>
+      <td>${effectBadge(p)}</td>
       <td>${p.priority || 0}</td>
       <td><button onclick="togglePolicy('${p.id}', this)" style="background:none;border:none;cursor:pointer;font-size:18px" title="${p.is_active ? 'Disable' : 'Enable'}">${p.is_active ? '🟢' : '⚪'}</button></td>
       <td>
@@ -5218,7 +5549,7 @@ async function loadPolicies() {
 async function loadAllPolicies() {
   const all = [];
   for (const vs of allVirtualServers) {
-    const pols = await api('/policies/virtual-server/' + vs.id);
+    const pols = await api('/token-policies/virtual-server/' + vs.id);
     all.push(...pols);
   }
   return all;
@@ -5226,23 +5557,26 @@ async function loadAllPolicies() {
 
 async function togglePolicy(id, btn) {
   btn.textContent = '⏳';
-  const result = await api('/policies/' + id + '/toggle', { method: 'PATCH' });
+  const result = await api('/token-policies/' + id + '/toggle', { method: 'PATCH' });
   btn.textContent = result.is_active ? '🟢' : '⚪';
 }
 
 async function deletePolicy(id) {
   if (!confirm('Delete this policy?')) return;
-  await api('/policies/' + id, { method: 'DELETE' });
+  await api('/token-policies/' + id, { method: 'DELETE' });
   loadPolicies();
 }
 
 function openPolicyModal(id = null) {
   editingPolicyId = id;
-  document.getElementById('policy-modal-title').textContent = id ? 'Edit Policy' : 'New Policy';
+  document.getElementById('policy-modal-title').textContent = id ? 'Edit Token Policy' : 'New Token Policy';
   document.getElementById('pol-name').value = '';
   document.getElementById('pol-desc').value = '';
   document.getElementById('pol-effect').value = 'permit';
   document.getElementById('pol-priority').value = '0';
+  document.getElementById('pol-ttl').value = '30';
+  document.getElementById('pol-timeout-action').value = 'deny';
+  document.getElementById('pol-approval-config').style.display = 'none';
   document.getElementById('pol-actions').innerHTML = '';
   document.getElementById('pol-conditions').innerHTML = '';
   const sel = document.getElementById('pol-vs');
@@ -5252,13 +5586,18 @@ function openPolicyModal(id = null) {
 }
 
 async function editPolicy(id) {
-  const policy = await api('/policies/' + id);
+  const policy = await api('/token-policies/' + id);
   editingPolicyId = id;
-  document.getElementById('policy-modal-title').textContent = 'Edit Policy';
+  document.getElementById('policy-modal-title').textContent = 'Edit Token Policy';
   document.getElementById('pol-name').value = policy.name;
   document.getElementById('pol-desc').value = policy.description || '';
   document.getElementById('pol-effect').value = policy.effect;
   document.getElementById('pol-priority').value = policy.priority || 0;
+  // Populate approval config fields if editing an approval policy
+  const cfg = policy.policy_json?.approval_config || {};
+  document.getElementById('pol-ttl').value = cfg.ttl_minutes || 30;
+  document.getElementById('pol-timeout-action').value = cfg.timeout_action || 'deny';
+  document.getElementById('pol-approval-config').style.display = policy.effect === 'approval' ? '' : 'none';
   const sel = document.getElementById('pol-vs');
   sel.innerHTML = '<option value="">Select corridor...</option>';
   allVirtualServers.forEach(vs => { sel.innerHTML += `<option value="${vs.id}" ${vs.id === policy.virtual_server_id ? 'selected' : ''}>${vs.name}</option>`; });
@@ -5407,18 +5746,26 @@ async function savePolicy() {
     if (isMulti) return { type, values: rawValue.split(',').map(v => v.trim()).filter(Boolean) };
     return { type, value: rawValue.trim() };
   });
+  const effect = document.getElementById('pol-effect').value;
+  const policyJson = { actions, conditions };
+  if (effect === 'approval') {
+    policyJson.approval_config = {
+      ttl_minutes: parseInt(document.getElementById('pol-ttl').value) || 30,
+      timeout_action: document.getElementById('pol-timeout-action').value,
+    };
+  }
   const body = {
     virtual_server_id: vsId,
     name: document.getElementById('pol-name').value,
     description: document.getElementById('pol-desc').value,
-    effect: document.getElementById('pol-effect').value,
+    effect,
     priority: parseInt(document.getElementById('pol-priority').value) || 0,
-    policy_json: { actions, conditions },
+    policy_json: policyJson,
     is_active: 1,
   };
   try {
-    if (editingPolicyId) await api('/policies/' + editingPolicyId, { method: 'PUT', body });
-    else                 await api('/policies', { method: 'POST', body });
+    if (editingPolicyId) await api('/token-policies/' + editingPolicyId, { method: 'PUT', body });
+    else                 await api('/token-policies', { method: 'POST', body });
     closePolicyModal(); loadPolicies();
   } catch (e) { alert(e.message); }
 }
@@ -5822,7 +6169,7 @@ async function runSimulation() {
   const scopes = document.getElementById('sim-scopes').value.split(',').map(s=>s.trim()).filter(Boolean);
   const groups = document.getElementById('sim-groups').value.split(',').map(s=>s.trim()).filter(Boolean);
   const sub    = document.getElementById('sim-sub').value;
-  const result = await api('/policies/simulate', { method: 'POST', body: { virtual_server_id: vsId, mcp_server_id: mcpId, tool_name: tool, scopes, groups, sub } });
+  const result = await api('/token-policies/simulate', { method: 'POST', body: { virtual_server_id: vsId, mcp_server_id: mcpId, tool_name: tool, scopes, groups, sub } });
   const resultCard = document.getElementById('sim-result');
   resultCard.style.display = '';
   document.getElementById('sim-decision').innerHTML = result.decision === 'allow'
@@ -5837,7 +6184,7 @@ async function runSimulation() {
     div.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <strong style="font-size:13px">${t.policyName}</strong>
-        <span class="badge ${t.matched?(t.effect==='permit'?'badge-green':'badge-red'):'badge-gray'}">${t.matched?(t.effect==='permit'?'Permit matched':'Forbid matched'):'No match'}</span>
+        <span class="badge ${t.matched?(t.effect==='permit'?'badge-green':t.effect==='approval'?'':'badge-red'):'badge-gray'}" ${t.matched&&t.effect==='approval'?'style="background:rgba(245,158,11,.15);color:#f59e0b"':''}>${t.matched?(t.effect==='permit'?'✅ Permit matched':t.effect==='approval'?'⏳ Approval required':'🚫 Forbid matched'):'No match'}</span>
       </div>
       <div style="font-size:12px;color:var(--text-muted)">
         Action match: ${t.actionMatched?'✅':'✗'} &nbsp;|&nbsp;
@@ -5856,6 +6203,7 @@ async function init() {
     allVirtualServers = vss;
   } catch (e) { console.error('Init failed:', e); }
   handleRoute();
+  refreshApprovalsBadge();
 }
 
 init();
