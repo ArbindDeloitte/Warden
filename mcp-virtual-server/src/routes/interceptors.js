@@ -8,9 +8,10 @@ const { run } = require('../interceptors/InterceptorPipeline');
 const router = express.Router();
 
 const SCANNER_CATALOG = [
-  { name: 'regex',       label: 'Regex + Keyword', tier: 'sync',  defaultEnabled: true,  description: 'PII patterns (SSN, cards, emails, API keys) and prompt injection heuristics. Always-on, <1ms.' },
-  { name: 'presidio',    label: 'Presidio PII',    tier: 'sync',  defaultEnabled: false, description: 'NLP-based Named Entity Recognition via Microsoft Presidio Docker sidecar. Catches names, addresses, org names.' },
-  { name: 'llama-guard', label: 'Llama Guard 3',   tier: 'async', defaultEnabled: false, description: 'Semantic safety classification via Ollama. Async only — never blocks requests, enriches audit log.' },
+  { name: 'regex',       label: 'Regex + Keyword',    tier: 'sync',  defaultEnabled: true,  description: 'PII patterns (SSN, cards, emails, API keys) and prompt injection heuristics. Always-on, <1ms.' },
+  { name: 'embedding',   label: 'Embedding Scanner',  tier: 'sync',  defaultEnabled: false, description: 'Semantic similarity against 20+ OWASP injection vectors using all-MiniLM-L6-v2. Runs fully in-process from local model — no network dependency. Catches rephrased injections regex misses. ~30ms.' },
+  { name: 'presidio',    label: 'Presidio PII',       tier: 'sync',  defaultEnabled: false, description: 'NLP-based Named Entity Recognition via local presidio-analyzer. Catches names, addresses, org names.' },
+  { name: 'llama-guard', label: 'Llama Guard 3',      tier: 'async', defaultEnabled: false, description: 'Semantic safety classification via Ollama. Async only — never blocks requests, enriches audit log.' },
 ];
 
 // ── Scanners ──────────────────────────────────────────────────────────────────

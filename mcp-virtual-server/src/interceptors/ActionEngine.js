@@ -34,6 +34,9 @@ async function decide(results, text, virtualServerId, direction) {
 
   let finalAction = 'allow';
   let finalReason = null;
+  let finalScanner = null;
+  let finalRule = null;
+  let finalScore = null;
   const allMatches = [];
 
   for (const result of results) {
@@ -54,11 +57,20 @@ async function decide(results, text, virtualServerId, direction) {
           // Use the rule's own category so the reason names the policy that fired,
           // not whichever category happened to be first in the scan result array.
           finalReason = rule.category !== '*' ? rule.category : ((result.categories || [])[0] || 'flagged');
+          finalScanner = result.scanner;
+          finalRule = rule.name || null;
+          finalScore = result.score || null;
           break;
         } else if (rule.action === 'mask' && finalAction !== 'block') {
           finalAction = 'mask';
+          finalScanner = result.scanner;
+          finalRule = rule.name || null;
+          finalScore = result.score || null;
         } else if (rule.action === 'warn' && finalAction === 'allow') {
           finalAction = 'warn';
+          finalScanner = result.scanner;
+          finalRule = rule.name || null;
+          finalScore = result.score || null;
         }
         break;
       }
@@ -76,7 +88,7 @@ async function decide(results, text, virtualServerId, direction) {
 
   writeInterceptorLog({ virtualServerId, direction, results, finalAction });
 
-  return { action: finalAction, text: maskedText, reason: finalReason };
+  return { action: finalAction, text: maskedText, reason: finalReason, scanner: finalScanner, rule: finalRule, score: finalScore };
 }
 
 function writeInterceptorLog({ virtualServerId, direction, results, finalAction }) {

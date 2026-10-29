@@ -1,0 +1,6 @@
+flask>=3.1
+waitress>=3.0
+presidio-analyzer>=2.2
+spacy>=3.8
+# spaCy English model — install with:
+#   py -3 -m spacy download en_core_web_sm

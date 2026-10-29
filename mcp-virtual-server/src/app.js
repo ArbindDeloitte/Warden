@@ -70,6 +70,12 @@ const server = app.listen(PORT, () => {
   console.log(`   UI:    http://localhost:${PORT}`);
   console.log(`   Proxy: POST http://localhost:${PORT}/api/proxy/:virtualServerId\n`);
 
+  // Initialize interceptor scanners after the server is accepting requests.
+  // EmbeddingScanner loads the ONNX model (~2–3 s); until ready it degrades gracefully.
+  const registry = require('./interceptors/ScannerRegistry');
+  registry.initAll()
+    .then(() => console.log('[Interceptors] All scanners ready'))
+    .catch(err => console.warn('[Interceptors] Scanner init error (degraded):', err.message));
 });
 
 server.on('error', (err) => {

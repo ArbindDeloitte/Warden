@@ -421,8 +421,16 @@ export default function Agent() {
       const scan = await scanMessage(trimmed, 'inbound');
 
       if (scan.action === 'block') {
+        const scannerLabel = {
+          regex: 'Regex + Keyword',
+          embedding: 'Embedding Scanner',
+          presidio: 'Presidio PII',
+          'llama-guard': 'Llama Guard 3',
+        }[scan.scanner] || scan.scanner || 'Unknown';
+        const scoreStr = scan.score != null ? ` (confidence: ${(scan.score * 100).toFixed(0)}%)` : '';
+        const ruleLine = scan.rule ? `\n• **Rule:** ${scan.rule}` : '';
         addMsg('agent', 'text',
-          `🚫 **Message blocked by Warden**\n\nYour message was flagged by the security policy and could not be processed.\n_Reason: ${scan.reason || 'policy violation'}_`
+          `🚫 **Message blocked by Warden**\n\nYour message was flagged by the security policy and could not be processed.\n\n• **Scanner:** ${scannerLabel}${scoreStr}${ruleLine}\n• **Reason:** ${scan.reason || 'policy violation'}`
         );
         return;
       }
@@ -433,8 +441,15 @@ export default function Agent() {
         : trimmed;
 
       if (scan.action === 'mask' && processText !== trimmed) {
+        const maskScannerLabel = {
+          regex: 'Regex + Keyword',
+          embedding: 'Embedding Scanner',
+          presidio: 'Presidio PII',
+          'llama-guard': 'Llama Guard 3',
+        }[scan.scanner] || scan.scanner || 'Unknown';
+        const maskRuleLine = scan.rule ? ` · Rule: ${scan.rule}` : '';
         addMsg('agent', 'text',
-          `🛡 **Warden:** Sensitive data detected in your message and masked before processing.\n_Masked: ${processText.slice(0, 200)}_`
+          `🛡 **Warden:** Sensitive data detected and masked before processing.\n• **Scanner:** ${maskScannerLabel}${maskRuleLine}\n• **Masked:** ${processText.slice(0, 200)}`
         );
       }
       // ────────────────────────────────────────────────────────

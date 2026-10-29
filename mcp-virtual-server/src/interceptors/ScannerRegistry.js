@@ -1,6 +1,7 @@
 'use strict';
 
 const RegexScanner = require('./scanners/RegexScanner');
+const EmbeddingScanner = require('./scanners/EmbeddingScanner');
 const PresidioScanner = require('./scanners/PresidioScanner');
 const LlamaGuardScanner = require('./scanners/LlamaGuardScanner');
 
@@ -43,6 +44,7 @@ class ScannerRegistry {
 
 const registry = new ScannerRegistry();
 registry.register(new RegexScanner());
+registry.register(new EmbeddingScanner());
 registry.register(new PresidioScanner());
 registry.register(new LlamaGuardScanner());
 

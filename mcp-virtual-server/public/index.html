@@ -4216,15 +4216,18 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
       const sel = document.getElementById('icp-vs-select');
       try {
         const vss = await api('/virtual-servers');
+        const filtered = (vss || []).filter(vs => vsHasFeature(vs, 'interceptors'));
         sel.innerHTML = '<option value="">— select a corridor —</option>';
-        (vss || []).forEach(vs => {
-          const o = document.createElement('option');
-          o.value = vs.id; o.textContent = vs.name;
-          sel.appendChild(o);
-        });
-        // Auto-select first VS
-        if (vss && vss.length > 0) {
-          sel.value = vss[0].id;
+        if (filtered.length === 0) {
+          sel.innerHTML = '<option value="">No corridors with Interceptors enabled</option>';
+        } else {
+          filtered.forEach(vs => {
+            const o = document.createElement('option');
+            o.value = vs.id; o.textContent = vs.name;
+            sel.appendChild(o);
+          });
+          // Auto-select first interceptor-enabled VS
+          sel.value = filtered[0].id;
           icpOnVsChange();
         }
       } catch (e) {
@@ -4935,6 +4938,16 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
 let allMcpServers = [];
 let allVirtualServers = [];
 let editingMcpId = null;
+
+// Returns true when the VS has a given feature enabled.
+// Default (missing / unparseable features_enabled) treats all features as on
+// so existing VSes created before the feature flag column existed still show up.
+function vsHasFeature(vs, feature) {
+  try {
+    const feats = JSON.parse(vs.features_enabled || '["interceptors","policy"]');
+    return feats.includes(feature);
+  } catch { return true; }
+}
 let editingVsId = null;
 let editingPolicyId = null;
 let assigningVsId = null;
@@ -5513,7 +5526,8 @@ async function loadPolicies() {
   const sel = document.getElementById('policy-vs-filter');
   const currentVal = sel.value;
   sel.innerHTML = '<option value="">All Corridors</option>';
-  allVirtualServers.forEach(vs => {
+  // Only show corridors that have the Token Policy feature enabled
+  allVirtualServers.filter(vs => vsHasFeature(vs, 'policy')).forEach(vs => {
     sel.innerHTML += `<option value="${vs.id}" ${currentVal === vs.id ? 'selected' : ''}>${vs.name}</option>`;
   });
 
@@ -5548,7 +5562,7 @@ async function loadPolicies() {
 
 async function loadAllPolicies() {
   const all = [];
-  for (const vs of allVirtualServers) {
+  for (const vs of allVirtualServers.filter(vs => vsHasFeature(vs, 'policy'))) {
     const pols = await api('/token-policies/virtual-server/' + vs.id);
     all.push(...pols);
   }
@@ -5581,7 +5595,8 @@ function openPolicyModal(id = null) {
   document.getElementById('pol-conditions').innerHTML = '';
   const sel = document.getElementById('pol-vs');
   sel.innerHTML = '<option value="">Select corridor...</option>';
-  allVirtualServers.forEach(vs => { sel.innerHTML += `<option value="${vs.id}">${vs.name}</option>`; });
+  // Only corridors with Token Policy feature enabled can receive new policies
+  allVirtualServers.filter(vs => vsHasFeature(vs, 'policy')).forEach(vs => { sel.innerHTML += `<option value="${vs.id}">${vs.name}</option>`; });
   document.getElementById('policy-modal').classList.add('open');
 }
 
@@ -5600,7 +5615,7 @@ async function editPolicy(id) {
   document.getElementById('pol-approval-config').style.display = policy.effect === 'approval' ? '' : 'none';
   const sel = document.getElementById('pol-vs');
   sel.innerHTML = '<option value="">Select corridor...</option>';
-  allVirtualServers.forEach(vs => { sel.innerHTML += `<option value="${vs.id}" ${vs.id === policy.virtual_server_id ? 'selected' : ''}>${vs.name}</option>`; });
+  allVirtualServers.filter(vs => vsHasFeature(vs, 'policy')).forEach(vs => { sel.innerHTML += `<option value="${vs.id}" ${vs.id === policy.virtual_server_id ? 'selected' : ''}>${vs.name}</option>`; });
   document.getElementById('pol-actions').innerHTML = '';
   (policy.policy_json?.actions || []).forEach(a => addActionRow(a));
   document.getElementById('pol-conditions').innerHTML = '';
