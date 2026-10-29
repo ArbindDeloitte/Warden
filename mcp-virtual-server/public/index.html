@@ -5733,6 +5733,8 @@ function updateConditionHint(selectEl) {
 async function savePolicy() {
   const vsId = document.getElementById('pol-vs').value;
   if (!vsId) return alert('Select a corridor');
+  const name = document.getElementById('pol-name').value.trim();
+  if (!name) return alert('Policy name is required');
   const actionRows = document.querySelectorAll('#pol-actions .action-row-policy');
   const actions = Array.from(actionRows).map(row => {
     const sels = row.querySelectorAll('select');
@@ -5756,7 +5758,7 @@ async function savePolicy() {
   }
   const body = {
     virtual_server_id: vsId,
-    name: document.getElementById('pol-name').value,
+    name,
     description: document.getElementById('pol-desc').value,
     effect,
     priority: parseInt(document.getElementById('pol-priority').value) || 0,

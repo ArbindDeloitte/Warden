@@ -30,8 +30,9 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   const { virtual_server_id, name, description, effect, priority, policy_json } = req.body;
 
-  if (!virtual_server_id || !name || !effect) {
-    return res.status(400).json({ error: 'virtual_server_id, name, and effect are required' });
+  const missing = [!virtual_server_id && 'virtual_server_id', !name && 'name', !effect && 'effect'].filter(Boolean);
+  if (missing.length) {
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
   }
   if (!['permit', 'forbid'].includes(effect)) {
     return res.status(400).json({ error: 'effect must be "permit" or "forbid"' });
