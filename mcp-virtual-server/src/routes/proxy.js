@@ -7,6 +7,7 @@ const { exchangeForOboToken } = require('../services/oboService');
 const { callMcpTool } = require('../services/mcpClient');
 const { evaluatePolicies } = require('../services/policyEngine');
 const pipeline = require('../interceptors/InterceptorPipeline');
+const { evaluateUserTriggers } = require('../services/triggerEvaluator');
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
 
@@ -364,6 +365,10 @@ router.post('/:virtualServerId', async (req, res) => {
       const inbound = await pipeline.run(inboundText, 'inbound', virtualServerId, agentId, callId, idpUser);
       if (inbound.action === 'block') {
         return res.status(403).json({ error: 'Request blocked by interceptor', reason: inbound.reason, intercepted: true });
+      }
+      // Fire Warden Function triggers after inbound scan (non-blocking)
+      if (idpUser?.sub) {
+        evaluateUserTriggers(virtualServerId, idpUser.sub, idpUser.email, idpUser.name).catch(() => {});
       }
     } catch (err) {
       console.warn('[Proxy] Inbound interceptor error (continuing):', err.message);

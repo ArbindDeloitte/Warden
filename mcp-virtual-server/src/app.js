@@ -17,6 +17,7 @@ const { processExpiredTickets } = require('./routes/approvals');
 const agentsRouter = require('./routes/agents');
 const scoringRouter = require('./routes/scoring');
 const idpConfigs = require('./routes/idpConfigs');
+const wardenFunctions = require('./routes/wardenFunctions');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -44,6 +45,7 @@ app.use('/api/approvals', approvalsRouter);
 app.use('/api/agents', agentsRouter);
 app.use('/api/scoring', scoringRouter);
 app.use('/api/virtual-servers/:id/idp-configs', idpConfigs);
+app.use('/api/warden-functions', wardenFunctions);
 
 // Health check
 app.get('/api/health', (req, res) => {

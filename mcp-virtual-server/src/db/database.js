@@ -350,4 +350,72 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_idp_vs ON vs_idp_configs(virtual_server_id);
 `);
 
+// ── Warden Functions ──────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS warden_functions (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    code        TEXT NOT NULL DEFAULT '',
+    is_active   INTEGER DEFAULT 1,
+    created_at  TEXT DEFAULT (datetime('now')),
+    updated_at  TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS warden_function_secrets (
+    id          TEXT PRIMARY KEY,
+    function_id TEXT NOT NULL,
+    key         TEXT NOT NULL,
+    value_b64   TEXT NOT NULL,
+    created_at  TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (function_id) REFERENCES warden_functions(id) ON DELETE CASCADE,
+    UNIQUE(function_id, key)
+  );
+
+  CREATE TABLE IF NOT EXISTS warden_function_triggers (
+    id           TEXT PRIMARY KEY,
+    function_id  TEXT NOT NULL,
+    vs_id        TEXT,
+    trigger_type TEXT NOT NULL DEFAULT 'user_score_below',
+    threshold    INTEGER NOT NULL DEFAULT 200,
+    is_active    INTEGER DEFAULT 1,
+    created_at   TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (function_id) REFERENCES warden_functions(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS warden_function_state (
+    id                TEXT PRIMARY KEY,
+    trigger_id        TEXT NOT NULL,
+    user_sub          TEXT NOT NULL,
+    armed             INTEGER DEFAULT 0,
+    score_at_trigger  INTEGER,
+    last_triggered_at TEXT,
+    UNIQUE(trigger_id, user_sub),
+    FOREIGN KEY (trigger_id) REFERENCES warden_function_triggers(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS warden_function_logs (
+    id            TEXT PRIMARY KEY,
+    function_id   TEXT NOT NULL,
+    trigger_id    TEXT,
+    user_sub      TEXT,
+    user_email    TEXT,
+    score         INTEGER,
+    vs_id         TEXT,
+    vs_name       TEXT,
+    status        TEXT NOT NULL,
+    output        TEXT,
+    console_logs  TEXT,
+    error_message TEXT,
+    duration_ms   INTEGER,
+    created_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (function_id) REFERENCES warden_functions(id) ON DELETE CASCADE
+  );
+`);
+
+// function_type: 'user_risk' | 'vs_risk' | 'scheduled' | (future)
+try { db.exec(`ALTER TABLE warden_functions ADD COLUMN function_type TEXT NOT NULL DEFAULT 'user_risk'`); } catch {}
+// interval_minutes for scheduled triggers
+try { db.exec(`ALTER TABLE warden_function_triggers ADD COLUMN interval_minutes INTEGER`); } catch {}
+
 module.exports = db;

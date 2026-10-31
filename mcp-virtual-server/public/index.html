@@ -451,6 +451,12 @@
       <span class="icon">👤</span> User Risk
     </button>
 
+    <div class="nav-section-label">Warden Functions</div>
+
+    <button class="nav-item" data-page="warden-functions">
+      <span class="icon">⚡</span> Functions
+    </button>
+
     <div class="nav-section-label">Logs</div>
 
     <button class="nav-item" data-page="audit">
@@ -6259,6 +6265,326 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
       </div>
     </div><!-- end page-score-history -->
 
+    <!-- ═══════════════════════════════════════════════════════════
+         WARDEN FUNCTIONS PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-warden-functions">
+    <style>
+      /* ── Layout ── */
+      .wf-layout { display:grid; grid-template-columns:280px 1fr; gap:0; height:calc(100vh - 120px); min-height:500px; }
+      .wf-sidebar { border-right:1px solid var(--border); padding:0; display:flex; flex-direction:column; overflow:hidden; }
+      .wf-main   { padding:0 0 0 24px; overflow-y:auto; display:flex; flex-direction:column; }
+
+      /* ── Sidebar ── */
+      .wf-sidebar-header { padding:16px 16px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+      .wf-sidebar-title  { font-size:13px; font-weight:700; color:var(--text); }
+      .wf-fn-list { flex:1; overflow-y:auto; padding:8px; }
+      .wf-fn-card { padding:12px 14px; border-radius:10px; cursor:pointer; margin-bottom:4px; border:1px solid transparent; transition:background .12s,border-color .12s; }
+      .wf-fn-card:hover { background:var(--surface2); }
+      .wf-fn-card.active { background:var(--surface2); border-color:var(--border); }
+      .wf-fn-name { font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .wf-fn-meta { font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; gap:8px; align-items:center; }
+      .wf-fn-badge { font-size:10px; font-weight:600; padding:1px 7px; border-radius:100px; }
+      .wf-fn-badge.active  { background:rgba(16,185,129,.12); color:#10b981; }
+      .wf-fn-badge.inactive{ background:rgba(148,163,184,.1); color:var(--text-muted); }
+      .wf-empty-sidebar { padding:24px 16px; text-align:center; font-size:12px; color:var(--text-muted); }
+
+      /* ── Detail header ── */
+      .wf-detail-header { padding:20px 0 0; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+      .wf-detail-title  { font-size:18px; font-weight:800; color:var(--text); }
+      .wf-detail-desc   { font-size:12px; color:var(--text-muted); margin-top:3px; }
+      .wf-detail-actions{ display:flex; gap:8px; align-items:center; flex-shrink:0; }
+
+      /* ── Tabs ── */
+      .wf-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:20px; flex-shrink:0; }
+      .wf-tab  { padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; border:none; background:none; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s,border-color .15s; }
+      .wf-tab.active { color:var(--text); border-bottom-color:var(--accent,#6366f1); }
+
+      /* ── Code editor ── */
+      .wf-editor-wrap { position:relative; border:1px solid var(--border); border-radius:10px; overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:380px; }
+      .wf-editor { width:100%; flex:1; font-family:'Fira Code','JetBrains Mono',Consolas,monospace; font-size:13px; line-height:1.6; padding:16px; border:none; background:var(--surface); color:var(--text); resize:none; outline:none; tab-size:2; }
+      .wf-editor-toolbar { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--surface2); border-bottom:1px solid var(--border); flex-shrink:0; }
+      .wf-editor-lang   { font-size:11px; color:var(--text-muted); font-family:monospace; }
+      .wf-save-code-btn { font-size:12px; font-weight:600; padding:5px 14px; border:none; border-radius:7px; background:var(--accent,#6366f1); color:#fff; cursor:pointer; }
+      .wf-save-code-btn:hover { opacity:.85; }
+      .wf-run-btn       { font-size:12px; font-weight:600; padding:5px 14px; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--text); cursor:pointer; }
+      .wf-run-btn:hover { background:var(--surface2); }
+
+      /* ── Test output ── */
+      .wf-test-output { margin-top:12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:var(--text); display:none; max-height:200px; overflow-y:auto; }
+      .wf-test-output.open { display:block; }
+      .wf-test-ok  { color:#10b981; }
+      .wf-test-err { color:#ef4444; }
+
+      /* ── Secrets panel ── */
+      .wf-secrets-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+      .wf-secret-row   { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; }
+      .wf-secret-key   { font-family:monospace; font-size:12px; font-weight:700; color:var(--text); flex:1; }
+      .wf-secret-val   { font-size:11px; color:var(--text-muted); }
+      .wf-add-secret   { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-top:4px; }
+      .wf-secret-input { padding:7px 10px; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--text); font-size:12px; font-family:monospace; }
+      .wf-secrets-note { font-size:11px; color:var(--text-muted); font-style:italic; margin-bottom:12px; }
+
+      /* ── Triggers panel ── */
+      .wf-trigger-row  { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; margin-bottom:8px; }
+      .wf-trigger-info { flex:1; }
+      .wf-trigger-title{ font-size:13px; font-weight:700; color:var(--text); }
+      .wf-trigger-sub  { font-size:11px; color:var(--text-muted); margin-top:2px; }
+      .wf-trigger-toggle { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer; }
+      .wf-add-trigger  { display:grid; grid-template-columns:1fr auto 80px auto; gap:8px; align-items:center; margin-top:12px; padding:10px 12px; border:1px solid rgba(128,128,128,.25); border-radius:8px; }
+      .wf-add-trigger input[type=number] { padding:6px 8px; border:1px solid var(--border); border-radius:7px; font-size:13px; font-family:inherit; background:var(--surface2); color:var(--text); outline:none; }
+
+      /* Custom VS picker (replaces native <select> to avoid Edge dark-mode issues) */
+      .wf-vs-picker { position:relative; }
+      .wf-vs-picker-btn { display:flex; align-items:center; gap:6px; width:100%; padding:6px 10px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:7px; font-size:13px; font-family:inherit; cursor:pointer; text-align:left; }
+      .wf-vs-picker-btn:hover { background:var(--surface3,var(--surface)); }
+      .wf-vs-arrow { margin-left:auto; opacity:.55; font-size:10px; }
+      .wf-vs-picker-menu { display:none; position:absolute; top:calc(100% + 3px); left:0; min-width:180px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.35); z-index:400; padding:4px; max-height:220px; overflow-y:auto; }
+      .wf-vs-picker-menu.open { display:block; }
+      .wf-vs-picker-opt { padding:7px 10px; border-radius:6px; font-size:13px; color:var(--text); cursor:pointer; white-space:nowrap; }
+      .wf-vs-picker-opt:hover { background:var(--surface); }
+      .wf-vs-picker-opt.selected { background:rgba(99,102,241,.15); color:var(--primary,#818cf8); font-weight:600; }
+
+      /* ── Logs panel ── */
+      .wf-log-row   { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border); }
+      .wf-log-row:last-child { border-bottom:none; }
+      .wf-log-status{ font-size:11px; font-weight:700; width:58px; flex-shrink:0; padding-top:1px; }
+      .wf-log-status.success{ color:#10b981; }
+      .wf-log-status.error  { color:#ef4444; }
+      .wf-log-body  { flex:1; min-width:0; }
+      .wf-log-title { font-size:12px; font-weight:600; color:var(--text); }
+      .wf-log-meta  { font-size:11px; color:var(--text-muted); margin-top:2px; }
+      .wf-log-console{ font-family:monospace; font-size:11px; color:var(--text-muted); margin-top:6px; background:var(--surface2); border-radius:6px; padding:6px 10px; display:none; }
+      .wf-log-row:hover .wf-log-console { display:block; }
+      .wf-log-time  { font-size:11px; color:var(--text-muted); flex-shrink:0; }
+
+      /* ── New Function Modal ── */
+      .wf-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(3px); z-index:1000; display:flex; align-items:center; justify-content:center; }
+      .wf-modal-card { background:var(--surface2); border:1px solid var(--border); border-radius:14px; width:440px; max-width:calc(100vw - 32px); box-shadow:0 20px 60px rgba(0,0,0,.45); animation:wfModalIn .15s ease; }
+      @keyframes wfModalIn { from { opacity:0; transform:scale(.95) translateY(8px); } to { opacity:1; transform:none; } }
+      .wf-modal-header { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 0; }
+      .wf-modal-title  { font-size:15px; font-weight:700; color:var(--text); }
+      .wf-modal-close  { background:none; border:none; color:var(--text-muted); font-size:16px; cursor:pointer; padding:4px 6px; border-radius:6px; line-height:1; }
+      .wf-modal-close:hover { background:var(--surface); color:var(--text); }
+      .wf-modal-body   { padding:20px; display:flex; flex-direction:column; gap:16px; }
+      .wf-modal-field  { display:flex; flex-direction:column; gap:6px; }
+      .wf-modal-label  { font-size:12px; font-weight:600; color:var(--text); text-transform:uppercase; letter-spacing:.4px; }
+      .wf-modal-input  { padding:9px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-size:13px; font-family:inherit; outline:none; transition:border-color .15s; }
+      .wf-modal-input:focus { border-color:var(--primary,#6366f1); box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+      .wf-modal-input::placeholder { color:var(--text-muted); }
+      .wf-modal-err    { font-size:12px; color:var(--red,#ef4444); }
+      .wf-modal-footer { display:flex; justify-content:flex-end; gap:8px; padding:0 20px 18px; }
+      /* type cards */
+      .wf-type-grid    { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+      .wf-type-card    { position:relative; border:1.5px solid var(--border); border-radius:10px; padding:12px 12px 10px; cursor:pointer; transition:border-color .15s, background .15s; }
+      .wf-type-card:hover { border-color:var(--primary,#6366f1); background:rgba(99,102,241,.05); }
+      .wf-type-card.selected { border-color:var(--primary,#6366f1); background:rgba(99,102,241,.09); }
+      .wf-type-card input[type=radio] { position:absolute; opacity:0; pointer-events:none; }
+      .wf-type-icon    { font-size:20px; margin-bottom:6px; }
+      .wf-type-name    { font-size:12px; font-weight:700; color:var(--text); margin-bottom:3px; }
+      .wf-type-desc    { font-size:11px; color:var(--text-muted); line-height:1.4; }
+      /* type badge on sidebar card and detail header */
+      .wf-type-badge   { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; }
+      .wf-type-badge.user_risk   { background:rgba(99,102,241,.15); color:#818cf8; }
+      .wf-type-badge.vs_risk     { background:rgba(245,158,11,.15); color:#f59e0b; }
+      .wf-type-badge.agent_risk  { background:rgba(239,68,68,.15);  color:#f87171; }
+      .wf-type-badge.scheduled   { background:rgba(16,185,129,.15); color:#10b981; }
+
+      /* ── Empty / placeholder ── */
+      .wf-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; color:var(--text-muted); padding:48px; text-align:center; }
+      .wf-placeholder .icon { font-size:48px; margin-bottom:16px; opacity:.4; }
+      .wf-placeholder h3 { font-size:16px; font-weight:700; color:var(--text); margin-bottom:8px; }
+      .wf-placeholder p  { font-size:13px; max-width:340px; line-height:1.6; }
+    </style>
+
+    <div style="margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin-bottom:4px">Warden Functions</h1>
+        <div style="font-size:13px;color:var(--text-muted)">Node.js functions that execute automatically when security events occur — suspend users, open tickets, call webhooks.</div>
+      </div>
+    </div>
+
+    <div class="wf-layout">
+      <!-- ── Sidebar: function list ── -->
+      <div class="wf-sidebar">
+        <div class="wf-sidebar-header">
+          <span class="wf-sidebar-title">Functions</span>
+          <button class="btn btn-ghost btn-sm" onclick="wfNewFunction()" title="New function">+ New</button>
+        </div>
+        <div class="wf-fn-list" id="wf-fn-list">
+          <div class="wf-empty-sidebar">No functions yet.<br>Click <strong>+ New</strong> to create one.</div>
+        </div>
+      </div>
+
+      <!-- ── Main: function detail ── -->
+      <div class="wf-main" id="wf-main">
+        <div class="wf-placeholder" id="wf-placeholder">
+          <div class="icon">⚡</div>
+          <h3>No function selected</h3>
+          <p>Create a function or select one from the list. Functions run automatically when a user's risk score crosses a threshold.</p>
+        </div>
+        <div id="wf-detail" style="display:none;flex-direction:column;flex:1">
+          <!-- Header -->
+          <div class="wf-detail-header">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <div class="wf-detail-title" id="wf-detail-name"></div>
+                <span id="wf-detail-type-badge" class="wf-type-badge user_risk"></span>
+              </div>
+              <div class="wf-detail-desc" id="wf-detail-desc"></div>
+            </div>
+            <div class="wf-detail-actions">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+                <input type="checkbox" id="wf-active-toggle" onchange="wfToggleActive()" style="width:14px;height:14px;accent-color:var(--accent)">
+                <span style="color:var(--text-muted)">Active</span>
+              </label>
+              <button class="btn btn-ghost btn-sm" onclick="wfDeleteFunction()" style="color:#ef4444">Delete</button>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="wf-tabs">
+            <button class="wf-tab active" data-wftab="code"     onclick="wfSwitchTab('code')">Code</button>
+            <button class="wf-tab"        data-wftab="secrets"  onclick="wfSwitchTab('secrets')">Secrets</button>
+            <button class="wf-tab"        data-wftab="triggers" onclick="wfSwitchTab('triggers')">Triggers</button>
+            <button class="wf-tab"        data-wftab="logs"     onclick="wfSwitchTab('logs')">Logs</button>
+          </div>
+
+          <!-- Code tab -->
+          <div id="wf-tab-code" style="display:flex;flex-direction:column;flex:1">
+            <div class="wf-editor-wrap">
+              <div class="wf-editor-toolbar">
+                <span class="wf-editor-lang">JavaScript (Node.js · vm sandbox)</span>
+                <div style="display:flex;gap:8px">
+                  <button class="wf-run-btn" onclick="wfRunTest()">▶ Test Run</button>
+                  <button class="wf-save-code-btn" onclick="wfSaveCode()">Save Code</button>
+                </div>
+              </div>
+              <textarea class="wf-editor" id="wf-code-editor" spellcheck="false" autocomplete="off"
+                placeholder="// Your Warden Function code here…"
+                onkeydown="if(event.key==='Tab'){event.preventDefault();const s=this.selectionStart;this.value=this.value.slice(0,s)+'  '+this.value.slice(this.selectionEnd);this.selectionStart=this.selectionEnd=s+2}"></textarea>
+            </div>
+            <div class="wf-test-output" id="wf-test-output"></div>
+          </div>
+
+          <!-- Secrets tab -->
+          <div id="wf-tab-secrets" style="display:none">
+            <p class="wf-secrets-note">Secrets are stored base64-encoded in the database. Access them in your function via the <code style="font-family:monospace;font-size:11px">secrets</code> object (e.g. <code style="font-family:monospace;font-size:11px">secrets.OKTA_API_TOKEN</code>). Secure your database file to protect values.</p>
+            <div class="wf-secrets-list" id="wf-secrets-list"></div>
+            <div class="wf-add-secret">
+              <input class="wf-secret-input" id="wf-new-secret-key"   placeholder="KEY_NAME" style="text-transform:uppercase">
+              <input class="wf-secret-input" id="wf-new-secret-value" placeholder="value" type="password" autocomplete="new-password">
+              <button class="btn btn-ghost btn-sm" onclick="wfAddSecret()">Add</button>
+            </div>
+          </div>
+
+          <!-- Triggers tab -->
+          <div id="wf-tab-triggers" style="display:none">
+            <div id="wf-trigger-tab-desc" style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.6"></div>
+            <div id="wf-triggers-list"></div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:4px;margin-bottom:8px">Add trigger</div>
+
+            <!-- user_risk & vs_risk: VS picker + threshold -->
+            <input type="hidden" id="wf-new-trigger-vs" value="">
+            <div class="wf-add-trigger" id="wf-trigger-form-score">
+              <div class="wf-vs-picker" id="wf-vs-picker">
+                <button type="button" class="wf-vs-picker-btn" onclick="wfToggleVsPicker(event)">
+                  <span id="wf-vs-picker-label">All virtual servers</span>
+                  <span class="wf-vs-arrow">▾</span>
+                </button>
+                <div class="wf-vs-picker-menu" id="wf-vs-picker-menu"></div>
+              </div>
+              <span id="wf-trigger-score-label" style="font-size:12px;color:var(--text-muted);white-space:nowrap">Score below</span>
+              <input type="number" id="wf-new-trigger-threshold" min="0" max="1000" value="200">
+              <button class="btn btn-primary btn-sm" onclick="wfAddTrigger()">Add Trigger</button>
+            </div>
+
+            <!-- scheduled: interval picker -->
+            <div class="wf-add-trigger" id="wf-trigger-form-sched" style="display:none;grid-template-columns:1fr auto auto">
+              <select id="wf-new-trigger-interval" style="padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none;color-scheme:light dark">
+                <option value="60">Every hour</option>
+                <option value="360">Every 6 hours</option>
+                <option value="720">Every 12 hours</option>
+                <option value="1440">Every day</option>
+                <option value="10080">Every week</option>
+              </select>
+              <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;align-self:center">schedule</span>
+              <button class="btn btn-primary btn-sm" onclick="wfAddTrigger()">Add Trigger</button>
+            </div>
+          </div>
+
+          <!-- Logs tab -->
+          <div id="wf-tab-logs" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span style="font-size:12px;color:var(--text-muted)">Hover a row to see console output</span>
+              <button class="btn btn-ghost btn-sm" onclick="wfLoadLogs()">↻ Refresh</button>
+            </div>
+            <div id="wf-logs-list" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── New Function Modal ── -->
+    <div class="wf-modal-backdrop" id="wf-new-modal" onclick="if(event.target===this)wfCloseNewModal()" style="display:none">
+      <div class="wf-modal-card">
+        <div class="wf-modal-header">
+          <span class="wf-modal-title">New Warden Function</span>
+          <button class="wf-modal-close" onclick="wfCloseNewModal()">✕</button>
+        </div>
+        <div class="wf-modal-body">
+          <div class="wf-modal-field">
+            <label class="wf-modal-label">Function name <span style="color:var(--red,#ef4444)">*</span></label>
+            <input id="wf-new-name" class="wf-modal-input" type="text" placeholder="e.g. createTicketForUser" autocomplete="off"
+                   oninput="document.getElementById('wf-new-name-err').style.display='none'"
+                   onkeydown="if(event.key==='Enter')wfSubmitNewModal()">
+            <div id="wf-new-name-err" class="wf-modal-err" style="display:none">Name is required</div>
+          </div>
+          <div class="wf-modal-field">
+            <label class="wf-modal-label">Description <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+            <input id="wf-new-desc" class="wf-modal-input" type="text" placeholder="What does this function do?"
+                   onkeydown="if(event.key==='Enter')wfSubmitNewModal()">
+          </div>
+          <div class="wf-modal-field">
+            <label class="wf-modal-label">Function type <span style="color:var(--red,#ef4444)">*</span></label>
+            <div class="wf-type-grid">
+              <label class="wf-type-card selected" onclick="wfSelectType('user_risk',this)">
+                <input type="radio" name="wf-new-type" value="user_risk" checked>
+                <div class="wf-type-icon">👤</div>
+                <div class="wf-type-name">User Risk</div>
+                <div class="wf-type-desc">Fires when a user's score drops below a threshold</div>
+              </label>
+              <label class="wf-type-card" onclick="wfSelectType('vs_risk',this)">
+                <input type="radio" name="wf-new-type" value="vs_risk">
+                <div class="wf-type-icon">🖥</div>
+                <div class="wf-type-name">VS Risk</div>
+                <div class="wf-type-desc">Fires when a virtual server's score drops below a threshold</div>
+              </label>
+              <label class="wf-type-card" onclick="wfSelectType('agent_risk',this)">
+                <input type="radio" name="wf-new-type" value="agent_risk">
+                <div class="wf-type-icon">🤖</div>
+                <div class="wf-type-name">Agent Risk</div>
+                <div class="wf-type-desc">Fires when an agent's score drops below a threshold</div>
+              </label>
+              <label class="wf-type-card" onclick="wfSelectType('scheduled',this)">
+                <input type="radio" name="wf-new-type" value="scheduled">
+                <div class="wf-type-icon">🕐</div>
+                <div class="wf-type-name">Scheduled</div>
+                <div class="wf-type-desc">Fires on a recurring time schedule (cron)</div>
+              </label>
+            </div>
+          </div>
+          <div id="wf-new-modal-err" class="wf-modal-err" style="display:none;margin-top:6px"></div>
+        </div>
+        <div class="wf-modal-footer">
+          <button class="btn btn-ghost" onclick="wfCloseNewModal()">Cancel</button>
+          <button class="btn btn-primary" id="wf-new-submit-btn" onclick="wfSubmitNewModal()">Create Function</button>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- end page-warden-functions -->
+
   </main>
 </div>
 
@@ -6558,7 +6884,8 @@ function handleRoute() {
   if (page === 'approvals')       loadApprovals();
   if (page === 'scoring')         loadScoring();
   if (page === 'user-risk')       loadUserRisk();
-  if (page === 'score-history')   shInit();
+  if (page === 'score-history')    shInit();
+  if (page === 'warden-functions') loadWardenFunctions();
   if (page === 'mcp-architecture') initMcaMermaid();
   if (page === 'mcp-flow') initMcpFlow();
   if (page !== 'tools')           closeDrawer();
@@ -7367,6 +7694,421 @@ function shRelTime(isoStr) {
   if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
   if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
   return new Date(utc).toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+}
+
+// ─── WARDEN FUNCTIONS ─────────────────────────────────────────────────────────
+
+let wfCurrentId   = null;
+let wfCurrentData = null;
+let wfAllVs       = [];
+
+async function loadWardenFunctions() {
+  const [fns, vs] = await Promise.all([
+    api('/warden-functions').catch(() => []),
+    api('/virtual-servers').catch(() => []),
+  ]);
+  wfAllVs = vs;
+  const list = document.getElementById('wf-fn-list');
+  if (!fns.length) {
+    list.innerHTML = '<div class="wf-empty-sidebar">No functions yet.<br>Click <strong>+ New</strong> to create one.</div>';
+    return;
+  }
+  list.innerHTML = fns.map(fn => {
+    const tm = WF_TYPE_META[fn.function_type] || WF_TYPE_META.user_risk;
+    return `
+    <div class="wf-fn-card${fn.id === wfCurrentId ? ' active' : ''}" onclick="wfOpenFunction(${escHtml(JSON.stringify(fn.id))})">
+      <div class="wf-fn-name">${escHtml(fn.name)}</div>
+      <div class="wf-fn-meta">
+        <span class="wf-fn-badge ${fn.is_active ? 'active' : 'inactive'}">${fn.is_active ? 'Active' : 'Inactive'}</span>
+        <span class="wf-type-badge ${fn.function_type || 'user_risk'}">${tm.icon} ${tm.label}</span>
+        <span>${fn.active_trigger_count || 0} trigger${fn.active_trigger_count !== 1 ? 's' : ''}</span>
+        ${fn.total_invocations ? `<span>${fn.total_invocations} run${fn.total_invocations !== 1 ? 's' : ''}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function wfOpenFunction(id) {
+  wfCurrentId = id;
+  const data = await api(`/warden-functions/${id}`).catch(() => null);
+  if (!data) return;
+  wfCurrentData = data;
+
+  document.getElementById('wf-placeholder').style.display = 'none';
+  const detail = document.getElementById('wf-detail');
+  detail.style.display = 'flex';
+
+  const tm = WF_TYPE_META[data.function_type] || WF_TYPE_META.user_risk;
+  document.getElementById('wf-detail-name').textContent = data.name;
+  document.getElementById('wf-detail-type-badge').className   = `wf-type-badge ${data.function_type || 'user_risk'}`;
+  document.getElementById('wf-detail-type-badge').textContent = `${tm.icon} ${tm.label}`;
+  document.getElementById('wf-detail-desc').textContent = data.description || '';
+  document.getElementById('wf-active-toggle').checked   = !!data.is_active;
+  document.getElementById('wf-code-editor').value       = data.code || '';
+  // Store type so Triggers tab can adapt its UI
+  document.getElementById('wf-detail').dataset.functionType = data.function_type || 'user_risk';
+  document.getElementById('wf-test-output').className   = 'wf-test-output';
+
+  // Reset custom VS picker to "All virtual servers"
+  document.getElementById('wf-new-trigger-vs').value = '';
+  document.getElementById('wf-vs-picker-label').textContent = 'All virtual servers';
+
+  wfSwitchTab('code');
+  wfRenderSecrets(data.secret_keys || []);
+  wfRenderTriggers(data.triggers   || []);
+  wfPopulateVsDropdown(); // pre-load so the Triggers tab is ready immediately
+
+  // Highlight active card in sidebar
+  document.querySelectorAll('.wf-fn-card').forEach(c => c.classList.remove('active'));
+  const card = [...document.querySelectorAll('.wf-fn-card')].find(c => c.onclick?.toString().includes(JSON.stringify(id)));
+  if (card) card.classList.add('active');
+}
+
+function wfSwitchTab(tab) {
+  ['code','secrets','triggers','logs'].forEach(t => {
+    document.getElementById(`wf-tab-${t}`).style.display = t === tab ? (t === 'code' ? 'flex' : 'block') : 'none';
+    document.querySelector(`.wf-tab[data-wftab="${t}"]`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'triggers') {
+    const fnType = document.getElementById('wf-detail')?.dataset.functionType || 'user_risk';
+    const descMap = {
+      user_risk:  "Fires when a user's risk score drops below the threshold. Fires once per crossing — won't re-fire until the score recovers above threshold.",
+      vs_risk:    "Fires when a Virtual Server's risk score drops below the threshold. The VS picker is required — select which server to watch.",
+      agent_risk: "Fires when an agent's risk score drops below the threshold. Optionally scope to a specific Virtual Server.",
+      scheduled:  "Fires on a recurring schedule, independent of user or VS activity.",
+    };
+    document.getElementById('wf-trigger-tab-desc').textContent = descMap[fnType] || descMap.user_risk;
+
+    const isScore  = fnType === 'user_risk' || fnType === 'vs_risk' || fnType === 'agent_risk';
+    const isSched  = fnType === 'scheduled';
+    document.getElementById('wf-trigger-form-score').style.display = isScore ? 'grid' : 'none';
+    document.getElementById('wf-trigger-form-sched').style.display = isSched ? 'grid' : 'none';
+
+    // VS picker label adapts: optional for user_risk, required for vs_risk
+    const scoreLabel = document.getElementById('wf-trigger-score-label');
+    if (scoreLabel) scoreLabel.textContent = fnType === 'vs_risk' ? 'VS score below' : fnType === 'agent_risk' ? 'Agent score below' : 'Score below';
+    const vsPickerBtn = document.querySelector('#wf-vs-picker .wf-vs-picker-btn');
+    if (vsPickerBtn) {
+      const labelEl = document.getElementById('wf-vs-picker-label');
+      if (fnType === 'vs_risk' && !document.getElementById('wf-new-trigger-vs').value) {
+        labelEl.textContent = 'Select virtual server (required)';
+      } else if (fnType === 'user_risk' && labelEl.textContent === 'Select virtual server (required)') {
+        labelEl.textContent = 'All virtual servers';
+        document.getElementById('wf-new-trigger-vs').value = '';
+      }
+    }
+    if (isScore) wfPopulateVsDropdown();
+  }
+  if (tab === 'logs')     wfLoadLogs();
+}
+
+function wfToggleVsPicker(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('wf-vs-picker-menu');
+  const opening = !menu.classList.contains('open');
+  menu.classList.toggle('open', opening);
+  if (opening) {
+    const close = (ev) => {
+      if (!document.getElementById('wf-vs-picker')?.contains(ev.target)) {
+        menu.classList.remove('open');
+        document.removeEventListener('click', close);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', close), 0);
+  }
+}
+
+function wfSelectVs(id, name) {
+  document.getElementById('wf-new-trigger-vs').value = id;
+  document.getElementById('wf-vs-picker-label').textContent = name;
+  document.getElementById('wf-vs-picker-menu').classList.remove('open');
+  document.querySelectorAll('.wf-vs-picker-opt').forEach(o =>
+    o.classList.toggle('selected', String(o.dataset.id) === String(id))
+  );
+}
+
+async function wfPopulateVsDropdown() {
+  const menu = document.getElementById('wf-vs-picker-menu');
+  if (!menu) return;
+  try {
+    const vsList = await api('/virtual-servers');
+    const currentId = document.getElementById('wf-new-trigger-vs').value;
+    menu.innerHTML = '';
+
+    const allOpt = document.createElement('div');
+    allOpt.className = 'wf-vs-picker-opt' + (currentId === '' ? ' selected' : '');
+    allOpt.dataset.id = '';
+    allOpt.textContent = 'All virtual servers';
+    allOpt.onclick = () => wfSelectVs('', 'All virtual servers');
+    menu.appendChild(allOpt);
+
+    (Array.isArray(vsList) ? vsList : []).forEach(vs => {
+      const opt = document.createElement('div');
+      opt.className = 'wf-vs-picker-opt' + (String(currentId) === String(vs.id) ? ' selected' : '');
+      opt.dataset.id = vs.id;
+      opt.textContent = vs.name;
+      opt.onclick = () => wfSelectVs(vs.id, vs.name);
+      menu.appendChild(opt);
+    });
+  } catch (e) {
+    console.warn('Could not load VS list:', e.message);
+  }
+}
+
+const WF_TYPE_META = {
+  user_risk:  { icon:'👤', label:'User Risk',   color:'user_risk'  },
+  vs_risk:    { icon:'🖥',  label:'VS Risk',    color:'vs_risk'    },
+  agent_risk: { icon:'🤖', label:'Agent Risk',  color:'agent_risk' },
+  scheduled:  { icon:'🕐', label:'Scheduled',   color:'scheduled'  },
+};
+
+function wfSelectType(value, card) {
+  document.querySelectorAll('.wf-type-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  card.querySelector('input[type=radio]').checked = true;
+}
+
+function wfNewFunction() {
+  document.getElementById('wf-new-name').value = '';
+  document.getElementById('wf-new-desc').value = '';
+  document.getElementById('wf-new-name-err').style.display   = 'none';
+  document.getElementById('wf-new-modal-err').style.display  = 'none';
+  // Reset type to user_risk
+  document.querySelectorAll('.wf-type-card').forEach(c => c.classList.remove('selected'));
+  const firstCard = document.querySelector('.wf-type-card');
+  if (firstCard) { firstCard.classList.add('selected'); firstCard.querySelector('input[type=radio]').checked = true; }
+  document.getElementById('wf-new-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('wf-new-name').focus(), 60);
+}
+
+function wfCloseNewModal() {
+  document.getElementById('wf-new-modal').style.display = 'none';
+}
+
+async function wfSubmitNewModal() {
+  const nameEl = document.getElementById('wf-new-name');
+  const name   = nameEl.value.trim();
+  if (!name) {
+    document.getElementById('wf-new-name-err').style.display = 'block';
+    nameEl.focus();
+    return;
+  }
+  const desc         = document.getElementById('wf-new-desc').value.trim();
+  const typeRadio    = document.querySelector('input[name="wf-new-type"]:checked');
+  const function_type = typeRadio?.value || 'user_risk';
+  const btn  = document.getElementById('wf-new-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  try {
+    const { id } = await api('/warden-functions', { method: 'POST', body: { name, description: desc, function_type } });
+    wfCloseNewModal();
+    await loadWardenFunctions();
+    wfOpenFunction(id);
+  } catch (e) {
+    const errEl = document.getElementById('wf-new-modal-err');
+    errEl.textContent = 'Create failed: ' + e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Function';
+  }
+}
+
+async function wfSaveCode() {
+  if (!wfCurrentId) return;
+  const code = document.getElementById('wf-code-editor').value;
+  try {
+    await api(`/warden-functions/${wfCurrentId}`, { method: 'PUT', body: { code } });
+    showToast('Code saved');
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+async function wfToggleActive() {
+  if (!wfCurrentId) return;
+  const is_active = document.getElementById('wf-active-toggle').checked;
+  await api(`/warden-functions/${wfCurrentId}`, { method: 'PUT', body: { is_active } }).catch(() => {});
+  loadWardenFunctions();
+}
+
+async function wfDeleteFunction() {
+  if (!wfCurrentId || !confirm(`Delete "${wfCurrentData?.name}"? This removes all triggers and logs.`)) return;
+  await api(`/warden-functions/${wfCurrentId}`, { method: 'DELETE' }).catch(() => {});
+  wfCurrentId = null;
+  wfCurrentData = null;
+  document.getElementById('wf-placeholder').style.display = '';
+  document.getElementById('wf-detail').style.display = 'none';
+  loadWardenFunctions();
+}
+
+async function wfRunTest() {
+  if (!wfCurrentId) return;
+  const btn = document.querySelector('.wf-run-btn');
+  btn.textContent = '⏳ Running…'; btn.disabled = true;
+  const out = document.getElementById('wf-test-output');
+  out.className = 'wf-test-output open';
+  out.innerHTML = '<span style="color:var(--text-muted)">Running with mock event…</span>';
+  try {
+    const result = await api(`/warden-functions/${wfCurrentId}/test`, { method: 'POST', body: {} });
+    const logs = (result.consoleLogs || []).map(l => escHtml(l)).join('\n');
+    const ret  = result.result !== undefined ? JSON.stringify(result.result, null, 2) : '';
+    const err  = result.error || '';
+    out.innerHTML = `<div class="${result.success ? 'wf-test-ok' : 'wf-test-err'}">${result.success ? '✓ Success' : '✗ Error'} · ${result.duration}ms</div>` +
+      (logs ? `<pre style="margin:6px 0 0;white-space:pre-wrap">${logs}</pre>` : '') +
+      (ret  ? `<pre style="margin:6px 0 0;white-space:pre-wrap;color:var(--text-muted)">→ ${escHtml(ret)}</pre>` : '') +
+      (err  ? `<pre style="margin:6px 0 0;white-space:pre-wrap;color:#ef4444">${escHtml(err)}</pre>` : '');
+  } catch (e) {
+    out.innerHTML = `<span class="wf-test-err">✗ ${escHtml(e.message)}</span>`;
+  } finally {
+    btn.textContent = '▶ Test Run'; btn.disabled = false;
+  }
+}
+
+// ── Secrets ───────────────────────────────────────────────────────────────────
+
+function wfRenderSecrets(keys) {
+  const list = document.getElementById('wf-secrets-list');
+  if (!keys.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">No secrets configured.</div>'; return; }
+  list.innerHTML = keys.map(s => `
+    <div class="wf-secret-row">
+      <span class="wf-secret-key">${escHtml(s.key)}</span>
+      <span class="wf-secret-val">••••••••</span>
+      <button class="btn btn-ghost btn-sm" style="color:#ef4444;font-size:11px" onclick="wfDeleteSecret(${escHtml(JSON.stringify(s.key))})">✕</button>
+    </div>`).join('');
+}
+
+async function wfAddSecret() {
+  const key   = document.getElementById('wf-new-secret-key').value.trim().toUpperCase().replace(/\s+/g,'_');
+  const value = document.getElementById('wf-new-secret-value').value;
+  if (!key || !value) { alert('Both key and value are required'); return; }
+  try {
+    await api(`/warden-functions/${wfCurrentId}/secrets/${encodeURIComponent(key)}`, { method: 'PUT', body: { value } });
+    document.getElementById('wf-new-secret-key').value   = '';
+    document.getElementById('wf-new-secret-value').value = '';
+    const data = await api(`/warden-functions/${wfCurrentId}`);
+    wfRenderSecrets(data.secret_keys || []);
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+async function wfDeleteSecret(key) {
+  if (!confirm(`Remove secret "${key}"?`)) return;
+  await api(`/warden-functions/${wfCurrentId}/secrets/${encodeURIComponent(key)}`, { method: 'DELETE' });
+  const data = await api(`/warden-functions/${wfCurrentId}`);
+  wfRenderSecrets(data.secret_keys || []);
+}
+
+// ── Triggers ──────────────────────────────────────────────────────────────────
+
+function wfRenderTriggers(triggers) {
+  const list = document.getElementById('wf-triggers-list');
+  if (!triggers.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:4px 0 12px">No triggers yet. Add one below.</div>'; return; }
+  list.innerHTML = triggers.map(t => {
+    const vsLabel = t.vs_name || (t.vs_id ? t.vs_id.slice(0,8) + '…' : 'All virtual servers');
+    let title, sub;
+    if (t.trigger_type === 'scheduled') {
+      const schedLabels = { 60:'Every hour', 360:'Every 6 hours', 720:'Every 12 hours', 1440:'Every day', 10080:'Every week' };
+      title = schedLabels[t.interval_minutes] || `Every ${t.interval_minutes} min`;
+      sub   = '🕐 Scheduled · Runs on interval';
+    } else if (t.trigger_type === 'vs_score_below') {
+      title = `VS score drops below <strong>${t.threshold}</strong>`;
+      sub   = `🖥 ${escHtml(vsLabel)} · Fires once per crossing`;
+    } else if (t.trigger_type === 'agent_score_below') {
+      title = `Agent score drops below <strong>${t.threshold}</strong>`;
+      sub   = `🤖 ${escHtml(vsLabel)} · Fires once per crossing`;
+    } else {
+      title = `Score drops below <strong>${t.threshold}</strong>`;
+      sub   = `👤 ${escHtml(vsLabel)} · Fires once per crossing`;
+    }
+    return `
+      <div class="wf-trigger-row">
+        <div class="wf-trigger-info">
+          <div class="wf-trigger-title">${title}</div>
+          <div class="wf-trigger-sub">${sub}</div>
+        </div>
+        <label class="wf-trigger-toggle">
+          <input type="checkbox" ${t.is_active ? 'checked' : ''} onchange="wfPatchTrigger(${escHtml(JSON.stringify(t.id))}, this.checked)" style="accent-color:var(--accent)">
+          ${t.is_active ? 'Active' : 'Paused'}
+        </label>
+        <button class="btn btn-ghost btn-sm" style="color:#ef4444;font-size:11px" onclick="wfDeleteTrigger(${escHtml(JSON.stringify(t.id))})">✕</button>
+      </div>`;
+  }).join('');
+}
+
+async function wfAddTrigger() {
+  const fnType = document.getElementById('wf-detail')?.dataset.functionType || 'user_risk';
+  let body = {};
+
+  if (fnType === 'scheduled') {
+    const intervalEl = document.getElementById('wf-new-trigger-interval');
+    const intervalMin = parseInt(intervalEl?.value || '1440');
+    body = { trigger_type: 'scheduled', interval_minutes: intervalMin, vs_id: null, threshold: null };
+
+  } else {
+    // user_risk or vs_risk
+    const vsId      = document.getElementById('wf-new-trigger-vs').value || null;
+    const threshold = parseInt(document.getElementById('wf-new-trigger-threshold').value);
+    if (fnType === 'vs_risk' && !vsId) { alert('Please select a Virtual Server for VS Risk triggers.'); return; }
+    if (isNaN(threshold) || threshold < 0 || threshold > 1000) { alert('Threshold must be 0–1000'); return; }
+    const triggerType = fnType === 'vs_risk' ? 'vs_score_below' : fnType === 'agent_risk' ? 'agent_score_below' : 'user_score_below';
+    body = { trigger_type: triggerType, vs_id: vsId, threshold };
+  }
+
+  try {
+    await api(`/warden-functions/${wfCurrentId}/triggers`, { method: 'POST', body });
+    const data = await api(`/warden-functions/${wfCurrentId}`);
+    wfRenderTriggers(data.triggers || []);
+    loadWardenFunctions();
+  } catch (e) { alert('Failed: ' + e.message); }
+}
+
+async function wfPatchTrigger(tid, is_active) {
+  await api(`/warden-functions/${wfCurrentId}/triggers/${tid}`, { method: 'PATCH', body: { is_active } });
+  loadWardenFunctions();
+}
+
+async function wfDeleteTrigger(tid) {
+  if (!confirm('Remove this trigger?')) return;
+  await api(`/warden-functions/${wfCurrentId}/triggers/${tid}`, { method: 'DELETE' });
+  const data = await api(`/warden-functions/${wfCurrentId}`);
+  wfRenderTriggers(data.triggers || []);
+  loadWardenFunctions();
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+
+async function wfLoadLogs() {
+  const el = document.getElementById('wf-logs-list');
+  el.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--text-muted)">Loading…</div>';
+  const { logs } = await api(`/warden-functions/${wfCurrentId}/logs?limit=50`).catch(() => ({ logs: [] }));
+  if (!logs.length) { el.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-muted)">No executions yet. Triggers fire when a user score crosses below threshold.</div>'; return; }
+  el.innerHTML = logs.map(log => {
+    const cls      = log.status === 'success' ? 'success' : 'error';
+    const label    = log.status === 'success' ? '✓ OK' : '✗ Error';
+    const user     = log.user_email || log.user_sub?.slice(0, 20) || '—';
+    const vsName   = log.vs_name   || log.vs_id?.slice(0, 8) || '—';
+    const dur      = log.duration_ms != null ? `${log.duration_ms}ms` : '';
+    const clogs    = (() => { try { return JSON.parse(log.console_logs || '[]'); } catch { return []; } })();
+    const errMsg   = log.error_message || '';
+    const out      = (() => { try { return JSON.stringify(JSON.parse(log.output || 'null'), null, 2); } catch { return log.output || ''; } })();
+    return `
+      <div class="wf-log-row">
+        <div class="wf-log-status ${cls}">${label}</div>
+        <div class="wf-log-body">
+          <div class="wf-log-title">👤 ${escHtml(user)} · score ${log.score ?? '—'} · 🗂 ${escHtml(vsName)}</div>
+          <div class="wf-log-meta">${dur}</div>
+          ${errMsg ? `<div style="font-family:monospace;font-size:11px;color:#ef4444;margin-top:4px">${escHtml(errMsg)}</div>` : ''}
+          ${(clogs.length || out) ? `<div class="wf-log-console">${clogs.map(l => escHtml(l)).join('\n')}${out ? '\n→ ' + escHtml(out) : ''}</div>` : ''}
+        </div>
+        <div class="wf-log-time">${fmtDateShort(log.created_at)}</div>
+      </div>`;
+  }).join('');
+}
+
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--text);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
 }
 
 // ─── API HELPERS ──────────────────────────────────────────────────────────────

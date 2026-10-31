@@ -4,6 +4,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { run } = require('../interceptors/InterceptorPipeline');
+const { evaluateUserTriggers } = require('../services/triggerEvaluator');
 
 // Decode a JWT payload (base64, no verification) to extract user identity
 function extractUserFromToken(tokenHeader) {
@@ -222,6 +223,10 @@ router.post('/:vsId/scan', async (req, res) => {
 
   const result = await run(text, direction || 'inbound', req.params.vsId, resolvedAgentId, null, user);
   res.json(result);
+  // Fire Warden Function triggers asynchronously — after response is sent
+  if (user?.sub) {
+    evaluateUserTriggers(req.params.vsId, user.sub, user.email, user.name).catch(() => {});
+  }
 });
 
 // Alias /test → /scan so the Warden UI "Test a message" button still works
