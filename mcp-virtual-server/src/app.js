@@ -14,6 +14,9 @@ const interceptors = require('./routes/interceptors');
 const apiKeys = require('./routes/apiKeys');
 const approvalsRouter = require('./routes/approvals');
 const { processExpiredTickets } = require('./routes/approvals');
+const agentsRouter = require('./routes/agents');
+const scoringRouter = require('./routes/scoring');
+const idpConfigs = require('./routes/idpConfigs');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -38,6 +41,9 @@ app.use('/api/audit', audit);
 app.use('/api/interceptors', interceptors);
 app.use('/api/keys', apiKeys);
 app.use('/api/approvals', approvalsRouter);
+app.use('/api/agents', agentsRouter);
+app.use('/api/scoring', scoringRouter);
+app.use('/api/virtual-servers/:id/idp-configs', idpConfigs);
 
 // Health check
 app.get('/api/health', (req, res) => {

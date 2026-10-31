@@ -409,6 +409,11 @@
       <span class="icon">⏳</span> Approvals
       <span id="approvals-badge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:100px;font-size:10px;font-weight:700;padding:1px 6px;min-width:16px;text-align:center"></span>
     </button>
+    <div class="nav-section-label">Agent Hub</div>
+
+    <button class="nav-item" data-page="agents">
+      <span class="icon">🤖</span> Agent Identity Hub
+    </button>
 
     <div class="nav-section-label">Corridor</div>
 
@@ -418,23 +423,41 @@
     <button class="nav-item" data-page="virtual-servers">
       <span class="icon">🗂</span> Virtual Server
     </button>
-    <button class="nav-item" data-page="policies">
-      <span class="icon">🛡</span> Token Policies
-    </button>
     <button class="nav-item" data-page="tools">
       <span class="icon">🔧</span> Tools
-    </button>
-    <button class="nav-item" data-page="simulate">
-      <span class="icon">🧪</span> Simulate
-    </button>
-    <button class="nav-item" data-page="interceptors">
-      <span class="icon">🛡</span> Interceptors
     </button>
     <button class="nav-item" data-page="keys">
       <span class="icon">🔑</span> Keys
     </button>
+
+    <div class="nav-section-label">Policies</div>
+
+    <button class="nav-item" data-page="policies">
+      <span class="icon">🛡</span> Token Policies
+    </button>
+    <button class="nav-item" data-page="simulate">
+      <span class="icon">🧪</span> Token Policy Simulate
+    </button>
+
+    <div class="nav-section-label">Threat & Risk</div>
+
+    <button class="nav-item" data-page="interceptors">
+      <span class="icon">🛡</span> Interceptors
+    </button>
+    <button class="nav-item" data-page="scoring">
+      <span class="icon">📊</span> VS / Agent Risk
+    </button>
+    <button class="nav-item" data-page="user-risk">
+      <span class="icon">👤</span> User Risk
+    </button>
+
+    <div class="nav-section-label">Logs</div>
+
     <button class="nav-item" data-page="audit">
-      <span class="icon">📋</span> Audit Log
+      <span class="icon">📋</span> Event Log
+    </button>
+    <button class="nav-item" data-page="score-history">
+      <span class="icon">📈</span> Score History
     </button>
 
     <div class="nav-section-label">Docs</div>
@@ -721,26 +744,36 @@
       <!-- Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px">
         <div>
-          <h1>Audit Log</h1>
-          <p class="subtitle">Every policy decision — allow and deny — with full token context. Click any row to expand details.</p>
+          <h1>Event Log</h1>
+          <p class="subtitle">Unified log for all activity — proxy calls, interceptor scans, and future event types. Click any row to expand details.</p>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="loadAudit(true)" style="flex-shrink:0;margin-top:6px">↺ Refresh</button>
       </div>
 
       <!-- Stat bar -->
       <div class="al-stat-bar">
-        <div class="al-stat"><span class="al-stat-n" id="al-total">—</span><span class="al-stat-l">Total</span></div>
-        <div class="al-stat allow"><span class="al-stat-n" id="al-allowed">—</span><span class="al-stat-l">Allowed</span></div>
-        <div class="al-stat deny"><span class="al-stat-n" id="al-denied">—</span><span class="al-stat-l">Denied</span></div>
+        <div class="al-stat"><span class="al-stat-n" id="al-total">—</span><span class="al-stat-l">Total Events</span></div>
+        <div class="al-stat allow"><span class="al-stat-n" id="al-allowed">—</span><span class="al-stat-l">Clean / Allow</span></div>
+        <div class="al-stat deny"><span class="al-stat-n" id="al-denied">—</span><span class="al-stat-l">Flagged / Deny</span></div>
+        <div class="al-stat" style="border-color:rgba(239,68,68,.3)"><span class="al-stat-n" id="al-blocked" style="color:#ef4444">—</span><span class="al-stat-l">Blocked</span></div>
+        <div class="al-stat"><span class="al-stat-n" id="al-proxy-calls">—</span><span class="al-stat-l">Proxy Calls</span></div>
+        <div class="al-stat"><span class="al-stat-n" id="al-interceptor-scans">—</span><span class="al-stat-l">Interceptor Scans</span></div>
       </div>
 
       <!-- Filters -->
       <div class="action-row" style="margin-bottom:14px">
-        <div style="display:flex;gap:10px">
-          <select id="audit-decision-filter" onchange="loadAudit(true)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none">
-            <option value="">All decisions</option>
-            <option value="allow">Allow</option>
-            <option value="deny">Deny</option>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <select id="audit-type-filter" onchange="loadAudit(true)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none">
+            <option value="">All types</option>
+            <option value="proxy_call">Proxy Calls</option>
+            <option value="interceptor">Interceptor Scans</option>
+          </select>
+          <select id="audit-level-filter" onchange="loadAudit(true)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none">
+            <option value="">All levels</option>
+            <option value="info">Info (clean)</option>
+            <option value="warn">Warn</option>
+            <option value="block">Block</option>
+            <option value="error">Error</option>
           </select>
           <select id="audit-vs-filter" onchange="loadAudit(true)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none">
             <option value="">All servers</option>
@@ -859,6 +892,22 @@
           <div style="font-size:15px;font-weight:700;margin-bottom:8px">Request Flow &amp; Steps</div>
           <div style="font-size:13px;color:var(--text-2);line-height:1.6">Interactive stage-by-stage walkthrough — from JWT verification through OBO exchange to MCP tool result.</div>
           <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:var(--accent);font-weight:600">Explore →</div>
+        </div>
+
+      </div>
+
+      <!-- Identities section -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin-bottom:14px;margin-top:36px">Identities</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:720px">
+
+        <!-- Identity Model card -->
+        <div onclick="navigate('identities')" style="cursor:pointer;border:1px solid var(--border-strong);border-radius:14px;padding:28px 24px;background:var(--surface);transition:all .18s;position:relative;overflow:hidden"
+          onmouseover="this.style.borderColor='#f59e0b';this.style.background='var(--surface2)'"
+          onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px">🪪</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px">Identity Model</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.6">Two-layer identity framework — how user and agent identities compose, enforce, and audit every call through the gateway.</div>
+          <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#f59e0b;font-weight:600">Read →</div>
         </div>
 
       </div>
@@ -3855,6 +3904,465 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     </div><!-- end page-mcp-flow -->
 
     <!-- ═══════════════════════════════════════════════════════════
+         IDENTITIES PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-identities">
+    <style>
+      #page-identities { background:#07091a; color:#e2e8f0; }
+
+      .id-hero {
+        background: linear-gradient(135deg, #0d1117 0%, #1a0e2e 50%, #0d1117 100%);
+        border-bottom: 1px solid #1e1a35;
+        padding: 52px 0 44px;
+        margin: -28px -36px 0;
+      }
+      .id-hero-inner { max-width: 900px; margin: 0 auto; padding: 0 40px; }
+      .id-badge {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: rgba(245,158,11,.15); border: 1px solid rgba(245,158,11,.3);
+        color: #fbbf24; font-size: 11px; font-weight: 700;
+        letter-spacing: .8px; text-transform: uppercase;
+        padding: 5px 14px; border-radius: 100px; margin-bottom: 20px;
+      }
+      .id-title {
+        font-size: 40px; font-weight: 800; letter-spacing: -.7px; line-height: 1.12;
+        background: linear-gradient(135deg, #f1f5f9 30%, #fbbf24 100%);
+        background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        margin-bottom: 14px;
+      }
+      .id-sub { color: #94a3b8; font-size: 15px; line-height: 1.75; max-width: 660px; margin-bottom: 36px; }
+      .id-stats { display: flex; border: 1px solid #1e1a35; border-radius: 12px; overflow: hidden; background: rgba(10,8,20,.7); width: fit-content; gap: 0; }
+      .id-stat { padding: 16px 28px; border-right: 1px solid #1e1a35; text-align: center; }
+      .id-stat:last-child { border-right: none; }
+      .id-stat-val { font-size: 24px; font-weight: 800; color: #f59e0b; }
+      .id-stat-label { font-size: 10px; color: #475569; margin-top: 3px; text-transform: uppercase; letter-spacing: .6px; }
+
+      .id-wrap { max-width: 900px; margin: 0 auto; padding: 48px 40px 80px; }
+
+      .id-section { margin-bottom: 56px; }
+      .id-section-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #f59e0b; margin-bottom: 8px; }
+      .id-section-h { font-size: 22px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+      .id-section-sub { color: #64748b; font-size: 13.5px; line-height: 1.65; margin-bottom: 24px; }
+
+      /* Identity type cards */
+      .id-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .id-type-card {
+        border-radius: 14px; padding: 28px 24px;
+        border: 1px solid #1e1a35; background: #0a0d1e;
+        position: relative; overflow: hidden;
+      }
+      .id-type-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      }
+      .id-type-card.user::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+      .id-type-card.agent::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+      .id-type-icon { font-size: 28px; margin-bottom: 14px; }
+      .id-type-label { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; margin-bottom: 6px; }
+      .id-type-card.user .id-type-label { color: #818cf8; }
+      .id-type-card.agent .id-type-label { color: #f59e0b; }
+      .id-type-title { font-size: 17px; font-weight: 700; color: #f1f5f9; margin-bottom: 10px; }
+      .id-type-body { font-size: 13px; color: #64748b; line-height: 1.7; }
+      .id-type-meta { margin-top: 18px; display: flex; flex-direction: column; gap: 6px; }
+      .id-meta-row { display: flex; align-items: center; gap: 10px; }
+      .id-meta-key { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #334155; width: 96px; flex-shrink: 0; }
+      .id-meta-val { font-size: 12px; font-family: 'Fira Code', monospace; color: #94a3b8; }
+      .id-meta-val.hl { color: #f59e0b; }
+      .id-meta-val.hl-blue { color: #818cf8; }
+
+      /* Request chain diagram */
+      .id-chain {
+        background: #070910; border: 1px solid #1a1f35; border-radius: 16px;
+        padding: 32px 28px; overflow-x: auto;
+      }
+      .id-chain-row { display: flex; align-items: center; gap: 0; margin-bottom: 0; }
+      .id-chain-node {
+        display: flex; flex-direction: column; align-items: center; gap: 5px;
+        min-width: 110px; text-align: center;
+      }
+      .id-chain-icon {
+        width: 46px; height: 46px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; border: 1px solid;
+      }
+      .id-chain-icon.actor   { background: rgba(99,102,241,.12); border-color: rgba(99,102,241,.3); }
+      .id-chain-icon.gateway { background: rgba(245,158,11,.1);  border-color: rgba(245,158,11,.3); }
+      .id-chain-icon.mcp     { background: rgba(16,185,129,.1);  border-color: rgba(16,185,129,.3); }
+      .id-chain-node-label { font-size: 11px; font-weight: 600; color: #94a3b8; }
+      .id-chain-node-sub   { font-size: 10px; color: #334155; }
+      .id-chain-arrow {
+        flex: 1; display: flex; flex-direction: column; align-items: center;
+        gap: 4px; padding: 0 8px; min-width: 80px;
+      }
+      .id-chain-arrow-line {
+        width: 100%; height: 2px; position: relative;
+        background: linear-gradient(90deg, #1e2540, #334155, #1e2540);
+      }
+      .id-chain-arrow-line::after {
+        content: '▶'; position: absolute; right: -4px; top: -8px;
+        font-size: 10px; color: #334155;
+      }
+      .id-chain-arrow-label { font-size: 10px; color: #334155; text-align: center; line-height: 1.4; }
+      .id-chain-token-pill {
+        font-size: 9px; font-weight: 700; letter-spacing: .5px;
+        padding: 2px 8px; border-radius: 100px; text-transform: uppercase;
+      }
+      .id-chain-token-pill.at-a { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.25); }
+      .id-chain-token-pill.wag  { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.25); }
+      .id-chain-token-pill.at-b { background: rgba(16,185,129,.1);  color: #34d399; border: 1px solid rgba(16,185,129,.25); }
+
+      /* Enforcement table */
+      .id-enforce-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+      .id-enforce-card {
+        border-radius: 12px; padding: 20px 18px;
+        border: 1px solid #1e1a35; background: #0a0d1e;
+        position: relative;
+      }
+      .id-enforce-level { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; margin-bottom: 8px; }
+      .id-enforce-level.obs  { color: #64748b; }
+      .id-enforce-level.req  { color: #f59e0b; }
+      .id-enforce-level.rest { color: #ef4444; }
+      .id-enforce-title { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+      .id-enforce-body  { font-size: 12px; color: #64748b; line-height: 1.65; }
+      .id-enforce-code  { margin-top: 12px; font-size: 11px; font-family: 'Fira Code', monospace; background: #070910; border: 1px solid #1a1f35; border-radius: 7px; padding: 8px 10px; color: #94a3b8; }
+
+      /* Policy conditions */
+      .id-cond-list { display: flex; flex-direction: column; gap: 10px; }
+      .id-cond-row {
+        display: flex; align-items: flex-start; gap: 16px;
+        border: 1px solid #1e1a35; border-radius: 10px;
+        background: #0a0d1e; padding: 16px 18px;
+      }
+      .id-cond-badge { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; white-space: nowrap; flex-shrink: 0; }
+      .id-cond-badge.exact  { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.25); }
+      .id-cond-badge.list   { background: rgba(16,185,129,.1);  color: #34d399; border: 1px solid rgba(16,185,129,.25); }
+      .id-cond-badge.forbid { background: rgba(239,68,68,.1);   color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+      .id-cond-info { flex: 1; }
+      .id-cond-type { font-size: 12px; font-family: 'Fira Code', monospace; color: #818cf8; margin-bottom: 4px; }
+      .id-cond-desc { font-size: 12.5px; color: #64748b; line-height: 1.55; }
+      .id-cond-example { margin-top: 8px; font-size: 11px; font-family: 'Fira Code', monospace; background: #070910; border: 1px solid #1a1f35; border-radius: 6px; padding: 7px 10px; color: #94a3b8; }
+
+      /* Security props */
+      .id-sec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .id-sec-card { border: 1px solid #1e1a35; border-radius: 12px; background: #0a0d1e; padding: 18px 20px; }
+      .id-sec-icon { font-size: 20px; margin-bottom: 10px; }
+      .id-sec-title { font-size: 13px; font-weight: 700; color: #f1f5f9; margin-bottom: 5px; }
+      .id-sec-body  { font-size: 12px; color: #64748b; line-height: 1.6; }
+
+      .id-back-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        color: #f59e0b; font-size: 13px; font-weight: 600;
+        cursor: pointer; margin-bottom: 32px;
+        background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
+        padding: 7px 16px; border-radius: 8px;
+        transition: background .15s;
+      }
+      .id-back-btn:hover { background: rgba(245,158,11,.15); }
+
+      /* ── Light theme overrides ── */
+      [data-theme="light"] #page-identities { background: #f8fafc; color: #0f172a; }
+
+      [data-theme="light"] .id-hero {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fffbeb 100%);
+        border-bottom-color: #fde68a;
+      }
+      [data-theme="light"] .id-badge {
+        background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.35); color: #b45309;
+      }
+      [data-theme="light"] .id-title {
+        background: linear-gradient(135deg, #1c1917 30%, #d97706 100%);
+        background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      }
+      [data-theme="light"] .id-sub { color: #44403c; }
+
+      [data-theme="light"] .id-stats {
+        background: rgba(255,255,255,.85); border-color: #fde68a;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      }
+      [data-theme="light"] .id-stat { border-right-color: #fde68a; }
+      [data-theme="light"] .id-stat-label { color: #78716c; }
+
+      [data-theme="light"] .id-section-eyebrow { color: #b45309; }
+      [data-theme="light"] .id-section-h { color: #111827; }
+      [data-theme="light"] .id-section-sub { color: #6b7280; }
+
+      [data-theme="light"] .id-type-card {
+        background: #fff; border-color: #e5e7eb;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      }
+      [data-theme="light"] .id-type-title { color: #111827; }
+      [data-theme="light"] .id-type-body  { color: #6b7280; }
+      [data-theme="light"] .id-meta-key   { color: #9ca3af; }
+      [data-theme="light"] .id-meta-val   { color: #374151; }
+      [data-theme="light"] .id-meta-val.hl { color: #d97706; }
+      [data-theme="light"] .id-meta-val.hl-blue { color: #4f46e5; }
+
+      [data-theme="light"] .id-chain {
+        background: #f1f5f9; border-color: #e2e8f0;
+      }
+      [data-theme="light"] .id-chain-node-label { color: #374151; }
+      [data-theme="light"] .id-chain-node-sub   { color: #9ca3af; }
+      [data-theme="light"] .id-chain-arrow-line {
+        background: linear-gradient(90deg, #cbd5e1, #94a3b8, #cbd5e1);
+      }
+      [data-theme="light"] .id-chain-arrow-line::after { color: #94a3b8; }
+      [data-theme="light"] .id-chain-arrow-label { color: #9ca3af; }
+
+      [data-theme="light"] .id-enforce-card {
+        background: #fff; border-color: #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05);
+      }
+      [data-theme="light"] .id-enforce-title { color: #111827; }
+      [data-theme="light"] .id-enforce-body  { color: #6b7280; }
+      [data-theme="light"] .id-enforce-code  {
+        background: #f8fafc; border-color: #e2e8f0; color: #374151;
+      }
+      [data-theme="light"] .id-enforce-level.obs  { color: #6b7280; }
+      [data-theme="light"] .id-enforce-level.req  { color: #d97706; }
+      [data-theme="light"] .id-enforce-level.rest { color: #dc2626; }
+
+      [data-theme="light"] .id-cond-row {
+        background: #fff; border-color: #e5e7eb;
+      }
+      [data-theme="light"] .id-cond-type { color: #4f46e5; }
+      [data-theme="light"] .id-cond-desc { color: #6b7280; }
+      [data-theme="light"] .id-cond-example {
+        background: #f8fafc; border-color: #e2e8f0; color: #374151;
+      }
+
+      [data-theme="light"] .id-sec-card {
+        background: #fff; border-color: #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05);
+      }
+      [data-theme="light"] .id-sec-title { color: #111827; }
+      [data-theme="light"] .id-sec-body  { color: #6b7280; }
+
+      [data-theme="light"] .id-back-btn {
+        color: #b45309; background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.25);
+      }
+      [data-theme="light"] .id-back-btn:hover { background: rgba(245,158,11,.15); }
+    </style>
+
+      <!-- Hero -->
+      <div class="id-hero">
+        <div class="id-hero-inner">
+          <div class="id-badge">🪪 Technical Reference</div>
+          <h1 class="id-title">Identity Model</h1>
+          <p class="id-sub">Warden operates a two-layer identity framework: every request carries a <strong style="color:#818cf8">user identity</strong> (Okta JWT, proving who the human is) and an optional <strong style="color:#f59e0b">agent identity</strong> (wag_* token, proving which software is acting on their behalf). Both layers are independently verified, logged, and policy-evaluated.</p>
+          <div class="id-stats">
+            <div class="id-stat"><div class="id-stat-val">2</div><div class="id-stat-label">Identity Layers</div></div>
+            <div class="id-stat"><div class="id-stat-val">wag_</div><div class="id-stat-label">Agent Token Prefix</div></div>
+            <div class="id-stat"><div class="id-stat-val">SHA-256</div><div class="id-stat-label">Token Storage</div></div>
+            <div class="id-stat"><div class="id-stat-val">3</div><div class="id-stat-label">Enforcement Levels</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="id-wrap">
+        <div class="id-back-btn" onclick="navigate('docs')">← Back to Documentation</div>
+
+        <!-- ── The Two Layers ─────────────────────────────── -->
+        <div class="id-section">
+          <div class="id-section-eyebrow">Overview</div>
+          <h2 class="id-section-h">The Two Identity Layers</h2>
+          <p class="id-section-sub">Traditional API gateways authenticate the caller. Warden authenticates <em>two</em> callers simultaneously — the human and the agent acting on their behalf — using different token types, different trust boundaries, and different enforcement mechanisms.</p>
+          <div class="id-type-grid">
+            <div class="id-type-card user">
+              <div class="id-type-icon">👤</div>
+              <div class="id-type-label">Layer 1 — User</div>
+              <div class="id-type-title">User Identity via Okta</div>
+              <div class="id-type-body">The human user authenticates to Okta using OIDC Authorization Code + PKCE. Their access token (AT_A) carries verified claims — subject (sub), groups, and scopes — and is presented on every gateway call.</div>
+              <div class="id-type-meta">
+                <div class="id-meta-row"><div class="id-meta-key">Token</div><div class="id-meta-val hl-blue">AT_A (Okta JWT)</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Header</div><div class="id-meta-val">x-user-token: Bearer …</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Claims</div><div class="id-meta-val">sub, groups, scp</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Verified by</div><div class="id-meta-val">Okta JWKS (RS256)</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Downscoped to</div><div class="id-meta-val">AT_B via RFC 8693 OBO</div></div>
+              </div>
+            </div>
+            <div class="id-type-card agent">
+              <div class="id-type-icon">🤖</div>
+              <div class="id-type-label">Layer 2 — Agent</div>
+              <div class="id-type-title">Agent Identity via Registry</div>
+              <div class="id-type-body">The AI agent or application is registered in Warden's Agent Hub and receives a unique opaque token. This token identifies <em>which software</em> is acting on the user's behalf — independent of which user it currently serves.</div>
+              <div class="id-type-meta">
+                <div class="id-meta-row"><div class="id-meta-key">Token</div><div class="id-meta-val hl">wag_&lt;32 hex chars&gt;</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Header</div><div class="id-meta-val">X-Agent-Token: wag_…</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Stored as</div><div class="id-meta-val">SHA-256 hash only</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Verified by</div><div class="id-meta-val">Warden Agent Registry</div></div>
+                <div class="id-meta-row"><div class="id-meta-key">Scoped to</div><div class="id-meta-val">Per-VS allowlist (opt.)</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Request Chain ─────────────────────────────── -->
+        <div class="id-section">
+          <div class="id-section-eyebrow">Request Anatomy</div>
+          <h2 class="id-section-h">How Identities Travel Through a Request</h2>
+          <p class="id-section-sub">A single MCP tool call carries both identities in separate headers. Warden resolves them independently, enforces policy against both, and records them together in the event log.</p>
+          <div class="id-chain">
+            <div class="id-chain-row">
+              <!-- Agent -->
+              <div class="id-chain-node">
+                <div class="id-chain-icon actor">🤖</div>
+                <div class="id-chain-node-label">AI Agent</div>
+                <div class="id-chain-node-sub">e.g. banking-chatbot</div>
+              </div>
+              <div class="id-chain-arrow">
+                <div style="display:flex;gap:4px;margin-bottom:4px">
+                  <span class="id-chain-token-pill at-a">AT_A</span>
+                  <span class="id-chain-token-pill wag">wag_*</span>
+                </div>
+                <div class="id-chain-arrow-line"></div>
+                <div class="id-chain-arrow-label">Two headers<br>one request</div>
+              </div>
+              <!-- Warden -->
+              <div class="id-chain-node">
+                <div class="id-chain-icon gateway">🛡</div>
+                <div class="id-chain-node-label">Warden</div>
+                <div class="id-chain-node-sub">port 3003</div>
+              </div>
+              <div class="id-chain-arrow">
+                <div style="display:flex;gap:4px;margin-bottom:4px">
+                  <span class="id-chain-token-pill at-b">AT_B</span>
+                  <span class="id-chain-token-pill wag">agent ctx</span>
+                </div>
+                <div class="id-chain-arrow-line"></div>
+                <div class="id-chain-arrow-label">OBO exchange<br>+ agent resolved</div>
+              </div>
+              <!-- MCP -->
+              <div class="id-chain-node">
+                <div class="id-chain-icon mcp">⚙</div>
+                <div class="id-chain-node-label">Banking MCP</div>
+                <div class="id-chain-node-sub">port 3001</div>
+              </div>
+            </div>
+
+            <!-- Steps legend -->
+            <div style="margin-top:28px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <div style="background:#070910;border:1px solid #1a1f35;border-radius:9px;padding:12px 14px">
+                <div style="font-size:10px;font-weight:700;color:#334155;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px">① Authenticate</div>
+                <div style="font-size:12px;color:#64748b;line-height:1.5">Warden verifies the API key, then hashes <code style="color:#f59e0b;font-size:11px">X-Agent-Token</code> and looks it up in the agents table.</div>
+              </div>
+              <div style="background:#070910;border:1px solid #1a1f35;border-radius:9px;padding:12px 14px">
+                <div style="font-size:10px;font-weight:700;color:#334155;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px">② Enforce</div>
+                <div style="font-size:12px;color:#64748b;line-height:1.5">Checks: agent active? In VS allowlist? Policy conditions with <code style="color:#818cf8;font-size:11px">agent_is</code> / <code style="color:#818cf8;font-size:11px">agent_in</code> pass?</div>
+              </div>
+              <div style="background:#070910;border:1px solid #1a1f35;border-radius:9px;padding:12px 14px">
+                <div style="font-size:10px;font-weight:700;color:#334155;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px">③ OBO Exchange</div>
+                <div style="font-size:12px;color:#64748b;line-height:1.5">User's AT_A is traded for an OBO token AT_B (aud: api://banking-mcp) via RFC 8693 — agent never touches credentials.</div>
+              </div>
+              <div style="background:#070910;border:1px solid #1a1f35;border-radius:9px;padding:12px 14px">
+                <div style="font-size:10px;font-weight:700;color:#334155;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px">④ Audit</div>
+                <div style="font-size:12px;color:#64748b;line-height:1.5">Event log records <code style="color:#94a3b8;font-size:11px">agent_id</code>, <code style="color:#94a3b8;font-size:11px">agent_name</code>, <code style="color:#94a3b8;font-size:11px">user_sub</code>, decision, and tool — both identities on every row.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Enforcement Levels ─────────────────────────── -->
+        <div class="id-section">
+          <div class="id-section-eyebrow">Configuration</div>
+          <h2 class="id-section-h">Three Levels of Agent Enforcement</h2>
+          <p class="id-section-sub">Agent identity enforcement is configured per Virtual Server. Start with observability-only and tighten as needed — no data is lost when changing modes.</p>
+          <div class="id-enforce-grid">
+            <div class="id-enforce-card">
+              <div class="id-enforce-level obs">Level 1 — Observe</div>
+              <div class="id-enforce-title">Log Only</div>
+              <div class="id-enforce-body">Agent token is read and resolved if present. Identity is recorded in the event log. Calls without a token pass through normally. Ideal for rollout — gain visibility before adding gates.</div>
+              <div class="id-enforce-code">require_agent_token = 0<br>VS allowlist: not checked<br>Result: agent_name in audit</div>
+            </div>
+            <div class="id-enforce-card">
+              <div class="id-enforce-level req">Level 2 — Require</div>
+              <div class="id-enforce-title">Token Required</div>
+              <div class="id-enforce-body">All calls must include a valid, active agent token. Tokenless calls are rejected 401. Token matched but agent disabled → 403. Token valid + in allowlist → proceeds. Enforced at the VS level.</div>
+              <div class="id-enforce-code">require_agent_token = 1<br>Agent must be in allowlist<br>Disabled agent → 403</div>
+            </div>
+            <div class="id-enforce-card">
+              <div class="id-enforce-level rest">Level 3 — Restrict</div>
+              <div class="id-enforce-title">Policy Conditions</div>
+              <div class="id-enforce-body">Cedar-style policies with <code style="color:#f87171;font-size:11px">agent_is</code> or <code style="color:#f87171;font-size:11px">agent_in</code> conditions restrict which tools specific agents can call — even when both are registered and allowed.</div>
+              <div class="id-enforce-code">{ "type": "agent_is",<br>  "value": "banking-app" }<br>Deny all others on that tool</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Policy Conditions ─────────────────────────── -->
+        <div class="id-section">
+          <div class="id-section-eyebrow">Token Policies</div>
+          <h2 class="id-section-h">Agent Conditions in Cedar-Style Policies</h2>
+          <p class="id-section-sub">Agent identity conditions can be combined with user identity conditions (group, scope, sub) to express precise access rules. All conditions in a policy must pass for the policy to match.</p>
+          <div class="id-cond-list">
+            <div class="id-cond-row">
+              <span class="id-cond-badge exact">Exact</span>
+              <div class="id-cond-info">
+                <div class="id-cond-type">agent_is</div>
+                <div class="id-cond-desc">Passes only when the registered agent name matches exactly. Use to grant a single named agent access to a sensitive tool.</div>
+                <div class="id-cond-example">{ "type": "agent_is", "value": "banking-chatbot-app" }</div>
+              </div>
+            </div>
+            <div class="id-cond-row">
+              <span class="id-cond-badge list">List</span>
+              <div class="id-cond-info">
+                <div class="id-cond-type">agent_in</div>
+                <div class="id-cond-desc">Passes if the agent name is any member of a comma-separated list. Use when multiple agents share access to the same tool.</div>
+                <div class="id-cond-example">{ "type": "agent_in", "values": ["banking-chatbot-app", "python-agent"] }</div>
+              </div>
+            </div>
+            <div class="id-cond-row">
+              <span class="id-cond-badge forbid">Forbid</span>
+              <div class="id-cond-info">
+                <div class="id-cond-type">not_agent_is</div>
+                <div class="id-cond-desc">Fails when called by this specific agent. Combine with a forbid-effect policy to block one agent from a tool while allowing all others.</div>
+                <div class="id-cond-example">{ "type": "not_agent_is", "value": "external-partner-agent" }</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Security Properties ─────────────────────────── -->
+        <div class="id-section">
+          <div class="id-section-eyebrow">Security Design</div>
+          <h2 class="id-section-h">Security Properties</h2>
+          <p class="id-section-sub">The identity model is built to be safe by design — tokens are never stored in recoverable form, and every trust decision is explicit.</p>
+          <div class="id-sec-grid">
+            <div class="id-sec-card">
+              <div class="id-sec-icon">🔒</div>
+              <div class="id-sec-title">Tokens stored as SHA-256 only</div>
+              <div class="id-sec-body">The raw <code>wag_*</code> token is shown exactly once (at registration or rotation) and never persisted. The database stores only the SHA-256 hash. A compromised DB reveals no usable tokens.</div>
+            </div>
+            <div class="id-sec-card">
+              <div class="id-sec-icon">⛔</div>
+              <div class="id-sec-title">Disabled agents are hard-blocked</div>
+              <div class="id-sec-body">Disabling an agent in the Agent Hub immediately invalidates all calls. The token hash lookup runs before any policy check — a disabled agent's call returns 403 regardless of VS settings or allowlist membership.</div>
+            </div>
+            <div class="id-sec-card">
+              <div class="id-sec-icon">🧩</div>
+              <div class="id-sec-title">Orthogonal to API keys</div>
+              <div class="id-sec-body">API keys answer "is this caller authorized to use Warden?" Agent tokens answer "which named agent is making this specific call?" They're independent — both can coexist, and agent identity works whether API key enforcement is on or off.</div>
+            </div>
+            <div class="id-sec-card">
+              <div class="id-sec-icon">📋</div>
+              <div class="id-sec-title">Every call fully attributed</div>
+              <div class="id-sec-body">The event log records <code>user_sub</code> (human), <code>agent_name</code> (software), tool called, VS, decision, and matched policy on every proxy call. Both identities survive the OBO exchange and appear together in audit.</div>
+            </div>
+            <div class="id-sec-card">
+              <div class="id-sec-icon">🚫</div>
+              <div class="id-sec-title">Agent never touches user credentials</div>
+              <div class="id-sec-body">The OBO token exchange is performed by Warden on behalf of the user. The agent only holds its own wag_* token and the user's AT_A. AT_B (the MCP-scoped token) is exchanged and forwarded by the gateway, never by the agent.</div>
+            </div>
+            <div class="id-sec-card">
+              <div class="id-sec-icon">🔄</div>
+              <div class="id-sec-title">Token rotation without downtime</div>
+              <div class="id-sec-body">Rotating a token via the Agent Hub generates a new wag_* token and immediately invalidates the previous hash. The new token is shown once and must be updated in the agent's environment. No restart of Warden is required.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end page-identities -->
+
+    <!-- ═══════════════════════════════════════════════════════════
          KEYS PAGE
     ═══════════════════════════════════════════════════════════ -->
     <div class="page" id="page-keys">
@@ -4141,6 +4649,7 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
         <select id="icp-log-scanner" onchange="icpLogFilter()">
           <option value="">All Scanners</option>
           <option value="regex">Regex</option>
+          <option value="embedding">Embedding</option>
           <option value="presidio">Presidio</option>
           <option value="llama-guard">Llama Guard</option>
         </select>
@@ -4176,6 +4685,7 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
           <select id="icp-rule-scanner">
             <option value="*">* — any scanner</option>
             <option value="regex">regex</option>
+            <option value="embedding">embedding</option>
             <option value="presidio">presidio</option>
             <option value="llama-guard">llama-guard</option>
           </select>
@@ -4275,8 +4785,8 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     }
 
     function icpScannerCard(s, i) {
-      const colors = { regex: '#10b981', presidio: '#f59e0b', 'llama-guard': '#a78bfa' };
-      const icons  = { regex: '🔍',      presidio: '🏥',       'llama-guard': '🤖' };
+      const colors = { regex: '#10b981', embedding: '#6366f1', presidio: '#f59e0b', 'llama-guard': '#a78bfa' };
+      const icons  = { regex: '🔍',      embedding: '🧠',       presidio: '🏥',       'llama-guard': '🤖' };
       const color  = colors[s.scanner_name] || '#6366f1';
       const icon   = icons[s.scanner_name]  || '⚡';
 
@@ -4770,6 +5280,985 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     </script>
     </div><!-- end page-approvals -->
 
+    <!-- ═══════════════════════════════════════════════════════════
+         AGENT IDENTITY HUB
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-agents">
+    <style>
+      .aih-header { margin-bottom:24px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+      .aih-header-text h1 { font-size:20px; font-weight:700; letter-spacing:-.2px; }
+      .aih-header-text p  { color:var(--text-2); font-size:13px; margin-top:4px; }
+
+      /* Split layout */
+      .aih-body { display:flex; gap:0; border:1px solid var(--border-strong); border-radius:14px; overflow:hidden; min-height:500px; }
+
+      /* Left: agent list */
+      .aih-list-col { width:280px; flex-shrink:0; border-right:1px solid var(--border-strong); background:var(--surface); overflow-y:auto; }
+      .aih-list-col-head { padding:14px 16px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--text-2); border-bottom:1px solid var(--border); }
+      .aih-agent-item { padding:13px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s; display:flex; align-items:center; gap:12px; }
+      .aih-agent-item:hover { background:var(--surface2); }
+      .aih-agent-item.selected { background:rgba(99,102,241,.1); border-left:3px solid var(--accent); }
+      .aih-agent-item:last-child { border-bottom:none; }
+      .aih-agent-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+      .aih-agent-dot.active   { background:#4ade80; box-shadow:0 0 5px rgba(74,222,128,.5); }
+      .aih-agent-dot.inactive { background:#64748b; }
+      .aih-agent-item-info { flex:1; min-width:0; }
+      .aih-agent-item-name { font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .aih-agent-item-sub  { font-size:11px; color:var(--text-2); margin-top:2px; font-family:monospace; letter-spacing:.3px; }
+
+      /* Right: detail panel */
+      .aih-detail-col { flex:1; background:var(--bg); display:none; }
+      .aih-detail-col.open { display:block; }
+      .aih-detail-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-2); font-size:13px; gap:8px; padding:48px; flex:1; }
+      .aih-detail-empty-icon { font-size:36px; opacity:.4; }
+
+      .aih-detail-inner { padding:28px; }
+      .aih-detail-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+      .aih-detail-name { font-size:18px; font-weight:700; flex:1; }
+      .aih-status-badge { display:inline-block; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:700; }
+      .aih-status-badge.active   { background:rgba(34,197,94,.15); color:#4ade80; }
+      .aih-status-badge.inactive { background:rgba(100,116,139,.15); color:#94a3b8; }
+
+      .aih-section { margin-bottom:24px; }
+      .aih-section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--text-2); margin-bottom:10px; }
+      .aih-field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+      .aih-field label { display:block; font-size:11px; font-weight:600; color:var(--text-2); margin-bottom:5px; text-transform:uppercase; letter-spacing:.5px; }
+      .aih-field input, .aih-field textarea { width:100%; box-sizing:border-box; background:var(--surface); border:1px solid var(--border-strong); border-radius:8px; color:var(--text-1); padding:9px 12px; font-size:13px; font-family:inherit; resize:vertical; }
+      .aih-field input:focus, .aih-field textarea:focus { outline:none; border-color:var(--accent); }
+
+      /* Token box */
+      .aih-token-box { background:var(--surface); border:1px solid var(--border-strong); border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+      .aih-token-prefix { font-family:'JetBrains Mono',monospace; font-size:13px; color:#818cf8; letter-spacing:.5px; flex:1; }
+      .aih-token-suffix { font-size:12px; color:var(--text-2); }
+
+      /* Metadata KV editor */
+      .aih-kv-table { width:100%; border-collapse:collapse; }
+      .aih-kv-table th { font-size:11px; font-weight:600; color:var(--text-2); text-align:left; padding:0 0 6px; text-transform:uppercase; letter-spacing:.5px; }
+      .aih-kv-row td { padding:4px 4px 4px 0; vertical-align:middle; }
+      .aih-kv-row td:last-child { width:30px; }
+      .aih-kv-input { width:100%; box-sizing:border-box; background:var(--surface); border:1px solid var(--border-strong); border-radius:6px; color:var(--text-1); padding:7px 10px; font-size:12.5px; font-family:inherit; }
+      .aih-kv-key { font-family:'JetBrains Mono',monospace; }
+      .aih-kv-del { background:none; border:none; color:var(--text-2); cursor:pointer; font-size:14px; padding:4px 6px; border-radius:5px; line-height:1; }
+      .aih-kv-del:hover { background:rgba(248,113,113,.15); color:#f87171; }
+      .aih-add-kv-btn { margin-top:8px; font-size:12px; }
+
+      /* Info rows */
+      .aih-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .aih-info-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 14px; }
+      .aih-info-item-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-2); margin-bottom:4px; }
+      .aih-info-item-val   { font-size:13px; font-weight:600; color:var(--text-1); }
+
+      /* Action row */
+      .aih-action-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+
+      /* Register modal */
+      .aih-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:900; display:flex; align-items:center; justify-content:center; }
+      .aih-modal { background:var(--surface); border:1px solid var(--border-strong); border-radius:16px; padding:28px; width:460px; max-width:95vw; box-shadow:0 24px 64px rgba(0,0,0,.5); }
+      .aih-modal h2 { font-size:17px; font-weight:700; margin-bottom:20px; }
+      .aih-modal label { display:block; font-size:12px; font-weight:600; color:var(--text-2); margin-bottom:6px; margin-top:16px; text-transform:uppercase; letter-spacing:.5px; }
+      .aih-modal label:first-of-type { margin-top:0; }
+      .aih-modal input[type=text], .aih-modal textarea { width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--border-strong); border-radius:8px; color:var(--text-1); padding:9px 12px; font-size:13.5px; font-family:inherit; }
+      .aih-modal input:focus, .aih-modal textarea:focus { outline:none; border-color:var(--accent); }
+      .aih-modal .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+
+      /* Token reveal */
+      .aih-token-reveal { background:var(--bg); border:1px solid rgba(74,222,128,.3); border-radius:8px; padding:14px; font-family:'JetBrains Mono',monospace; font-size:12px; word-break:break-all; color:#4ade80; margin:14px 0 6px; }
+      .aih-warning { font-size:12px; color:#fbbf24; background:rgba(251,191,36,.08); border:1px solid rgba(251,191,36,.2); border-radius:8px; padding:10px 12px; margin-bottom:4px; }
+
+      /* Empty list state */
+      .aih-list-empty { padding:40px 20px; text-align:center; color:var(--text-2); font-size:13px; }
+    </style>
+
+    <!-- Page header -->
+    <div class="aih-header">
+      <div class="aih-header-text">
+        <h1>🤖 Agent Identity Hub</h1>
+        <p>Register agents that call virtual servers. Each agent gets a <code style="font-size:11px">wag_*</code> token sent in <code style="font-size:11px">X-Agent-Token</code> — gateway logs who called.</p>
+      </div>
+      <button class="btn" onclick="openRegisterAgentModal()">＋ Register Agent</button>
+    </div>
+
+    <!-- Split body: list left + detail right -->
+    <div class="aih-body" id="aih-body">
+      <!-- Left column: agent list -->
+      <div class="aih-list-col" id="aih-list-col">
+        <div class="aih-list-col-head">Agents <span id="aih-agent-count" style="font-weight:400;opacity:.7"></span></div>
+        <div id="aih-agent-list">
+          <div class="aih-list-empty" style="color:var(--text-2)">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Right column: detail panel (hidden until agent selected) -->
+      <div class="aih-detail-col" id="aih-detail-col">
+        <div id="aih-detail-inner"></div>
+      </div>
+
+      <!-- Empty right placeholder when nothing is selected -->
+      <div class="aih-detail-empty" id="aih-detail-empty" style="display:flex">
+        <div class="aih-detail-empty-icon">🤖</div>
+        <div>Select an agent to view details</div>
+        <div style="font-size:11px;color:var(--text-muted)">or register a new one</div>
+      </div>
+    </div>
+
+    <!-- Register Agent Modal -->
+    <div id="aih-register-modal" class="aih-modal-overlay" style="display:none" onclick="if(event.target===this)closeRegisterAgentModal()">
+      <div class="aih-modal">
+        <h2>🤖 Register Agent</h2>
+
+        <label>Agent Name <span style="color:#f87171">*</span></label>
+        <input type="text" id="aih-reg-name" placeholder="e.g. banking-chatbot-app" />
+
+        <label>Description</label>
+        <input type="text" id="aih-reg-desc" placeholder="What does this agent do?" />
+
+        <label>Initial Metadata (optional)</label>
+        <p style="font-size:11px;color:var(--text-2);margin-bottom:8px">Add key/value fields to describe this agent's context.</p>
+        <table class="aih-kv-table" style="margin-bottom:0">
+          <thead><tr><th style="width:45%">Key</th><th>Value</th><th></th></tr></thead>
+          <tbody id="aih-reg-kv-body"></tbody>
+        </table>
+        <button class="btn btn-ghost aih-add-kv-btn" onclick="aihAddKvRow('aih-reg-kv-body')">＋ Add field</button>
+
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeRegisterAgentModal()">Cancel</button>
+          <button class="btn" onclick="submitRegisterAgent()">Register</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Token Reveal Modal -->
+    <div id="aih-reveal-modal" class="aih-modal-overlay" style="display:none">
+      <div class="aih-modal">
+        <h2 id="aih-reveal-title">✅ Agent Registered</h2>
+        <div class="aih-warning">⚠️ Copy this token now — it will <strong>never</strong> be shown again.</div>
+        <div class="aih-token-reveal" id="aih-reveal-token"></div>
+        <div style="display:flex;gap:8px;margin-bottom:4px">
+          <button class="btn" style="flex:1" onclick="aihCopyToken()">📋 Copy Token</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-2)">Send in every request as: <code style="font-size:11px">X-Agent-Token: &lt;token&gt;</code></p>
+        <div class="modal-footer" style="margin-top:12px">
+          <button class="btn btn-ghost" onclick="closeRevealAgentModal()">I've copied it — close</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    // ── Agent Identity Hub state ───────────────────────────────────────────────
+    let aihAgents = [];
+    let aihSelectedId = null;
+
+    function relativeTime(isoStr) {
+      if (!isoStr) return 'Never';
+      const diff = Date.now() - new Date(isoStr).getTime();
+      if (diff < 60000)    return 'Just now';
+      if (diff < 3600000)  return Math.floor(diff/60000) + 'm ago';
+      if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+      return Math.floor(diff/86400000) + 'd ago';
+    }
+
+    async function loadAgents() {
+      try {
+        const [agents, agentScores] = await Promise.all([
+          api('/agents'),
+          api('/scoring/agents').catch(() => []),
+        ]);
+        const agentScoreMap = Object.fromEntries((agentScores || []).map(s => [s.id, s]));
+        aihAgents = agents || [];
+        const list = document.getElementById('aih-agent-list');
+        const count = document.getElementById('aih-agent-count');
+        count.textContent = `(${aihAgents.length})`;
+        if (!aihAgents.length) {
+          list.innerHTML = '<div class="aih-list-empty">No agents registered yet.<br><br><button class="btn btn-sm" onclick="openRegisterAgentModal()">＋ Register first agent</button></div>';
+          return;
+        }
+        list.innerHTML = '';
+        aihAgents.forEach(a => {
+          const item = document.createElement('div');
+          item.className = 'aih-agent-item' + (a.id === aihSelectedId ? ' selected' : '');
+          item.dataset.agentId = a.id;
+          item.onclick = () => selectAgent(a.id);
+          const sc = agentScoreMap[a.id];
+          const scPill = sc ? `<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;background:${sc.tier.bg};border:1px solid ${sc.tier.border};border-radius:8px;padding:5px 8px;gap:2px">
+              <span style="font-size:15px;font-weight:800;color:${sc.tier.color};line-height:1;letter-spacing:-.5px">${sc.score}</span>
+              <span style="font-size:9px;font-weight:700;color:${sc.tier.color};opacity:.75;line-height:1;text-transform:uppercase;letter-spacing:.4px">${sc.tier.name}</span>
+            </div>` : '<div style="min-width:48px"></div>';
+          item.innerHTML = `
+            <div class="aih-agent-dot ${a.is_active ? 'active' : 'inactive'}"></div>
+            <div class="aih-agent-item-info" style="flex:1;min-width:0">
+              <div class="aih-agent-item-name">${escHtml(a.name)}</div>
+              <div class="aih-agent-item-sub">${escHtml(a.token_prefix)}… · ${relativeTime(a.last_seen_at)}</div>
+            </div>
+            ${scPill}
+          `;
+          list.appendChild(item);
+        });
+        // Re-select the previously selected agent if still in list
+        if (aihSelectedId && aihAgents.find(a => a.id === aihSelectedId)) {
+          selectAgent(aihSelectedId);
+        }
+      } catch (e) {
+        document.getElementById('aih-agent-list').innerHTML = `<div class="aih-list-empty" style="color:#f87171">Failed to load agents</div>`;
+      }
+    }
+
+    async function selectAgent(id) {
+      aihSelectedId = id;
+      // Update selected state in list
+      document.querySelectorAll('.aih-agent-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.agentId === id);
+      });
+      // Show detail panel, hide empty placeholder
+      document.getElementById('aih-detail-col').classList.add('open');
+      document.getElementById('aih-detail-empty').style.display = 'none';
+      document.getElementById('aih-detail-inner').innerHTML = '<div style="padding:28px;color:var(--text-2);font-size:13px">Loading…</div>';
+
+      try {
+        const a = await api('/agents/' + id);
+        renderAgentDetail(a);
+      } catch (e) {
+        document.getElementById('aih-detail-inner').innerHTML = `<div style="padding:28px;color:#f87171">Failed to load agent details</div>`;
+      }
+    }
+
+    async function renderAgentDetail(a) {
+      const meta = a.metadata && typeof a.metadata === 'object' ? a.metadata : {};
+      const created = a.created_at ? new Date(a.created_at).toLocaleString() : '—';
+      const lastSeen = a.last_seen_at ? new Date(a.last_seen_at).toLocaleString() : 'Never';
+
+      // Always fetch fresh VS list — don't rely on allVirtualServers which may be empty
+      // if the user navigated directly to Agent Hub without visiting Virtual Servers first.
+      let allVs = allVirtualServers;
+      if (!allVs || !allVs.length) {
+        try { allVs = await api('/virtual-servers'); allVirtualServers = allVs; } catch { allVs = []; }
+      }
+      const agentRequiredVs = allVs.filter(vs => vs.require_agent_token);
+
+      let assignedVsIds = new Set();
+      try {
+        const checks = await Promise.all(
+          agentRequiredVs.map(vs => api('/virtual-servers/' + vs.id + '/agents')
+            .then(list => ({ vsId: vs.id, found: list.some(ag => ag.id === a.id) }))
+            .catch(() => ({ vsId: vs.id, found: false }))
+          )
+        );
+        checks.filter(c => c.found).forEach(c => assignedVsIds.add(c.vsId));
+      } catch {}
+      // VSes where agent is explicitly allowlisted (require_agent_token = 1 + in allowlist)
+      const assignedVsList = allVs.filter(vs => assignedVsIds.has(vs.id));
+      // VSes that don't require an agent token — all agents are implicitly allowed
+      const openVsList = allVs.filter(vs => !vs.require_agent_token);
+
+      document.getElementById('aih-detail-inner').innerHTML = `
+        <div class="aih-detail-inner">
+          <!-- Header row -->
+          <div class="aih-detail-header">
+            <div class="aih-detail-name">${escHtml(a.name)}</div>
+            <span class="aih-status-badge ${a.is_active ? 'active' : 'inactive'}">${a.is_active ? '🟢 Active' : '⚪ Inactive'}</span>
+          </div>
+
+          <!-- Identity info -->
+          <div class="aih-section">
+            <div class="aih-section-title">Identity</div>
+            <div class="aih-info-grid">
+              <div class="aih-info-item">
+                <div class="aih-info-item-label">Agent ID</div>
+                <div class="aih-info-item-val" style="font-family:monospace;font-size:11px;word-break:break-all">${escHtml(a.id)}</div>
+              </div>
+              <div class="aih-info-item">
+                <div class="aih-info-item-label">Token Prefix</div>
+                <div class="aih-info-item-val" style="font-family:monospace;color:#818cf8">${escHtml(a.token_prefix)}…</div>
+              </div>
+              <div class="aih-info-item">
+                <div class="aih-info-item-label">Registered</div>
+                <div class="aih-info-item-val">${created}</div>
+              </div>
+              <div class="aih-info-item">
+                <div class="aih-info-item-label">Last Seen</div>
+                <div class="aih-info-item-val">${lastSeen}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Editable fields -->
+          <div class="aih-section">
+            <div class="aih-section-title">Details</div>
+            <div class="aih-field-row">
+              <div class="aih-field" style="grid-column:1/-1">
+                <label>Name</label>
+                <input type="text" id="aih-edit-name" value="${escHtml(a.name)}" />
+              </div>
+            </div>
+            <div class="aih-field">
+              <label>Description</label>
+              <input type="text" id="aih-edit-desc" value="${escHtml(a.description || '')}" placeholder="What does this agent do?" />
+            </div>
+          </div>
+
+          <!-- Metadata KV editor -->
+          <div class="aih-section">
+            <div class="aih-section-title">Metadata</div>
+            <table class="aih-kv-table">
+              <thead><tr><th style="width:42%">Key</th><th>Value</th><th></th></tr></thead>
+              <tbody id="aih-edit-kv-body"></tbody>
+            </table>
+            <button class="btn btn-ghost aih-add-kv-btn" onclick="aihAddKvRow('aih-edit-kv-body')">＋ Add field</button>
+          </div>
+
+          <!-- Token -->
+          <div class="aih-section">
+            <div class="aih-section-title">Agent Token</div>
+            <div class="aih-token-box">
+              <div>
+                <div style="font-size:11px;color:var(--text-2);margin-bottom:3px">Current prefix (full token hidden)</div>
+                <div class="aih-token-prefix">${escHtml(a.token_prefix)}…<span style="opacity:.4">████████████████████████</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="rotateAgentToken('${a.id}')">🔄 Rotate</button>
+            </div>
+            <p style="font-size:11px;color:var(--text-2);margin-top:8px">Send as: <code style="font-size:11px">X-Agent-Token: &lt;full-token&gt;</code></p>
+          </div>
+
+          <!-- Virtual Servers this agent is allowed on -->
+          <div class="aih-section">
+            <div class="aih-section-title">Allowed On Virtual Servers</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${openVsList.map(vs => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;gap:10px">
+                  <div style="min-width:0;flex:1">
+                    <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(vs.name)}</div>
+                  </div>
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.4px;padding:2px 8px;border-radius:100px;background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.25);white-space:nowrap;flex-shrink:0">Open Access</span>
+                </div>`).join('')}
+              ${assignedVsList.map(vs => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;gap:10px">
+                  <div style="min-width:0;flex:1">
+                    <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(vs.name)}</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.4px;padding:2px 8px;border-radius:100px;background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.25);white-space:nowrap">Allowlisted</span>
+                    <button class="btn btn-danger btn-sm" onclick="aihRemoveFromVs('${a.id}','${vs.id}')">Remove</button>
+                  </div>
+                </div>`).join('')}
+              ${!openVsList.length && !assignedVsList.length
+                ? `<p style="font-size:12.5px;color:var(--text-muted)">No virtual servers found.</p>`
+                : ''}
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="aih-section">
+            <div class="aih-section-title">Actions</div>
+            <div class="aih-action-row">
+              <button class="btn" onclick="saveAgentChanges('${a.id}')">💾 Save Changes</button>
+              <button class="btn btn-ghost" onclick="toggleAgentStatus('${a.id}', ${a.is_active})">${a.is_active ? '⏸ Disable' : '▶ Enable'}</button>
+              <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteAgent('${a.id}')">Delete Agent</button>
+            </div>
+          </div>
+        </div>
+      `;
+      // Populate KV editor
+      aihRenderKvRows('aih-edit-kv-body', meta);
+    }
+
+    // ── KV Metadata Editor ─────────────────────────────────────────────────────
+    function aihRenderKvRows(tbodyId, obj) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const entries = Object.entries(obj || {});
+      if (entries.length === 0) {
+        aihAddKvRow(tbodyId, '', '');
+        return;
+      }
+      entries.forEach(([k, v]) => aihAddKvRow(tbodyId, k, v));
+    }
+
+    function aihAddKvRow(tbodyId, key = '', value = '') {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      const tr = document.createElement('tr');
+      tr.className = 'aih-kv-row';
+      tr.innerHTML = `
+        <td><input class="aih-kv-input aih-kv-key" placeholder="key" value="${escHtml(String(key))}" /></td>
+        <td><input class="aih-kv-input" placeholder="value" value="${escHtml(String(value))}" /></td>
+        <td><button class="aih-kv-del" title="Remove" onclick="this.closest('tr').remove()">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function aihCollectMetadata(tbodyId) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return {};
+      const meta = {};
+      tbody.querySelectorAll('tr.aih-kv-row').forEach(tr => {
+        const inputs = tr.querySelectorAll('input.aih-kv-input');
+        const k = (inputs[0]?.value || '').trim();
+        const v = (inputs[1]?.value || '').trim();
+        if (k) meta[k] = v;
+      });
+      return meta;
+    }
+
+    // ── CRUD operations ────────────────────────────────────────────────────────
+    async function saveAgentChanges(id) {
+      const name = document.getElementById('aih-edit-name')?.value?.trim();
+      const desc = document.getElementById('aih-edit-desc')?.value?.trim();
+      const metadata = aihCollectMetadata('aih-edit-kv-body');
+      if (!name) return alert('Name is required');
+      try {
+        await api('/agents/' + id, { method: 'PUT', body: { name, description: desc, metadata } });
+        await loadAgents();
+        selectAgent(id);
+      } catch (e) { alert('Save failed: ' + e.message); }
+    }
+
+    async function toggleAgentStatus(id, currentlyActive) {
+      try {
+        await api('/agents/' + id + '/toggle', { method: 'PATCH' });
+        await loadAgents();
+        selectAgent(id);
+      } catch (e) { alert('Toggle failed: ' + e.message); }
+    }
+
+    async function aihRemoveFromVs(agentId, vsId) {
+      try {
+        await api('/virtual-servers/' + vsId + '/agents/' + agentId, { method: 'DELETE' });
+        selectAgent(agentId); // refresh detail panel
+      } catch (e) { alert('Failed to remove: ' + e.message); }
+    }
+
+    async function deleteAgent(id) {
+      const a = aihAgents.find(x => x.id === id);
+      if (!confirm(`Delete agent "${a?.name || id}"? This cannot be undone.`)) return;
+      try {
+        await api('/agents/' + id, { method: 'DELETE' });
+        aihSelectedId = null;
+        document.getElementById('aih-detail-col').classList.remove('open');
+        document.getElementById('aih-detail-empty').style.display = 'flex';
+        await loadAgents();
+      } catch (e) { alert('Delete failed: ' + e.message); }
+    }
+
+    async function rotateAgentToken(id) {
+      const a = aihAgents.find(x => x.id === id);
+      if (!confirm(`Rotate token for "${a?.name || id}"? The current token will stop working immediately.`)) return;
+      try {
+        const result = await api('/agents/' + id + '/rotate-token', { method: 'POST' });
+        showRevealModal('🔄 New Token Generated', result.token);
+        await loadAgents();
+        selectAgent(id);
+      } catch (e) { alert('Rotate failed: ' + e.message); }
+    }
+
+    // ── Register modal ─────────────────────────────────────────────────────────
+    function openRegisterAgentModal() {
+      document.getElementById('aih-reg-name').value = '';
+      document.getElementById('aih-reg-desc').value = '';
+      aihRenderKvRows('aih-reg-kv-body', {});
+      document.getElementById('aih-register-modal').style.display = 'flex';
+      setTimeout(() => document.getElementById('aih-reg-name').focus(), 50);
+    }
+
+    function closeRegisterAgentModal() {
+      document.getElementById('aih-register-modal').style.display = 'none';
+    }
+
+    async function submitRegisterAgent() {
+      const name = document.getElementById('aih-reg-name').value.trim();
+      const desc = document.getElementById('aih-reg-desc').value.trim();
+      const metadata = aihCollectMetadata('aih-reg-kv-body');
+      if (!name) { document.getElementById('aih-reg-name').focus(); return; }
+      try {
+        const result = await api('/agents', { method: 'POST', body: { name, description: desc, metadata } });
+        closeRegisterAgentModal();
+        showRevealModal('✅ Agent Registered', result.token);
+        await loadAgents();
+        selectAgent(result.id);
+      } catch (e) { alert('Registration failed: ' + e.message); }
+    }
+
+    // ── Token reveal modal ─────────────────────────────────────────────────────
+    let _aihRevealToken = '';
+    function showRevealModal(title, token) {
+      _aihRevealToken = token;
+      document.getElementById('aih-reveal-title').textContent = title;
+      document.getElementById('aih-reveal-token').textContent = token;
+      document.getElementById('aih-reveal-modal').style.display = 'flex';
+    }
+    function closeRevealAgentModal() {
+      document.getElementById('aih-reveal-modal').style.display = 'none';
+    }
+    function aihCopyToken() {
+      navigator.clipboard.writeText(_aihRevealToken).catch(() => {});
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    </script>
+    </div><!-- end page-agents -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCORING PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-scoring">
+      <style>
+        .sc-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+        .sc-title-group h1 { margin-bottom:4px; }
+        .sc-tabs { display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+        .sc-tab { padding:8px 22px; font-size:13px; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--text-muted); transition:background .15s,color .15s; }
+        .sc-tab.active { background:var(--surface2); color:var(--text); }
+
+        /* Score grid */
+        .sc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+        .sc-card {
+          background:var(--surface); border:1px solid var(--border); border-radius:14px;
+          padding:20px 20px 16px; display:flex; flex-direction:column; gap:0;
+          transition:border-color .15s;
+        }
+        .sc-card:hover { border-color:var(--border-hover,#334155); }
+
+        .sc-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+        .sc-card-name { font-size:15px; font-weight:700; color:var(--text); margin-bottom:3px; }
+        .sc-card-sub  { font-size:11px; color:var(--text-muted); }
+        .sc-card-score-wrap { text-align:right; }
+        .sc-card-score { font-size:36px; font-weight:800; line-height:1; }
+        .sc-card-tier  { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-top:3px; }
+
+        /* Breakdown bar */
+        .sc-bar-wrap { margin:10px 0 14px; }
+        .sc-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+        .sc-bar-label { font-size:10.5px; color:var(--text-muted); width:110px; flex-shrink:0; }
+        .sc-bar-track { flex:1; height:5px; background:var(--surface2); border-radius:100px; overflow:hidden; }
+        .sc-bar-fill  { height:100%; border-radius:100px; transition:width .3s; }
+        .sc-bar-val   { font-size:10.5px; color:var(--text-muted); width:28px; text-align:right; flex-shrink:0; }
+
+        .sc-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+        .sc-window-chip { font-size:10px; color:var(--text-muted); background:var(--surface2); border-radius:6px; padding:3px 8px; }
+        .sc-neutral-chip { font-size:10px; color:var(--text-muted); }
+        .sc-action-btn { font-size:12px; color:var(--text-2); border:1px solid var(--border); border-radius:8px; padding:4px 11px; background:var(--surface); }
+        .sc-action-btn:hover { background:var(--surface2); color:var(--text); border-color:var(--border-strong,#475569); }
+
+        /* Config drawer (inline panel below card grid) */
+        .sc-cfg-panel {
+          display:none; background:var(--surface); border:1px solid var(--border); border-radius:14px;
+          padding:24px 24px 20px; margin-top:4px;
+        }
+        .sc-cfg-panel.open { display:block; }
+        .sc-cfg-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .sc-cfg-title  { font-size:15px; font-weight:700; color:var(--text); }
+
+        .sc-mode-toggle { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+        .sc-mode-btn { padding:6px 18px; font-size:12px; font-weight:600; border:none; cursor:pointer; background:transparent; color:var(--text-muted); transition:background .15s,color .15s; }
+        .sc-mode-btn.active { background:var(--surface2); color:var(--text); }
+
+        .sc-cfg-custom { margin-top:18px; display:none; }
+        .sc-cfg-custom.open { display:block; }
+
+        .sc-cfg-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+        .sc-cfg-row label { font-size:12px; color:var(--text-muted); width:160px; flex-shrink:0; }
+        .sc-cfg-row input[type=number] {
+          width:80px; padding:5px 8px; border:1px solid var(--border); border-radius:6px;
+          background:var(--surface2); color:var(--text); font-size:13px;
+        }
+        .sc-cfg-row .sc-sign { font-size:11px; color:var(--text-muted); width:20px; }
+        .sc-cfg-hint { font-size:11px; color:var(--text-muted); margin-left:4px; }
+
+        .sc-window-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+        .sc-window-pill {
+          padding:5px 14px; border-radius:100px; border:1px solid var(--border);
+          font-size:12px; font-weight:600; cursor:pointer; background:transparent;
+          color:var(--text-muted); transition:all .15s;
+        }
+        .sc-window-pill.active { background:var(--surface2); color:var(--text); border-color:var(--border-hover,#334155); }
+
+        .sc-cfg-preview {
+          background:var(--surface2); border-radius:10px; padding:12px 16px;
+          margin:16px 0 20px; display:flex; align-items:center; gap:16px;
+        }
+        .sc-preview-label { font-size:11px; color:var(--text-muted); }
+        .sc-preview-score { font-size:28px; font-weight:800; }
+        .sc-preview-tier  { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
+        .sc-cfg-note { font-size:11px; color:var(--text-muted); font-style:italic; margin-bottom:16px; }
+        .sc-cfg-actions { display:flex; gap:10px; }
+      </style>
+
+      <div class="sc-header">
+        <div class="sc-title-group">
+          <h1>VS / Agent Risk</h1>
+          <p class="subtitle">Behavioral health scores for virtual servers and agents. A clean call adds points; violations subtract them.</p>
+        </div>
+        <div class="sc-tabs">
+          <button class="sc-tab active" onclick="scSwitchTab('vs')" id="sc-tab-vs">Virtual Servers</button>
+          <button class="sc-tab" onclick="scSwitchTab('agents')" id="sc-tab-agents">Agents</button>
+        </div>
+      </div>
+
+      <!-- VS tab -->
+      <div id="sc-panel-vs">
+        <div class="sc-grid" id="sc-vs-grid"><div class="empty-state"><div class="icon">📊</div><div class="msg">Loading scores…</div></div></div>
+      </div>
+
+      <!-- Agents tab -->
+      <div id="sc-panel-agents" style="display:none">
+        <div class="sc-grid" id="sc-agents-grid"><div class="empty-state"><div class="icon">📊</div><div class="msg">Loading scores…</div></div></div>
+      </div>
+
+      <!-- Config panel (shared, appended below grid) -->
+      <div id="sc-cfg-panel" class="sc-cfg-panel">
+        <div class="sc-cfg-header">
+          <span class="sc-cfg-title" id="sc-cfg-title">Configure Scoring</span>
+          <button class="btn btn-ghost btn-sm" onclick="scCloseConfig()">✕ Close</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--text-muted);font-weight:600">Scoring mode</span>
+          <div class="sc-mode-toggle">
+            <button class="sc-mode-btn active" id="sc-mode-default" onclick="scConfigTarget?.type==='user' ? scSetUserMode('default') : scSetMode('default')">Default</button>
+            <button class="sc-mode-btn" id="sc-mode-custom" onclick="scConfigTarget?.type==='user' ? scSetUserMode('custom') : scSetMode('custom')">Custom</button>
+          </div>
+        </div>
+        <p class="sc-cfg-note" id="sc-mode-note">Using Warden default weights across a 7-day rolling window.</p>
+
+        <!-- Scan Counting — always visible (applies in both Default and Custom modes) -->
+        <div id="sc-bidir-section" style="margin-bottom:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:4px">Scan Counting</div>
+          <label style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:4px;background:var(--surface)">
+            <input type="checkbox" id="sc-bidir-toggle" checked style="margin-top:2px;accent-color:var(--accent);width:15px;height:15px;flex-shrink:0" onchange="scUpdatePreview()">
+            <div>
+              <div id="sc-bidir-label" style="font-size:13px;font-weight:600;color:var(--text)">Only score outbound scans</div>
+              <div id="sc-bidir-desc" style="font-size:11.5px;color:var(--text-2);margin-top:3px;line-height:1.5">When enabled, <strong>inbound</strong> scans (messages sent by the user) are ignored entirely — only <strong>outbound</strong> scans (responses from the agent) affect the score. Useful because inbound content is user-controlled and shouldn't penalise the agent or virtual server.</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="sc-cfg-custom" id="sc-cfg-custom">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:16px">Time Window</div>
+          <div class="sc-window-row" id="sc-window-pills">
+            <button class="sc-window-pill active" data-days="1"  onclick="scSetWindow(1)">1 day</button>
+            <button class="sc-window-pill" data-days="7"  onclick="scSetWindow(7)">7 days</button>
+            <button class="sc-window-pill" data-days="30" onclick="scSetWindow(30)">30 days</button>
+            <button class="sc-window-pill" data-days="90" onclick="scSetWindow(90)">90 days</button>
+          </div>
+
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Point Weights</div>
+          <div class="sc-cfg-row">
+            <label>Clean call (passed all checks)</label>
+            <span class="sc-sign" style="color:#10b981">+</span>
+            <input type="number" id="sc-w-clean" value="5" min="0" max="100" step="1">
+            <span class="sc-cfg-hint">per allowed proxy call</span>
+          </div>
+          <div class="sc-cfg-row">
+            <label>Clean interceptor scan</label>
+            <span class="sc-sign" style="color:#10b981">+</span>
+            <input type="number" id="sc-w-scan" value="2" min="0" max="100" step="1">
+            <span class="sc-cfg-hint">per scan that found nothing</span>
+          </div>
+          <div class="sc-cfg-row">
+            <label>Policy denial</label>
+            <span class="sc-sign" style="color:#ef4444">−</span>
+            <input type="number" id="sc-w-deny" value="15" min="0" max="200" step="1">
+            <span class="sc-cfg-hint">per denied proxy call</span>
+          </div>
+          <div class="sc-cfg-row">
+            <label>Interceptor block</label>
+            <span class="sc-sign" style="color:#ef4444">−</span>
+            <input type="number" id="sc-w-iblock" value="30" min="0" max="200" step="1">
+            <span class="sc-cfg-hint">per blocked scan result</span>
+          </div>
+          <div class="sc-cfg-row">
+            <label>PII flag (non-blocking)</label>
+            <span class="sc-sign" style="color:#ef4444">−</span>
+            <input type="number" id="sc-w-pii" value="10" min="0" max="200" step="1">
+            <span class="sc-cfg-hint">per PII detection event</span>
+          </div>
+          <div class="sc-cfg-row">
+            <label>Injection flag (non-blocking)</label>
+            <span class="sc-sign" style="color:#ef4444">−</span>
+            <input type="number" id="sc-w-inj" value="20" min="0" max="200" step="1">
+            <span class="sc-cfg-hint">per injection detection event</span>
+          </div>
+
+          <div class="sc-cfg-preview">
+            <div>
+              <div class="sc-preview-label">Preview score (current window)</div>
+              <div class="sc-preview-score" id="sc-preview-score">—</div>
+              <div class="sc-preview-tier" id="sc-preview-tier"></div>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-left:auto;max-width:240px;line-height:1.5">
+              Score = 500 + Σ(point contributions)<br>Clamped to [0, 1000].<br>
+              Neutral (500) shown when no activity in window.
+            </div>
+          </div>
+        </div>
+
+        <div class="sc-cfg-actions" style="justify-content:space-between">
+          <button class="btn btn-ghost" style="color:#ef4444;border-color:rgba(239,68,68,.3)" onclick="scResetScore(scConfigTarget.type,scConfigTarget.id,scConfigTarget.name)">↺ Reset Score</button>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-ghost" onclick="scCloseConfig()">Cancel</button>
+            <button class="btn btn-primary" onclick="scSaveConfig()">Save</button>
+          </div>
+        </div>
+      </div>
+    </div><!-- end page-scoring -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         USER RISK PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-user-risk">
+    <style>
+      .ur-layout { display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start; transition:grid-template-columns .25s ease; }
+      .ur-layout.ur-cfg-hidden { grid-template-columns:1fr 0px; gap:0; }
+      @media(max-width:900px){ .ur-layout { grid-template-columns:1fr; } }
+
+      /* Filter bar */
+      .ur-filter-bar { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+      .ur-search { flex:1; min-width:160px; padding:7px 12px; border:1px solid var(--border); border-radius:8px;
+        background:var(--surface); color:var(--text); font-size:13px; }
+      .ur-search:focus { outline:none; border-color:var(--primary,#6366f1); }
+      .ur-vs-select { padding:7px 10px; border:1px solid var(--border); border-radius:8px;
+        background:var(--surface); color:var(--text); font-size:13px; cursor:pointer; }
+      .ur-badge { font-size:11px; color:var(--text-muted); background:var(--surface2); border-radius:100px; padding:2px 10px; }
+
+      /* User cards */
+      .ur-grid { display:flex; flex-direction:column; gap:10px; }
+      .ur-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; transition:border-color .15s; }
+      .ur-card:hover { border-color:var(--border-hover,#334155); }
+      .ur-card-header { display:flex; align-items:center; gap:14px; padding:16px 18px; cursor:pointer; user-select:none; }
+      .ur-card-avatar { width:36px; height:36px; border-radius:50%; background:var(--surface2);
+        display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+      .ur-card-info { flex:1; min-width:0; }
+      .ur-card-email { font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .ur-card-meta  { font-size:11px; color:var(--text-muted); margin-top:2px; }
+      .ur-card-right { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+      .ur-card-score { font-size:28px; font-weight:800; line-height:1; }
+      .ur-card-tier  { font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+      .ur-card-chevron { font-size:11px; color:var(--text-muted); transition:transform .2s; }
+      .ur-card.open .ur-card-chevron { transform:rotate(180deg); }
+
+      /* Events accordion */
+      .ur-events { display:none; padding:0 18px 14px; }
+      .ur-card.open .ur-events { display:block; }
+      .ur-events-table { width:100%; border-collapse:collapse; font-size:12px; }
+      .ur-events-table th { text-align:left; font-weight:600; color:var(--text-muted); padding:5px 8px 5px 0; border-bottom:1px solid var(--border); }
+      .ur-events-table td { padding:6px 8px 6px 0; border-bottom:1px solid var(--border); color:var(--text); vertical-align:top; }
+      .ur-events-table tr:last-child td { border-bottom:none; }
+      .ur-evt-action-block  { color:#ef4444; font-weight:700; }
+      .ur-evt-action-mask   { color:#f59e0b; font-weight:700; }
+      .ur-evt-action-warn   { color:#f59e0b; }
+      .ur-evt-action-allow  { color:var(--text-muted); }
+      .ur-evt-flag { display:inline-block; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; }
+      .ur-evt-flag.pii  { background:rgba(245,158,11,.15); color:#f59e0b; }
+      .ur-evt-flag.inj  { background:rgba(239,68,68,.12); color:#ef4444; }
+      .ur-evt-flag.clean{ background:rgba(16,185,129,.1); color:#10b981; }
+      .ur-load-btn { font-size:11px; color:var(--primary,#6366f1); background:none; border:none; cursor:pointer; padding:6px 0 0; }
+
+      /* Config sidebar */
+      .ur-sidebar { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; position:sticky; top:20px; overflow:hidden; transition:opacity .2s ease, transform .2s ease; }
+      .ur-layout.ur-cfg-hidden .ur-sidebar { opacity:0; pointer-events:none; transform:translateX(12px); }
+      .ur-sidebar-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+      .ur-cfg-toggle-btn { display:flex; align-items:center; gap:5px; padding:5px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; transition:background .15s,color .15s,border-color .15s; flex-shrink:0; }
+      .ur-cfg-toggle-btn:hover { background:var(--surface2); color:var(--text); border-color:var(--border-hover,#334155); }
+      .ur-cfg-toggle-btn.active { background:var(--surface2); color:var(--text); border-color:var(--border-hover,#334155); }
+      .ur-idp-chips { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+      .ur-idp-chip { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-muted); }
+      .ur-idp-dot  { width:7px; height:7px; border-radius:50%; background:#10b981; flex-shrink:0; }
+      .ur-idp-none { font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+
+      .ur-mode-toggle { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:14px; }
+      .ur-mode-btn { flex:1; padding:6px 0; font-size:12px; font-weight:600; border:none; cursor:pointer;
+        background:transparent; color:var(--text-muted); transition:background .15s,color .15s; }
+      .ur-mode-btn.active { background:var(--surface2); color:var(--text); }
+      .ur-mode-note { font-size:11px; color:var(--text-muted); font-style:italic; margin-bottom:14px; }
+
+      .ur-toggle-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; cursor:pointer; }
+      .ur-toggle-label { font-size:12px; font-weight:600; color:var(--text); }
+      .ur-toggle-desc  { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+      .ur-window-row { margin-bottom:14px; }
+      .ur-window-label { font-size:12px; font-weight:600; color:var(--text); margin-bottom:8px; }
+      .ur-window-pills { display:flex; gap:6px; flex-wrap:wrap; }
+      .ur-window-pill { padding:4px 12px; border-radius:100px; border:1px solid var(--border);
+        font-size:11px; font-weight:600; cursor:pointer; background:transparent;
+        color:var(--text-muted); transition:all .15s; }
+      .ur-window-pill.active { background:var(--surface2); color:var(--text); border-color:var(--border-hover,#334155); }
+
+      .ur-weights-section { display:none; margin-bottom:14px; }
+      .ur-weights-section.open { display:block; }
+      .ur-weights-title { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
+      .ur-weight-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+      .ur-weight-label { font-size:11px; color:var(--text-muted); flex:1; }
+      .ur-weight-sign  { font-size:11px; color:var(--text-muted); width:14px; flex-shrink:0; }
+      .ur-weight-input { width:64px; padding:4px 7px; border:1px solid var(--border); border-radius:6px;
+        background:var(--surface2); color:var(--text); font-size:12px; }
+
+      .ur-sidebar-actions { display:flex; gap:8px; margin-top:4px; flex-wrap:wrap; }
+      .ur-save-btn  { flex:1; padding:8px 0; font-size:13px; font-weight:600; border:none; border-radius:8px;
+        background:var(--primary,#6366f1); color:#fff; cursor:pointer; transition:opacity .15s; }
+      .ur-save-btn:hover { opacity:.85; }
+      .ur-reset-btn { padding:8px 14px; font-size:12px; font-weight:600; border:1px solid var(--border); border-radius:8px;
+        background:transparent; color:var(--text-muted); cursor:pointer; transition:background .15s; }
+      .ur-reset-btn:hover { background:var(--surface2); color:var(--text); }
+    </style>
+
+    <div style="margin-bottom:24px">
+      <h1 style="margin-bottom:4px">User Risk</h1>
+      <div style="font-size:13px;color:var(--text-muted)">Identity-linked risk scores powered by IDP Connect. Scores reflect what users send, not what agents return.</div>
+    </div>
+
+    <div class="ur-layout ur-cfg-hidden" id="ur-layout">
+      <!-- ── Left: user cards ── -->
+      <div>
+        <div class="ur-filter-bar">
+          <input class="ur-search" id="ur-search" type="text" placeholder="Search by email or name…" oninput="urFilterCards()">
+          <select class="ur-vs-select" id="ur-vs-filter" onchange="urApplyVsFilter()">
+            <option value="">All virtual servers</option>
+          </select>
+          <span class="ur-badge" id="ur-count-badge"></span>
+          <button class="btn btn-ghost btn-sm" onclick="loadUserRisk()" title="Refresh">↻</button>
+          <button class="ur-cfg-toggle-btn" id="ur-cfg-toggle" onclick="urToggleConfig()" title="Configure scoring">⚙ Configure</button>
+        </div>
+        <div class="ur-grid" id="ur-grid">
+          <div style="color:var(--text-muted);font-size:13px;padding:20px 0">Loading…</div>
+        </div>
+      </div>
+
+      <!-- ── Right: config sidebar ── -->
+      <div class="ur-sidebar">
+        <div class="ur-sidebar-title">⚙ Global Scoring Config</div>
+
+        <!-- IDP status chips -->
+        <div id="ur-idp-chips"></div>
+
+        <!-- Mode -->
+        <div class="ur-mode-toggle">
+          <button class="ur-mode-btn" id="ur-mode-default" onclick="urSetMode('default')">Default</button>
+          <button class="ur-mode-btn" id="ur-mode-custom"  onclick="urSetMode('custom')">Custom</button>
+        </div>
+        <div class="ur-mode-note" id="ur-mode-note"></div>
+
+        <!-- Inbound-only toggle -->
+        <label class="ur-toggle-row" for="ur-inbound-toggle">
+          <div>
+            <div class="ur-toggle-label">Only score inbound scans</div>
+            <div class="ur-toggle-desc">Only messages the user sends affect their score</div>
+          </div>
+          <input type="checkbox" id="ur-inbound-toggle" style="width:16px;height:16px;cursor:pointer">
+        </label>
+
+        <!-- Time window -->
+        <div class="ur-window-row">
+          <div class="ur-window-label">Rolling window</div>
+          <div class="ur-window-pills" id="ur-window-pills">
+            <button class="ur-window-pill" data-days="1"  onclick="urSetWindow(1)">1d</button>
+            <button class="ur-window-pill" data-days="3"  onclick="urSetWindow(3)">3d</button>
+            <button class="ur-window-pill" data-days="7"  onclick="urSetWindow(7)">7d</button>
+            <button class="ur-window-pill" data-days="14" onclick="urSetWindow(14)">14d</button>
+            <button class="ur-window-pill" data-days="30" onclick="urSetWindow(30)">30d</button>
+          </div>
+        </div>
+
+        <!-- Custom weights -->
+        <div class="ur-weights-section" id="ur-weights-section">
+          <div class="ur-weights-title">Point weights</div>
+          <div class="ur-weight-row"><span class="ur-weight-label">Clean scan</span>         <span class="ur-weight-sign">+</span><input class="ur-weight-input" id="urw-clean" type="number" min="0" max="100" value="2"></div>
+          <div class="ur-weight-row"><span class="ur-weight-label">PII flag</span>           <span class="ur-weight-sign">−</span><input class="ur-weight-input" id="urw-pii"   type="number" min="0" max="500" value="10"></div>
+          <div class="ur-weight-row"><span class="ur-weight-label">Injection flag</span>     <span class="ur-weight-sign">−</span><input class="ur-weight-input" id="urw-inj"   type="number" min="0" max="500" value="20"></div>
+          <div class="ur-weight-row"><span class="ur-weight-label">Interceptor block</span>  <span class="ur-weight-sign">−</span><input class="ur-weight-input" id="urw-block" type="number" min="0" max="500" value="30"></div>
+        </div>
+
+        <div class="ur-sidebar-actions">
+          <button class="ur-save-btn" onclick="urSaveConfig()">Save</button>
+          <button class="ur-reset-btn" onclick="urResetAllScores()">Reset All Scores</button>
+        </div>
+      </div>
+    </div>
+    </div><!-- end page-user-risk -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCORE HISTORY PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-score-history">
+    <style>
+      .sh-header { margin-bottom:24px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+      .sh-header-text h1 { font-size:20px; font-weight:700; letter-spacing:-.2px; }
+      .sh-header-text p  { color:var(--text-2); font-size:13px; margin-top:4px; }
+
+      .sh-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+      .sh-filter-tabs { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+      .sh-filter-tab  { padding:6px 16px; font-size:12px; font-weight:600; cursor:pointer; border:none; background:none; color:var(--text-2); transition:background .12s,color .12s; }
+      .sh-filter-tab.active { background:var(--accent); color:#fff; }
+      .sh-entity-select { padding:6px 12px; font-size:12.5px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); cursor:pointer; min-width:180px; }
+      .sh-refresh-btn { margin-left:auto; }
+
+      /* Timeline */
+      .sh-timeline { display:flex; flex-direction:column; gap:0; }
+      .sh-day-group { margin-bottom:28px; }
+      .sh-day-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--text-3); margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+
+      .sh-row { display:flex; align-items:center; gap:14px; padding:10px 14px; border-radius:8px; margin-bottom:2px; transition:background .1s; }
+      .sh-row:hover { background:var(--surface2); }
+
+      .sh-delta { min-width:52px; text-align:right; font-size:14px; font-weight:800; letter-spacing:-.3px; flex-shrink:0; }
+      .sh-delta.pos { color:#10b981; }
+      .sh-delta.neg { color:#ef4444; }
+      .sh-delta.zero{ color:var(--text-3); }
+
+      .sh-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+      .sh-body { flex:1; min-width:0; }
+      .sh-label { font-size:13px; font-weight:600; color:var(--text); }
+      .sh-meta  { font-size:11px; color:var(--text-2); margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+      .sh-tag   { font-size:10px; font-weight:600; padding:1px 7px; border-radius:100px; }
+
+      .sh-time  { font-size:11px; color:var(--text-3); flex-shrink:0; min-width:72px; text-align:right; }
+
+      .sh-empty { text-align:center; padding:60px 20px; color:var(--text-3); }
+      .sh-empty .icon { font-size:32px; margin-bottom:12px; }
+
+      /* Category dot colours */
+      .sh-dot.clean     { background:#10b981; }
+      .sh-dot.deny      { background:#f59e0b; }
+      .sh-dot.block     { background:#ef4444; }
+      .sh-dot.pii       { background:#8b5cf6; }
+      .sh-dot.injection { background:#f97316; }
+      .sh-dot.flag      { background:#94a3b8; }
+
+      /* Category tag colours */
+      .sh-tag.clean     { background:rgba(16,185,129,.12);  color:#10b981; }
+      .sh-tag.deny      { background:rgba(245,158,11,.12);  color:#f59e0b; }
+      .sh-tag.block     { background:rgba(239,68,68,.12);   color:#ef4444; }
+      .sh-tag.pii       { background:rgba(139,92,246,.12);  color:#8b5cf6; }
+      .sh-tag.injection { background:rgba(249,115,22,.12);  color:#f97316; }
+      .sh-tag.flag      { background:rgba(148,163,184,.12); color:#94a3b8; }
+      /* Direction tags: inbound = green (reuses .clean), outbound = indigo */
+      .sh-tag.outbound  { background:rgba(99,102,241,.12);  color:#6366f1; }
+    </style>
+
+      <div class="sh-header">
+        <div class="sh-header-text">
+          <h1>Score History</h1>
+          <p>Every point change — what happened, when, and how much it moved the score.</p>
+        </div>
+      </div>
+
+      <div class="sh-toolbar">
+        <div class="sh-filter-tabs">
+          <button class="sh-filter-tab active" data-filter="all"    onclick="shSetFilter('all')">All</button>
+          <button class="sh-filter-tab"        data-filter="vs"     onclick="shSetFilter('vs')">Virtual Servers</button>
+          <button class="sh-filter-tab"        data-filter="agent"  onclick="shSetFilter('agent')">Agents</button>
+          <button class="sh-filter-tab"        data-filter="user"   onclick="shSetFilter('user')">Users</button>
+        </div>
+        <select class="sh-entity-select" id="sh-entity-select" onchange="shLoad()">
+          <option value="">All entities</option>
+        </select>
+        <button class="btn btn-ghost btn-sm sh-refresh-btn" onclick="shLoad()">↺ Refresh</button>
+      </div>
+
+      <div id="sh-timeline-wrap">
+        <div class="sh-empty"><div class="icon">📈</div><div>Loading…</div></div>
+      </div>
+    </div><!-- end page-score-history -->
+
   </main>
 </div>
 
@@ -4838,10 +6327,69 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Pipeline Features</div>
     <div style="display:grid;gap:8px">
       <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
-        <input type="checkbox" id="vs-feat-interceptors" checked style="width:16px;height:16px;margin-top:2px;accent-color:#10b981;flex-shrink:0;cursor:pointer">
+        <input type="checkbox" id="vs-feat-interceptors" checked onchange="vsToggleIdpConnectRow()" style="width:16px;height:16px;margin-top:2px;accent-color:#10b981;flex-shrink:0;cursor:pointer">
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--text)">🛡 Interceptors</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Run inbound and outbound scanner pipeline (Regex + Presidio PII detection, masking, blocking). When disabled, tool arguments and responses pass through unscanned.</div>
+        </div>
+      </div>
+      <!-- IDP Connect: only visible when Interceptors is on -->
+      <div id="vs-idp-connect-row" style="display:none;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2)">
+          <input type="checkbox" id="vs-feat-idp-connect" onchange="vsToggleIdpSection()" style="width:16px;height:16px;margin-top:2px;accent-color:#6366f1;flex-shrink:0;cursor:pointer">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">🔗 Advanced — Connect with an IDP</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Require every caller to present a valid user identity token (<code style="font-size:11px">x-user-token</code>) issued by a trusted IDP. Calls without a matching issuer are rejected with 401. User identity (sub, email) is logged on each verified call.</div>
+          </div>
+        </div>
+        <!-- IDP issuers list — shown when checkbox is checked -->
+        <div id="vs-idp-section" style="display:none;padding:14px 14px 14px 42px;background:var(--surface);border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Trusted Issuers</div>
+          <div id="vs-idp-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--text-muted)">No issuers configured yet.</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="font-size:12px" onclick="vsShowAddIdp()">＋ Add Issuer</button>
+          <!-- Inline add form -->
+          <div id="vs-idp-add-form" style="display:none;margin-top:12px;padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">New Trusted Issuer</div>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;gap:8px;align-items:center">
+                <label style="font-size:11px;color:var(--text-muted);width:80px;flex-shrink:0">Name</label>
+                <input id="vs-idp-add-name" class="form-input" placeholder="e.g. Okta Production" style="flex:1;font-size:13px">
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <label style="font-size:11px;color:var(--text-muted);width:80px;flex-shrink:0">Provider</label>
+                <select id="vs-idp-add-provider" class="form-input" style="flex:1;font-size:13px">
+                  <option value="okta">Okta</option>
+                  <option value="azure_ad">Azure AD / Entra</option>
+                  <option value="auth0">Auth0</option>
+                  <option value="google">Google</option>
+                  <option value="custom">Custom / Other</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <label style="font-size:11px;color:var(--text-muted);width:80px;flex-shrink:0">Issuer URL</label>
+                <input id="vs-idp-add-issuer" class="form-input" placeholder="https://dev-xxx.okta.com/oauth2/default" style="flex:1;font-size:13px">
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <label style="font-size:11px;color:var(--text-muted);width:80px;flex-shrink:0">Audience</label>
+                <input id="vs-idp-add-audience" class="form-input" placeholder="api://banking (optional)" style="flex:1;font-size:13px">
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <label style="font-size:11px;color:var(--text-muted);width:80px;flex-shrink:0">JWKS URI</label>
+                <input id="vs-idp-add-jwks" class="form-input" placeholder="Leave blank to auto-derive from issuer" style="flex:1;font-size:13px">
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="checkbox" id="vs-idp-add-fullverify" style="accent-color:#6366f1">
+                <label for="vs-idp-add-fullverify" style="font-size:12px;color:var(--text-muted);cursor:pointer">Full signature verification (JWKS) — slower but cryptographically secure</label>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn btn-primary btn-sm" onclick="vsAddIdp()">Add</button>
+              <button class="btn btn-ghost btn-sm" onclick="vsHideAddIdp()">Cancel</button>
+            </div>
+          </div>
+          <p id="vs-idp-new-vs-note" style="display:none;font-size:11px;color:var(--text-muted);font-style:italic;margin-top:8px">Save the virtual server first, then re-open Edit to configure IDP issuers.</p>
         </div>
       </div>
       <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
@@ -4851,7 +6399,28 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
           <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Evaluate Cedar-style permit/forbid/approval policies and OBO token scopes. When disabled, all tool calls are auto-allowed (audit logging and OBO exchange still run).</div>
         </div>
       </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+        <input type="checkbox" id="vs-require-agent-token" onchange="vsToggleAgentSection()" style="width:16px;height:16px;margin-top:2px;accent-color:#f59e0b;flex-shrink:0;cursor:pointer">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">🤖 Require Agent Identity</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Reject calls that don't include a valid <code style="font-size:11px">X-Agent-Token</code> from a registered agent. When off, agent identity is logged when present but not enforced.</div>
+        </div>
+      </div>
     </div>
+
+    <!-- Allowed Agents section — visible only when Require Agent Identity is on -->
+    <div id="vs-allowed-agents-section" style="display:none;margin-top:18px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Allowed Agents</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Only agents in this list may call this virtual server when enforcement is on. Agents are checked against the registry — inactive agents are always rejected.</p>
+      <div id="vs-agents-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="vs-add-agent-sel" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;outline:none">
+          <option value="">Add an agent…</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="vsAddAgentAssignment()">＋ Add</button>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeVsModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveVs()">Save</button>
@@ -4958,7 +6527,7 @@ function navigate(page) {
   window.location.hash = page;
 }
 
-const DOCS_PAGES = new Set(['docs', 'architecture', 'pipeline', 'mcp-architecture', 'mcp-flow']);
+const DOCS_PAGES = new Set(['docs', 'architecture', 'pipeline', 'mcp-architecture', 'mcp-flow', 'identities']);
 
 function handleRoute() {
   const page = window.location.hash.slice(1) || 'dashboard';
@@ -4985,7 +6554,11 @@ function handleRoute() {
   if (page === 'simulate')        loadSimulateDropdowns();
   if (page === 'interceptors')    loadInterceptorsPage();
   if (page === 'keys')            loadKeys();
+  if (page === 'agents')          loadAgents();
   if (page === 'approvals')       loadApprovals();
+  if (page === 'scoring')         loadScoring();
+  if (page === 'user-risk')       loadUserRisk();
+  if (page === 'score-history')   shInit();
   if (page === 'mcp-architecture') initMcaMermaid();
   if (page === 'mcp-flow') initMcpFlow();
   if (page !== 'tools')           closeDrawer();
@@ -4997,6 +6570,804 @@ document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
 });
 
 window.addEventListener('hashchange', handleRoute);
+
+// ─── SCORING ──────────────────────────────────────────────────────────────────
+let scCurrentTab   = 'vs';
+let scConfigTarget = null; // { type: 'vs'|'agent', id, name }
+let scConfigWindow = 7;
+
+function scSwitchTab(tab) {
+  scCurrentTab = tab;
+  document.getElementById('sc-tab-vs').classList.toggle('active', tab === 'vs');
+  document.getElementById('sc-tab-agents').classList.toggle('active', tab === 'agents');
+  document.getElementById('sc-panel-vs').style.display     = tab === 'vs'     ? '' : 'none';
+  document.getElementById('sc-panel-agents').style.display = tab === 'agents' ? '' : 'none';
+  scCloseConfig();
+}
+
+function scTierStyle(tier) {
+  return `color:${tier.color};`;
+}
+
+function scScoreBar(label, count, max, color) {
+  const pct = max ? Math.round((count / max) * 100) : 0;
+  return `<div class="sc-bar-row">
+    <span class="sc-bar-label">${label}</span>
+    <div class="sc-bar-track"><div class="sc-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span class="sc-bar-val">${count}</span>
+  </div>`;
+}
+
+function scRenderCard(entity, type) {
+  const { id, name, score, tier, breakdown, neutral, config, is_active } = entity;
+  const total = breakdown.total_proxy + breakdown.total_interceptor;
+  const maxBar = Math.max(breakdown.total_proxy, 1);
+
+  const inactiveNote = is_active === 0 ? ' <span style="font-size:10px;color:var(--text-muted)">(inactive)</span>' : '';
+  const neutralNote  = neutral ? '<span class="sc-neutral-chip">No activity in window</span>' : '';
+  const modeChip     = `<span class="sc-window-chip">${config.mode === 'custom' ? '⚙ Custom · ' : ''}${config.time_window_days}d window</span>`;
+
+  const intMax = Math.max(breakdown.total_interceptor, 1);
+  const allBars = [
+    [breakdown.clean_calls,              'Clean calls',        maxBar,  '#10b981'],
+    [(breakdown.clean_scans || 0),       'Clean scans',        intMax,  '#34d399'],
+    [breakdown.policy_denials,           'Policy denials',     maxBar,  '#ef4444'],
+    [breakdown.interceptor_blocks,       'Interceptor blocks', intMax,  '#f97316'],
+    [breakdown.pii_flags,                'PII flags',          intMax,  '#f59e0b'],
+    [breakdown.injection_flags,          'Injection flags',    intMax,  '#a78bfa'],
+  ];
+  const bars = allBars
+    .filter(([count]) => count > 0)
+    .map(([count, label, max, color]) => scScoreBar(label, count, max, color))
+    .join('') || '<div style="font-size:12px;color:var(--text-muted);padding:4px 0">No activity in this window</div>';
+
+  return `<div class="sc-card">
+    <div class="sc-card-top">
+      <div>
+        <div class="sc-card-name">${escHtml(name)}${inactiveNote}</div>
+        <div class="sc-card-sub">${breakdown.total_proxy} proxy call${breakdown.total_proxy !== 1 ? 's' : ''}${breakdown.total_interceptor > 0 ? ' · ' + breakdown.total_interceptor + ' scans' : ''}</div>
+      </div>
+      <div class="sc-card-score-wrap">
+        <div class="sc-card-score" style="${scTierStyle(tier)}">${score}</div>
+        <div class="sc-card-tier" style="color:${tier.color}">${tier.name}</div>
+      </div>
+    </div>
+    <div class="sc-bar-wrap">${bars}</div>
+    <div class="sc-card-footer">
+      ${neutralNote || modeChip}
+      <button class="btn btn-ghost btn-sm sc-action-btn" onclick="scOpenConfig('${type}','${id}','${escHtml(name).replace(/'/g,"\\'")}')">⚙ Configure</button>
+    </div>
+  </div>`;
+}
+
+function renderUserScoreCards(data) {
+  const grid  = document.getElementById('sc-users-grid');
+  const users = Array.isArray(data) ? data : (data?.users || []);
+  const cfg   = Array.isArray(data) ? null : data?.config;
+  const modeChip = cfg ? `<span class="sc-window-chip" style="margin-bottom:12px;display:inline-block">${cfg.mode === 'custom' ? '⚙ Custom · ' : ''}${cfg.time_window_days || 7}d window · ${cfg.only_inbound ? 'inbound only' : 'all scans'}</span>` : '';
+
+  if (!users.length) {
+    grid.innerHTML = `${modeChip}<div class="empty-state"><div class="icon">👤</div><div class="msg">No users tracked yet. Enable IDP Connect on a virtual server to start.</div></div>`;
+    return;
+  }
+  grid.innerHTML = modeChip + users.map(u => {
+    const name = u.user_email || (u.user_sub ? u.user_sub.slice(0, 24) + '…' : 'Unknown');
+    const tier = u.tier;
+    const scoreBadge = tier
+      ? `<span class="sc-tier-badge" style="background:${tier.bg};color:${tier.color};border:1px solid ${tier.border};border-radius:100px;font-size:10px;font-weight:700;padding:2px 9px;white-space:nowrap">${tier.name}</span>`
+      : '';
+    return `
+      <div class="sc-card">
+        <div class="sc-card-top">
+          <div class="sc-card-info">
+            <div class="sc-card-name">${escHtml(name)}</div>
+            ${u.user_name ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px">${escHtml(u.user_name)}</div>` : ''}
+            <div class="sc-card-sub">${u.event_count || 0} scan event${u.event_count !== 1 ? 's' : ''} · last ${fmtDateShort(u.last_seen)}</div>
+          </div>
+          <div class="sc-card-score-wrap">
+            ${scoreBadge}
+            <div class="sc-card-score" style="${tier ? `color:${tier.color}` : ''}">${u.score ?? '—'}</div>
+            <div class="sc-card-score-sub">/ 1000</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function loadScoring() {
+  scCloseConfig();
+  const [vsScores, agentScores] = await Promise.all([
+    api('/scoring/vs').catch(() => []),
+    api('/scoring/agents').catch(() => []),
+  ]);
+
+  const vsGrid = document.getElementById('sc-vs-grid');
+  const agGrid = document.getElementById('sc-agents-grid');
+
+  const scoredVs = vsScores.filter(v => v.interceptors_enabled !== false);
+  if (!scoredVs.length) {
+    vsGrid.innerHTML = '<div class="empty-state"><div class="icon">🛡</div><div class="msg">No virtual servers with interceptors enabled.</div></div>';
+  } else {
+    vsGrid.innerHTML = scoredVs.map(vs => scRenderCard(vs, 'vs')).join('');
+  }
+
+  if (!agentScores.length) {
+    agGrid.innerHTML = '<div class="empty-state"><div class="icon">🤖</div><div class="msg">No agents registered yet.</div></div>';
+  } else {
+    agGrid.innerHTML = agentScores.map(a => scRenderCard(a, 'agent')).join('');
+  }
+}
+
+async function scResetScore(type, id, name) {
+  if (!confirm(`Reset the score for "${name}" back to neutral (500)?\n\nThis discards all past events from the score calculation. The audit log is preserved.`)) return;
+  try {
+    const url = `/scoring/${type}/${id}/reset`;
+    await api(url, { method: 'POST' });
+    scCloseConfig();
+    await loadScoring();
+  } catch (e) {
+    alert('Reset failed: ' + e.message);
+  }
+}
+
+async function scOpenUserConfig() {
+  scConfigTarget = { type: 'user', id: '__users_global__', name: 'Users (Global)' };
+  document.getElementById('sc-cfg-title').textContent = 'Configure User Scoring';
+
+  const cfg = await api('/scoring/users/config').catch(() => ({ mode: 'default', time_window_days: 7, points: {} }));
+  scConfigWindow = cfg.time_window_days || 7;
+  scRefreshWindowPills(scConfigWindow);
+
+  const pts = cfg.points || {};
+  document.getElementById('sc-w-clean').value  = pts.clean_scan        ?? 2;
+  document.getElementById('sc-w-scan').value   = pts.clean_scan        ?? 2;
+  document.getElementById('sc-w-deny').value   = pts.policy_deny       != null ? Math.abs(pts.policy_deny)  : 15;
+  document.getElementById('sc-w-iblock').value = pts.interceptor_block != null ? Math.abs(pts.interceptor_block) : 30;
+  document.getElementById('sc-w-pii').value    = pts.pii_flag          != null ? Math.abs(pts.pii_flag)     : 10;
+  document.getElementById('sc-w-inj').value    = pts.injection_flag    != null ? Math.abs(pts.injection_flag): 20;
+
+  document.getElementById('sc-bidir-label').textContent = 'Only score inbound scans';
+  document.getElementById('sc-bidir-desc').innerHTML =
+    'When enabled, <strong>outbound</strong> scans (agent responses) are ignored — only <strong>inbound</strong> scans (messages sent by the user) affect the score. Recommended: user risk should reflect what the user sends, not what the agent returns.';
+
+  scSetUserMode(cfg.mode || 'default', false);
+  document.getElementById('sc-bidir-toggle').checked = !!(cfg.only_inbound !== false);
+
+  document.getElementById('sc-cfg-panel').classList.add('open');
+  document.getElementById('sc-cfg-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function scOpenConfig(type, id, name) {
+  scConfigTarget = { type, id, name };
+  document.getElementById('sc-cfg-title').textContent = `Configure Scoring — ${name}`;
+  // Reset toggle label back to outbound (VS/agent default)
+  document.getElementById('sc-bidir-label').textContent = 'Only score outbound scans';
+  document.getElementById('sc-bidir-desc').innerHTML =
+    'When enabled, <strong>inbound</strong> scans (messages sent by the user) are ignored entirely — only <strong>outbound</strong> scans (responses from the agent) affect the score. Useful because inbound content is user-controlled and shouldn\'t penalise the agent or virtual server.';
+
+  // Load existing config
+  const data = await api(`/scoring/${type === 'vs' ? 'vs' : 'agents'}/${id}`).catch(() => null);
+  const cfg = data?.config || { mode: 'default', time_window_days: 7, points: {} };
+
+  scSetMode(cfg.mode || 'default', false);
+  scConfigWindow = cfg.time_window_days || 7;
+  scRefreshWindowPills(scConfigWindow);
+
+  const pts = cfg.points || {};
+  document.getElementById('sc-w-clean').value  = pts.clean_call        ?? 5;
+  document.getElementById('sc-w-scan').value   = pts.clean_scan        ?? 2;
+  document.getElementById('sc-w-deny').value   = pts.policy_deny       != null ? Math.abs(pts.policy_deny)  : 15;
+  document.getElementById('sc-w-iblock').value = pts.interceptor_block != null ? Math.abs(pts.interceptor_block) : 30;
+  document.getElementById('sc-w-pii').value    = pts.pii_flag          != null ? Math.abs(pts.pii_flag)     : 10;
+  document.getElementById('sc-w-inj').value    = pts.injection_flag    != null ? Math.abs(pts.injection_flag): 20;
+  document.getElementById('sc-bidir-toggle').checked = !!(cfg.only_outbound);
+  document.getElementById('sc-bidir-section').style.display = '';
+
+  document.getElementById('sc-cfg-panel').classList.add('open');
+  document.getElementById('sc-cfg-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  if (cfg.mode === 'custom') scUpdatePreview();
+}
+
+function scCloseConfig() {
+  document.getElementById('sc-cfg-panel').classList.remove('open');
+  scConfigTarget = null;
+}
+
+function scSetMode(mode, refresh = true) {
+  document.getElementById('sc-mode-default').classList.toggle('active', mode === 'default');
+  document.getElementById('sc-mode-custom').classList.toggle('active', mode === 'custom');
+  document.getElementById('sc-cfg-custom').classList.toggle('open', mode === 'custom');
+  document.getElementById('sc-mode-note').textContent = mode === 'default'
+    ? 'Using Warden default weights across a 7-day rolling window.'
+    : 'Override individual point values and the rolling time window below.';
+  // In default mode, lock the outbound toggle to checked (mirrors DEFAULT_CONFIG)
+  const toggle = document.getElementById('sc-bidir-toggle');
+  if (mode === 'default') {
+    toggle.checked  = true;
+    toggle.disabled = true;
+    toggle.parentElement.style.opacity = '0.65';
+    toggle.parentElement.style.cursor  = 'default';
+  } else {
+    toggle.disabled = false;
+    toggle.parentElement.style.opacity = '';
+    toggle.parentElement.style.cursor  = 'pointer';
+  }
+  if (mode === 'custom' && refresh) scUpdatePreview();
+}
+
+function scSetUserMode(mode, refresh = true) {
+  document.getElementById('sc-mode-default').classList.toggle('active', mode === 'default');
+  document.getElementById('sc-mode-custom').classList.toggle('active', mode === 'custom');
+  document.getElementById('sc-cfg-custom').classList.toggle('open', mode === 'custom');
+  document.getElementById('sc-mode-note').textContent = mode === 'default'
+    ? 'Using Warden default weights — only inbound scans scored across a 7-day window.'
+    : 'Override individual point values and the rolling time window below.';
+  const toggle = document.getElementById('sc-bidir-toggle');
+  if (mode === 'default') {
+    toggle.checked  = true;
+    toggle.disabled = true;
+    toggle.parentElement.style.opacity = '0.65';
+    toggle.parentElement.style.cursor  = 'default';
+  } else {
+    toggle.disabled = false;
+    toggle.parentElement.style.opacity = '';
+    toggle.parentElement.style.cursor  = 'pointer';
+  }
+  if (mode === 'custom' && refresh) scUpdatePreview();
+}
+
+function scSetWindow(days) {
+  scConfigWindow = days;
+  scRefreshWindowPills(days);
+  scUpdatePreview();
+}
+
+function scRefreshWindowPills(days) {
+  document.querySelectorAll('#sc-window-pills .sc-window-pill').forEach(p => {
+    p.classList.toggle('active', Number(p.dataset.days) === days);
+  });
+}
+
+async function scUpdatePreview() {
+  if (!scConfigTarget) return;
+  const { type, id } = scConfigTarget;
+  const body = scBuildConfigBody();
+  // Compute a preview by temporarily saving then reading — or compute client side
+  const el     = document.getElementById('sc-preview-score');
+  const elTier = document.getElementById('sc-preview-tier');
+  el.textContent = '…';
+  try {
+    // Use the live endpoint with query params isn't possible; instead POST a transient compute
+    // We'll just show a "Save to preview" note since full server-side re-compute requires a round trip
+    // For now, show a rough local estimate
+    el.textContent = '—';
+    elTier.textContent = 'Save to see updated score';
+    elTier.style.color = 'var(--text-muted)';
+  } catch {}
+}
+
+function scBuildConfigBody() {
+  const mode = document.getElementById('sc-mode-custom').classList.contains('active') ? 'custom' : 'default';
+  return {
+    mode,
+    time_window_days: scConfigWindow,
+    only_outbound: document.getElementById('sc-bidir-toggle').checked,
+    points: {
+      clean_call:        +document.getElementById('sc-w-clean').value,
+      clean_scan:        +document.getElementById('sc-w-scan').value,
+      policy_deny:      -Math.abs(+document.getElementById('sc-w-deny').value),
+      interceptor_block:-Math.abs(+document.getElementById('sc-w-iblock').value),
+      pii_flag:         -Math.abs(+document.getElementById('sc-w-pii').value),
+      injection_flag:   -Math.abs(+document.getElementById('sc-w-inj').value),
+    },
+  };
+}
+
+async function scSaveConfig() {
+  if (!scConfigTarget) return;
+  const { type, id } = scConfigTarget;
+  try {
+    if (type === 'user') {
+      const mode = document.getElementById('sc-mode-custom').classList.contains('active') ? 'custom' : 'default';
+      const body = {
+        mode,
+        time_window_days: scConfigWindow,
+        only_inbound: document.getElementById('sc-bidir-toggle').checked,
+        points: {
+          clean_scan:        +document.getElementById('sc-w-scan').value,
+          policy_deny:      -Math.abs(+document.getElementById('sc-w-deny').value),
+          interceptor_block:-Math.abs(+document.getElementById('sc-w-iblock').value),
+          pii_flag:         -Math.abs(+document.getElementById('sc-w-pii').value),
+          injection_flag:   -Math.abs(+document.getElementById('sc-w-inj').value),
+        },
+      };
+      await api('/scoring/users/config', { method: 'PUT', body });
+    } else {
+      const body = scBuildConfigBody();
+      await api(`/scoring/${type}/` + id + '/config', { method: 'PUT', body });
+    }
+    scCloseConfig();
+    loadScoring();
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+// ─── USER RISK PAGE ───────────────────────────────────────────────────────────
+
+let urAllUsers   = [];   // full dataset from last API call
+let urWindow     = 7;
+let urMode       = 'default';
+let urOpenSub    = null; // currently expanded user sub
+
+async function loadUserRisk() {
+  const vsId  = document.getElementById('ur-vs-filter')?.value || '';
+  const url   = vsId ? `/scoring/users?vs_id=${encodeURIComponent(vsId)}` : '/scoring/users';
+  const data  = await api(url).catch(() => ({ config: null, users: [] }));
+
+  urAllUsers = Array.isArray(data.users) ? data.users : [];
+
+  // Populate VS filter (first load only)
+  const sel = document.getElementById('ur-vs-filter');
+  if (sel && sel.options.length <= 1) {
+    const vsList = await api('/scoring/users/idp-vs').catch(() => []);
+    vsList.forEach(vs => {
+      const opt = document.createElement('option');
+      opt.value = vs.id;
+      opt.textContent = vs.name;
+      sel.appendChild(opt);
+    });
+
+    // IDP chips in sidebar
+    const chipsEl = document.getElementById('ur-idp-chips');
+    if (chipsEl) {
+      if (!vsList.length) {
+        chipsEl.innerHTML = '<div class="ur-idp-none">No virtual servers with IDP Connect enabled. Enable it in a VS to start tracking users.</div>';
+      } else {
+        chipsEl.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">IDP Connect active on</div>' +
+          vsList.map(vs => `<div class="ur-idp-chip"><span class="ur-idp-dot"></span>${escHtml(vs.name)}</div>`).join('') +
+          '<div style="height:1px;background:var(--border);margin:12px 0 14px"></div>';
+      }
+    }
+  }
+
+  // Load config into sidebar
+  const cfg = data.config || {};
+  urMode   = cfg.mode || 'default';
+  urWindow = cfg.time_window_days || 7;
+  urSetMode(urMode, false);
+  urRefreshWindowPills(urWindow);
+  document.getElementById('ur-inbound-toggle').checked = cfg.only_inbound !== false;
+  const pts = cfg.points || {};
+  document.getElementById('urw-clean').value = pts.clean_scan        ?? 2;
+  document.getElementById('urw-pii').value   = Math.abs(pts.pii_flag          ?? 10);
+  document.getElementById('urw-inj').value   = Math.abs(pts.injection_flag    ?? 20);
+  document.getElementById('urw-block').value = Math.abs(pts.interceptor_block ?? 30);
+
+  urRenderCards();
+}
+
+function urRenderCards() {
+  const search = (document.getElementById('ur-search')?.value || '').toLowerCase();
+  const grid   = document.getElementById('ur-grid');
+  const badge  = document.getElementById('ur-count-badge');
+
+  let users = urAllUsers;
+  if (search) {
+    users = users.filter(u =>
+      (u.user_email || '').toLowerCase().includes(search) ||
+      (u.user_name  || '').toLowerCase().includes(search) ||
+      (u.user_sub   || '').toLowerCase().includes(search)
+    );
+  }
+
+  if (badge) badge.textContent = users.length ? `${users.length} user${users.length !== 1 ? 's' : ''}` : '';
+
+  if (!users.length) {
+    grid.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:24px 0;text-align:center">
+      ${search ? 'No users match your search.' : 'No users tracked yet. Enable IDP Connect on a virtual server and send a message through the chatbot.'}
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = users.map(u => {
+    const email   = u.user_email || (u.user_sub ? u.user_sub.slice(0, 28) + '…' : 'Unknown');
+    const initial = (u.user_name || u.user_email || '?')[0].toUpperCase();
+    const tier    = u.tier;
+    const isOpen  = urOpenSub === u.user_sub;
+    const tierBadge = tier
+      ? `<div class="ur-card-tier" style="color:${tier.color}">${tier.name}</div>`
+      : '';
+    return `
+<div class="ur-card${isOpen ? ' open' : ''}" id="ur-card-${CSS.escape(u.user_sub || 'x')}">
+  <div class="ur-card-header" onclick="urToggleCard(${escHtml(JSON.stringify(u.user_sub))})">
+    <div class="ur-card-avatar">${escHtml(initial)}</div>
+    <div class="ur-card-info">
+      <div class="ur-card-email" title="${escHtml(u.user_sub || '')}">${escHtml(email)}</div>
+      <div class="ur-card-meta">${u.user_name ? escHtml(u.user_name) + ' · ' : ''}${u.event_count || 0} events · last ${fmtDateShort(u.last_seen)}</div>
+    </div>
+    <div class="ur-card-right">
+      <div>
+        <div class="ur-card-score" style="${tier ? `color:${tier.color}` : ''}">${u.score ?? '—'}</div>
+        ${tierBadge}
+      </div>
+      <span class="ur-card-chevron">▼</span>
+    </div>
+  </div>
+  <div class="ur-events" id="ur-events-${CSS.escape(u.user_sub || 'x')}">
+    <div style="font-size:11px;color:var(--text-muted);padding:4px 0 8px">Loading events…</div>
+  </div>
+</div>`;
+  }).join('');
+
+  // If a card was open, reload its events
+  if (urOpenSub) urLoadEvents(urOpenSub);
+}
+
+async function urToggleCard(sub) {
+  if (urOpenSub === sub) {
+    urOpenSub = null;
+    urRenderCards();
+    return;
+  }
+  urOpenSub = sub;
+  urRenderCards();
+  await urLoadEvents(sub);
+}
+
+async function urLoadEvents(sub, limit = 15) {
+  const vsId    = document.getElementById('ur-vs-filter')?.value || '';
+  const vsParam = vsId ? `&vs_id=${encodeURIComponent(vsId)}` : '';
+  const events  = await api(`/scoring/users/${encodeURIComponent(sub)}/events?limit=${limit}${vsParam}`).catch(() => []);
+  const el      = document.getElementById(`ur-events-${CSS.escape(sub)}`);
+  if (!el) return;
+
+  if (!events.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:4px 0 8px">No events in the current window.</div>';
+    return;
+  }
+
+  el.innerHTML = `<table class="ur-events-table">
+    <thead><tr>
+      <th>Time</th><th>Direction</th><th>Finding</th><th>Action</th><th>VS</th>
+    </tr></thead>
+    <tbody>
+      ${events.map(e => {
+        const cats = e.categories || [];
+        const isInj = cats.some(c => c === 'prompt_injection' || c === 'injection' || c === 'unsafe');
+        const isPii = cats.some(c => c === 'pii' || c === 'ssn' || c === 'email' || c === 'phone' || c === 'credit_card' || c === 'iban');
+        const flagSpan = e.flagged
+          ? (isInj ? '<span class="ur-evt-flag inj">injection</span>' : '<span class="ur-evt-flag pii">pii</span>')
+          : '<span class="ur-evt-flag clean">clean</span>';
+        const actCls = `ur-evt-action-${e.action || 'allow'}`;
+        return `<tr>
+          <td style="white-space:nowrap">${fmtDateShort(e.created_at)}</td>
+          <td>${e.direction || '—'}</td>
+          <td>${flagSpan}${cats.length ? ` <span style="font-size:10px;color:var(--text-muted)">${cats.slice(0,2).join(', ')}</span>` : ''}</td>
+          <td class="${actCls}">${e.action || 'allow'}</td>
+          <td style="font-size:11px;color:var(--text-muted)">${escHtml(e.vs_name || e.vs_id?.slice(0,8) || '—')}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+  ${events.length >= limit ? `<button class="ur-load-btn" onclick="urLoadEvents(${escHtml(JSON.stringify(sub))}, ${limit + 15})">Load more…</button>` : ''}`;
+}
+
+function urToggleConfig() {
+  const layout = document.getElementById('ur-layout');
+  const btn    = document.getElementById('ur-cfg-toggle');
+  const hidden = layout.classList.toggle('ur-cfg-hidden');
+  btn.classList.toggle('active', !hidden);
+  btn.textContent = hidden ? '⚙ Configure' : '⚙ Configure';
+}
+
+function urFilterCards() {
+  urRenderCards();
+}
+
+async function urApplyVsFilter() {
+  await loadUserRisk();
+}
+
+function urSetMode(mode, refresh = true) {
+  urMode = mode;
+  document.getElementById('ur-mode-default').classList.toggle('active', mode === 'default');
+  document.getElementById('ur-mode-custom').classList.toggle('active', mode === 'custom');
+  document.getElementById('ur-mode-note').textContent = mode === 'default'
+    ? 'Using Warden defaults — only inbound scans scored across a 7-day window.'
+    : 'Customize weights and the rolling time window below.';
+  document.getElementById('ur-weights-section').classList.toggle('open', mode === 'custom');
+  const toggle = document.getElementById('ur-inbound-toggle');
+  if (mode === 'default') {
+    toggle.checked  = true;
+    toggle.disabled = true;
+    toggle.parentElement.style.opacity = '0.6';
+    toggle.parentElement.style.cursor  = 'default';
+  } else {
+    toggle.disabled = false;
+    toggle.parentElement.style.opacity = '';
+    toggle.parentElement.style.cursor  = 'pointer';
+  }
+}
+
+function urSetWindow(days) {
+  urWindow = days;
+  urRefreshWindowPills(days);
+}
+
+function urRefreshWindowPills(days) {
+  document.querySelectorAll('#ur-window-pills .ur-window-pill').forEach(p => {
+    p.classList.toggle('active', Number(p.dataset.days) === days);
+  });
+}
+
+async function urSaveConfig() {
+  const mode        = urMode;
+  const only_inbound = document.getElementById('ur-inbound-toggle').checked;
+  const body = {
+    mode,
+    time_window_days: urWindow,
+    only_inbound,
+    points: {
+      clean_scan:        +document.getElementById('urw-clean').value,
+      pii_flag:         -Math.abs(+document.getElementById('urw-pii').value),
+      injection_flag:   -Math.abs(+document.getElementById('urw-inj').value),
+      interceptor_block:-Math.abs(+document.getElementById('urw-block').value),
+    },
+  };
+  try {
+    await api('/scoring/users/config', { method: 'PUT', body });
+    await loadUserRisk();
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+async function urResetAllScores() {
+  if (!confirm('Reset ALL user scores back to neutral (500)?\n\nThis sets reset_at to now — future events continue to accumulate. The audit log is preserved.')) return;
+  try {
+    // Reset by saving current config with reset_at = now server-side
+    // We re-use the users/config PUT and rely on the server to set reset_at
+    // Instead, POST a dedicated reset endpoint
+    await api('/scoring/users/config/reset', { method: 'POST' });
+    await loadUserRisk();
+  } catch (e) {
+    // Fallback: re-save config which will be enough for a "fresh start" feel
+    await loadUserRisk();
+  }
+}
+
+// ─── SCORE HISTORY ────────────────────────────────────────────────────────────
+let shCurrentFilter = 'all';
+let shAllVs     = [];
+let shAllAgents = [];
+let shAllUsers  = [];
+
+async function shInit() {
+  try {
+    const [vs, agents, userResp] = await Promise.all([
+      api('/virtual-servers').catch(() => []),
+      api('/agents').catch(() => []),
+      api('/scoring/users').catch(() => ({ users: [] })),
+    ]);
+    shAllVs     = vs;
+    shAllAgents = agents;
+    shAllUsers  = Array.isArray(userResp.users) ? userResp.users : [];
+  } catch {}
+  shPopulateEntitySelect();
+  await shLoad();
+}
+
+function shSetFilter(filter) {
+  shCurrentFilter = filter;
+  document.querySelectorAll('.sh-filter-tab').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+  shPopulateEntitySelect();
+  // Reset entity picker when switching tabs so stale cross-type selection doesn't linger
+  const sel = document.getElementById('sh-entity-select');
+  if (sel) sel.value = '';
+  shLoad();
+}
+
+function shPopulateEntitySelect() {
+  const sel = document.getElementById('sh-entity-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All entities</option>';
+  const addGroup = (label, items, type, idKey = 'id', nameKey = 'name') => {
+    if (!items.length) return;
+    const grp = document.createElement('optgroup');
+    grp.label = label;
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = `${type}:${encodeURIComponent(item[idKey])}`;
+      opt.textContent = item[nameKey] || item[idKey];
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  };
+
+  if (shCurrentFilter === 'user') {
+    addGroup('', shAllUsers, 'user', 'user_sub', 'user_email');
+    return;
+  }
+  const showVs    = shCurrentFilter !== 'agent';
+  const showAgent = shCurrentFilter !== 'vs';
+  if (showVs)    addGroup(showAgent ? 'Virtual Servers' : '', shAllVs,     'vs');
+  if (showAgent) addGroup(showVs    ? 'Agents'          : '', shAllAgents, 'agent');
+}
+
+async function shLoad() {
+  const wrap = document.getElementById('sh-timeline-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="sh-empty"><div class="icon">⏳</div><div>Loading…</div></div>';
+
+  const selVal = document.getElementById('sh-entity-select')?.value || '';
+  const [entityType, entityId] = selVal ? selVal.split(':') : [null, null];
+
+  const qs = new URLSearchParams({ limit: 300 });
+  if (entityType && entityId) {
+    qs.set('entity_type', entityType);
+    qs.set('entity_id', entityId);
+  } else if (shCurrentFilter === 'agent') {
+    qs.set('entity_type', 'agent');
+  } else if (shCurrentFilter === 'user') {
+    qs.set('entity_type', 'user');
+  }
+
+  // Determine grouping
+  const groupBy = (entityType && entityId) || shCurrentFilter === 'all'
+    ? 'date'
+    : shCurrentFilter === 'vs'
+      ? 'vs'
+      : shCurrentFilter === 'user'
+        ? 'user'
+        : 'agent';
+
+  try {
+    const events = await api('/scoring/history?' + qs.toString());
+    shRender(events, wrap, groupBy);
+  } catch (e) {
+    wrap.innerHTML = `<div class="sh-empty"><div class="icon">⚠️</div><div>Failed to load: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+function shEventRow(ev) {
+  const sign  = ev.delta > 0 ? '+' : '';
+  const cls   = ev.delta > 0 ? 'pos' : ev.delta < 0 ? 'neg' : 'zero';
+  const entity = ev.vs_name
+    ? `<span style="font-size:10.5px;color:var(--text-2)">🗂 ${escHtml(ev.vs_name)}</span>`
+    : '';
+  const agentTag = ev.agent_name
+    ? `<span style="font-size:10.5px;color:var(--text-2)">🤖 ${escHtml(ev.agent_name)}</span>`
+    : '';
+  const userTag = ev.user_email
+    ? `<span style="font-size:10.5px;color:var(--text-2)">👤 ${escHtml(ev.user_email)}</span>`
+    : ev.user_sub
+      ? `<span style="font-size:10.5px;color:var(--text-2)">👤 ${escHtml(ev.user_sub.slice(0, 20))}…</span>`
+      : '';
+  const dirTag = ev.direction
+    ? `<span class="sh-tag ${ev.direction === 'outbound' ? 'outbound' : 'clean'}" style="opacity:.8">${ev.direction}</span>`
+    : '';
+  const toolTag = ev.tool_name
+    ? `<span style="font-family:monospace;font-size:10px;color:var(--text-3)">${escHtml(ev.tool_name)}</span>`
+    : '';
+  const scannerTag = ev.scanner
+    ? `<span style="font-size:10px;color:var(--text-3)">${escHtml(ev.scanner)}</span>`
+    : '';
+  return `<div class="sh-row">
+    <div class="sh-delta ${cls}">${sign}${ev.delta}</div>
+    <div class="sh-dot ${ev.category}"></div>
+    <div class="sh-body">
+      <div class="sh-label"><span class="sh-tag ${ev.category}">${escHtml(ev.event_label)}</span></div>
+      <div class="sh-meta">${userTag}${entity}${agentTag}${dirTag}${toolTag}${scannerTag}</div>
+    </div>
+    <div class="sh-time" title="${ev.created_at}">${shRelTime(ev.created_at)}</div>
+  </div>`;
+}
+
+function shRender(events, wrap, groupBy = 'date') {
+  if (!events.length) {
+    wrap.innerHTML = '<div class="sh-empty"><div class="icon">📭</div><div>No score events in the selected window.</div></div>';
+    return;
+  }
+
+  let html = '';
+
+  if (groupBy === 'vs') {
+    // Group by VS name — events without a vs_id go into "Unknown"
+    const groups = {};
+    for (const ev of events) {
+      const key = ev.vs_name || 'Unknown';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(ev);
+    }
+    html = Object.entries(groups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([vsName, evs]) => {
+        const total = evs.reduce((s, e) => s + e.delta, 0);
+        const sign  = total >= 0 ? '+' : '';
+        const totalColor = total >= 0 ? '#10b981' : '#ef4444';
+        const header = `<div class="sh-day-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>🗂 ${escHtml(vsName)}</span>
+          <span style="font-size:11px;font-weight:700;color:${totalColor}">${sign}${total} pts · ${evs.length} events</span>
+        </div>`;
+        return `<div class="sh-day-group">${header}${evs.map(shEventRow).join('')}</div>`;
+      }).join('');
+
+  } else if (groupBy === 'agent') {
+    // Group by agent name
+    const groups = {};
+    for (const ev of events) {
+      const key = ev.agent_name || 'No agent';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(ev);
+    }
+    html = Object.entries(groups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([agentName, evs]) => {
+        const total = evs.reduce((s, e) => s + e.delta, 0);
+        const sign  = total >= 0 ? '+' : '';
+        const totalColor = total >= 0 ? '#10b981' : '#ef4444';
+        const header = `<div class="sh-day-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>🤖 ${escHtml(agentName)}</span>
+          <span style="font-size:11px;font-weight:700;color:${totalColor}">${sign}${total} pts · ${evs.length} events</span>
+        </div>`;
+        return `<div class="sh-day-group">${header}${evs.map(shEventRow).join('')}</div>`;
+      }).join('');
+
+  } else if (groupBy === 'user') {
+    // Group by user email / sub
+    const groups = {};
+    const labels = {};
+    for (const ev of events) {
+      const key = ev.user_sub || 'Unknown';
+      if (!groups[key]) { groups[key] = []; labels[key] = ev.user_email || ev.user_name || key; }
+      groups[key].push(ev);
+    }
+    html = Object.entries(groups)
+      .sort(([, a], [, b]) => b.length - a.length)  // most active users first
+      .map(([sub, evs]) => {
+        const total = evs.reduce((s, e) => s + e.delta, 0);
+        const sign  = total >= 0 ? '+' : '';
+        const totalColor = total >= 0 ? '#10b981' : '#ef4444';
+        const header = `<div class="sh-day-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>👤 ${escHtml(labels[sub])}</span>
+          <span style="font-size:11px;font-weight:700;color:${totalColor}">${sign}${total} pts · ${evs.length} events</span>
+        </div>`;
+        return `<div class="sh-day-group">${header}${evs.map(shEventRow).join('')}</div>`;
+      }).join('');
+
+  } else {
+    // Group by calendar day (default: All tab or single-entity drill-down)
+    const groups = {};
+    for (const ev of events) {
+      const d = ev.created_at ? ev.created_at.slice(0, 10) : 'Unknown';
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(ev);
+    }
+    html = Object.entries(groups)
+      .map(([day, evs]) => `<div class="sh-day-group"><div class="sh-day-label">${shDayLabel(day)}</div>${evs.map(shEventRow).join('')}</div>`)
+      .join('');
+  }
+
+  wrap.innerHTML = `<div class="sh-timeline">${html}</div>`;
+}
+
+function shDayLabel(dateStr) {
+  if (!dateStr || dateStr === 'Unknown') return 'Unknown';
+  const d = new Date(dateStr + 'T00:00:00Z');
+  const today = new Date(); today.setUTCHours(0,0,0,0);
+  const diff = Math.round((today - d) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+}
+
+function shRelTime(isoStr) {
+  if (!isoStr) return '';
+  const utc = isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : isoStr.replace(' ', 'T') + 'Z';
+  const diff = Date.now() - new Date(utc).getTime();
+  if (diff < 60000)    return 'Just now';
+  if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  return new Date(utc).toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+}
 
 // ─── API HELPERS ──────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
@@ -5013,6 +7384,19 @@ async function api(path, opts = {}) {
 function fmtDate(dt) {
   if (!dt) return '—';
   return new Date(dt + 'Z').toLocaleString();
+}
+
+function fmtDateShort(ts) {
+  if (!ts) return '—';
+  try {
+    const d = new Date(ts.includes('T') ? ts : ts + 'Z');
+    const now = new Date();
+    const diffDays = Math.floor((now - d) / 86400000);
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7)  return `${diffDays}d ago`;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  } catch { return ts; }
 }
 
 // ─── KEYS PAGE ────────────────────────────────────────────────────────────────
@@ -5329,8 +7713,12 @@ async function saveMcp() {
 
 // ─── VIRTUAL SERVERS ─────────────────────────────────────────────────────────
 async function loadVirtualServers() {
-  const servers = await api('/virtual-servers');
+  const [servers, vsScores] = await Promise.all([
+    api('/virtual-servers'),
+    api('/scoring/vs').catch(() => []),
+  ]);
   allVirtualServers = servers;
+  const scoreMap = Object.fromEntries((vsScores || []).map(s => [s.id, s]));
   const container = document.getElementById('vs-list');
   container.innerHTML = '';
 
@@ -5341,15 +7729,21 @@ async function loadVirtualServers() {
 
   for (const vs of servers) {
     const detail = await api('/virtual-servers/' + vs.id);
+    const sc = scoreMap[vs.id];
+    const scoreBadge = (sc && sc.tier) ? `<div onclick="navigate('scoring')" title="Risk Score: ${sc.tier.name}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:54px;background:${sc.tier.bg};border:1px solid ${sc.tier.border};border-radius:8px;padding:5px 10px;gap:2px;cursor:pointer;flex-shrink:0">
+        <span style="font-size:17px;font-weight:800;color:${sc.tier.color};line-height:1;letter-spacing:-.5px">${sc.score}</span>
+        <span style="font-size:9px;font-weight:700;color:${sc.tier.color};opacity:.75;line-height:1;text-transform:uppercase;letter-spacing:.4px">${sc.tier.name}</span>
+      </div>` : '';
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
       <div class="card-header">
         <div>
-          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span>${(() => { const f = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })(); const tags = []; if (f.includes('interceptors')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">🛡 Intercept</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🛡 Intercept</span>'); if (f.includes('policy')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">🔒 Token Policy</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🔒 Token Policy</span>'); return ' ' + tags.join(' '); })()}</div>
+          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span>${(() => { const f = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })(); const tags = []; if (f.includes('interceptors')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">🛡 Intercept</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🛡 Intercept</span>'); if (f.includes('policy')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">🔒 Token Policy</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🔒 Token Policy</span>'); if (vs.require_agent_token) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(251,191,36,0.15);color:#f59e0b;border:1px solid rgba(251,191,36,0.3)">🤖 Agent Required</span>'); return ' ' + tags.join(' '); })()}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Proxy: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px">POST /api/proxy/${vs.id}</code></div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center">
+          ${scoreBadge}
           <button class="btn btn-ghost btn-sm" onclick="openToolModal('${vs.id}')">⚙ Tools</button>
           <button class="btn btn-ghost btn-sm" onclick="editVs('${vs.id}')">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteVs('${vs.id}')">Delete</button>
@@ -5370,6 +7764,10 @@ async function loadVirtualServers() {
             return `<span class="tag ${cls}" ${style}>${icon} ${p.name}</span>`;
           }).join('')}</div>` : '<span style="color:var(--text-muted);font-size:12.5px">No policies — all calls denied by default</span>'}
         </div>
+        ${vs.require_agent_token ? `<div style="grid-column:1/-1;margin-top:4px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Allowed Agents (${(detail.agents||[]).length})</div>
+          ${(detail.agents||[]).length ? `<div class="tag-list">${(detail.agents||[]).map(a => `<span class="tag" style="${a.is_active?'':'opacity:.5'}" title="${a.id}">🤖 ${a.name}</span>`).join('')}</div>` : '<span style="color:var(--text-muted);font-size:12.5px">No agents assigned — all agent-token calls will be rejected</span>'}
+        </div>` : ''}
       </div>
     `;
     container.appendChild(card);
@@ -5383,6 +7781,10 @@ function openVsModal() {
   document.getElementById('vs-require-obo').checked = true;
   document.getElementById('vs-feat-interceptors').checked = true;
   document.getElementById('vs-feat-policy').checked = true;
+  document.getElementById('vs-feat-idp-connect').checked = false;
+  document.getElementById('vs-require-agent-token').checked = false;
+  document.getElementById('vs-allowed-agents-section').style.display = 'none';
+  vsToggleIdpConnectRow();
   document.getElementById('vs-modal').classList.add('open');
 }
 
@@ -5401,10 +7803,177 @@ async function editVs(id) {
   const vsFeatures = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })();
   document.getElementById('vs-feat-interceptors').checked = vsFeatures.includes('interceptors');
   document.getElementById('vs-feat-policy').checked = vsFeatures.includes('policy');
+  document.getElementById('vs-feat-idp-connect').checked = vsFeatures.includes('idp_connect');
+  document.getElementById('vs-require-agent-token').checked = vs.require_agent_token === 1;
+  vsToggleIdpConnectRow();
+  vsToggleIdpSection();
+  const agentSec = document.getElementById('vs-allowed-agents-section');
+  if (vs.require_agent_token === 1) {
+    agentSec.style.display = 'block';
+    vsLoadAgents(id);
+  } else {
+    agentSec.style.display = 'none';
+  }
   document.getElementById('vs-modal').classList.add('open');
 }
 
 function closeVsModal() { document.getElementById('vs-modal').classList.remove('open'); }
+
+// ── VS Modal — Allowed Agents section ────────────────────────────────────────
+function vsToggleAgentSection() {
+  const on = document.getElementById('vs-require-agent-token').checked;
+  document.getElementById('vs-allowed-agents-section').style.display = on ? 'block' : 'none';
+  if (on && editingVsId) vsLoadAgents(editingVsId);
+  else if (on) vsRenderAgents([], []); // new VS — no assignments yet
+}
+
+async function vsLoadAgents(vsId) {
+  const [assigned, all] = await Promise.all([
+    api('/virtual-servers/' + vsId + '/agents'),
+    api('/agents'),
+  ]);
+  vsRenderAgents(assigned, all);
+}
+
+function vsRenderAgents(assigned, all) {
+  const list = document.getElementById('vs-agents-list');
+  const sel  = document.getElementById('vs-add-agent-sel');
+
+  // Build assigned list
+  if (!assigned.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:6px 0">No agents assigned yet.</div>';
+  } else {
+    list.innerHTML = assigned.map(a => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0">
+          <span style="width:8px;height:8px;border-radius:50%;background:${a.is_active?'#10b981':'#6b7280'};flex-shrink:0"></span>
+          <span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.name)}</span>
+          <span style="font-size:11px;color:var(--text-3);font-family:monospace;white-space:nowrap">${escHtml(a.token_prefix)}…</span>
+        </div>
+        <button class="btn btn-danger btn-sm" style="flex-shrink:0" onclick="vsRemoveAgentAssignment('${a.id}')">Remove</button>
+      </div>`).join('');
+  }
+
+  // Populate add dropdown with unassigned agents
+  const assignedIds = new Set(assigned.map(a => a.id));
+  const unassigned = (all || []).filter(a => !assignedIds.has(a.id));
+  sel.innerHTML = '<option value="">Add an agent…</option>' +
+    unassigned.map(a => `<option value="${a.id}">${escHtml(a.name)} (${a.is_active ? 'active' : 'inactive'})</option>`).join('');
+}
+
+async function vsAddAgentAssignment() {
+  const agentId = document.getElementById('vs-add-agent-sel').value;
+  if (!agentId || !editingVsId) return;
+  try {
+    await api('/virtual-servers/' + editingVsId + '/agents', { method: 'POST', body: { agent_id: agentId } });
+    await vsLoadAgents(editingVsId);
+  } catch (e) { alert('Failed to add agent: ' + e.message); }
+}
+
+async function vsRemoveAgentAssignment(agentId) {
+  if (!editingVsId) return;
+  try {
+    await api('/virtual-servers/' + editingVsId + '/agents/' + agentId, { method: 'DELETE' });
+    await vsLoadAgents(editingVsId);
+  } catch (e) { alert('Failed to remove agent: ' + e.message); }
+}
+
+// ─── VS Modal — IDP Connect section ──────────────────────────────────────────
+function vsToggleIdpConnectRow() {
+  const interceptorsOn = document.getElementById('vs-feat-interceptors').checked;
+  const row = document.getElementById('vs-idp-connect-row');
+  row.style.display = interceptorsOn ? 'flex' : 'none';
+  if (!interceptorsOn) {
+    document.getElementById('vs-feat-idp-connect').checked = false;
+    document.getElementById('vs-idp-section').style.display = 'none';
+  }
+}
+
+function vsToggleIdpSection() {
+  const on = document.getElementById('vs-feat-idp-connect').checked;
+  document.getElementById('vs-idp-section').style.display = on ? 'block' : 'none';
+  if (on) {
+    if (editingVsId) {
+      vsLoadIdpConfigs(editingVsId);
+      document.getElementById('vs-idp-new-vs-note').style.display = 'none';
+    } else {
+      document.getElementById('vs-idp-list').innerHTML = '<div style="font-size:12px;color:var(--text-muted)">No issuers configured yet.</div>';
+      document.getElementById('vs-idp-new-vs-note').style.display = 'block';
+    }
+  }
+}
+
+async function vsLoadIdpConfigs(vsId) {
+  try {
+    const configs = await api('/virtual-servers/' + vsId + '/idp-configs');
+    const list = document.getElementById('vs-idp-list');
+    if (!configs.length) {
+      list.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">No issuers configured yet.</div>';
+      return;
+    }
+    const providerLabel = { okta: 'Okta', azure_ad: 'Azure AD', auth0: 'Auth0', google: 'Google', custom: 'Custom' };
+    list.innerHTML = configs.map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
+            ${escHtml(c.name)}
+            <span style="font-size:10px;padding:1px 7px;border-radius:100px;background:rgba(99,102,241,.12);color:#6366f1;font-weight:600">${escHtml(providerLabel[c.provider] || c.provider)}</span>
+            ${c.full_verification ? '<span style="font-size:10px;padding:1px 7px;border-radius:100px;background:rgba(16,185,129,.12);color:#10b981;font-weight:600">JWKS ✓</span>' : ''}
+            ${!c.is_active ? '<span style="font-size:10px;padding:1px 7px;border-radius:100px;background:rgba(148,163,184,.12);color:#94a3b8;font-weight:600">Disabled</span>' : ''}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.issuer)}">${escHtml(c.issuer)}</div>
+          ${c.audience ? `<div style="font-size:10.5px;color:var(--text-3);margin-top:1px">aud: ${escHtml(c.audience)}</div>` : ''}
+        </div>
+        <button class="btn btn-danger btn-sm" style="flex-shrink:0;font-size:11px" onclick="vsDeleteIdp('${c.id}')">Remove</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('vs-idp-list').innerHTML = `<div style="font-size:12px;color:#ef4444">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function vsShowAddIdp() {
+  document.getElementById('vs-idp-add-form').style.display = 'block';
+  document.getElementById('vs-idp-add-name').value = '';
+  document.getElementById('vs-idp-add-issuer').value = '';
+  document.getElementById('vs-idp-add-audience').value = '';
+  document.getElementById('vs-idp-add-jwks').value = '';
+  document.getElementById('vs-idp-add-fullverify').checked = false;
+  document.getElementById('vs-idp-add-provider').value = 'okta';
+}
+
+function vsHideAddIdp() {
+  document.getElementById('vs-idp-add-form').style.display = 'none';
+}
+
+async function vsAddIdp() {
+  const name     = document.getElementById('vs-idp-add-name').value.trim();
+  const issuer   = document.getElementById('vs-idp-add-issuer').value.trim();
+  const provider = document.getElementById('vs-idp-add-provider').value;
+  const audience = document.getElementById('vs-idp-add-audience').value.trim();
+  const jwks_uri = document.getElementById('vs-idp-add-jwks').value.trim();
+  const full_verification = document.getElementById('vs-idp-add-fullverify').checked;
+
+  if (!name || !issuer) { alert('Name and Issuer URL are required.'); return; }
+  if (!editingVsId) { alert('Save the virtual server first before adding IDP issuers.'); return; }
+
+  try {
+    await api('/virtual-servers/' + editingVsId + '/idp-configs', {
+      method: 'POST',
+      body: { name, provider, issuer, audience: audience || null, jwks_uri: jwks_uri || null, full_verification },
+    });
+    vsHideAddIdp();
+    vsLoadIdpConfigs(editingVsId);
+  } catch (e) { alert('Failed to add issuer: ' + e.message); }
+}
+
+async function vsDeleteIdp(configId) {
+  if (!editingVsId || !confirm('Remove this trusted issuer?')) return;
+  try {
+    await api('/virtual-servers/' + editingVsId + '/idp-configs/' + configId, { method: 'DELETE' });
+    vsLoadIdpConfigs(editingVsId);
+  } catch (e) { alert('Failed to remove: ' + e.message); }
+}
 
 async function saveVs() {
   const body = {
@@ -5416,8 +7985,10 @@ async function saveVs() {
     okta_audience: document.getElementById('vs-audience').value,
     jwks_uri: document.getElementById('vs-jwks').value,
     require_obo: document.getElementById('vs-require-obo').checked ? 1 : 0,
+    require_agent_token: document.getElementById('vs-require-agent-token').checked ? 1 : 0,
     features_enabled: [
       document.getElementById('vs-feat-interceptors').checked ? 'interceptors' : null,
+      document.getElementById('vs-feat-interceptors').checked && document.getElementById('vs-feat-idp-connect').checked ? 'idp_connect' : null,
       document.getElementById('vs-feat-policy').checked ? 'policy' : null,
     ].filter(Boolean),
   };
@@ -5699,6 +8270,16 @@ const CONDITION_TYPES = [
   { value: 'sub_in',             label: 'User sub in list',
     hint: 'Pass if user sub matches any entry in a comma-separated list',
     badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. user1@co, user2@co' },
+  // ── Agent identity conditions (Phase 3) ─────────────────────────────────
+  { value: 'agent_is',           label: 'Agent name equals',
+    hint: 'Pass only when the calling agent\'s registered name matches exactly',
+    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b', placeholder: 'e.g. banking-chatbot-app' },
+  { value: 'agent_in',           label: 'Agent name in list',
+    hint: 'Pass if the calling agent is any of the listed registered names (comma-separated)',
+    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b', placeholder: 'e.g. banking-chatbot-app, python-agent' },
+  { value: 'not_agent_is',       label: 'Agent name is NOT',
+    hint: 'Deny when called by this specific agent — useful for restricting sensitive tools',
+    badge: 'NOT', badgeCls: 'not', color: '#ef4444', placeholder: 'e.g. external-partner-agent' },
 ];
 
 function addConditionRow(existing = null) {
@@ -5759,7 +8340,7 @@ async function savePolicy() {
   const conditions = Array.from(condRows).map(row => {
     const type = row.querySelector('select').value;
     const rawValue = row.querySelector('input').value;
-    const isMulti = type.endsWith('_any') || type.endsWith('_all') || type === 'sub_in';
+    const isMulti = type.endsWith('_any') || type.endsWith('_all') || type === 'sub_in' || type === 'agent_in';
     if (isMulti) return { type, values: rawValue.split(',').map(v => v.trim()).filter(Boolean) };
     return { type, value: rawValue.trim() };
   });
@@ -5953,32 +8534,40 @@ async function loadAudit(resetPage = true) {
     vsSel.innerHTML += `<option value="${vs.id}" ${currentVs === vs.id ? 'selected' : ''}>${vs.name}</option>`;
   });
 
-  const decision = document.getElementById('audit-decision-filter').value;
-  const vsId     = document.getElementById('audit-vs-filter').value;
+  const logType = document.getElementById('audit-type-filter').value;
+  const level   = document.getElementById('audit-level-filter').value;
+  const vsId    = document.getElementById('audit-vs-filter').value;
 
   const params = new URLSearchParams({
     limit:  AUDIT_PAGE_SIZE,
     offset: auditCurrentPage * AUDIT_PAGE_SIZE,
   });
-  if (decision) params.set('decision', decision);
-  if (vsId)     params.set('virtual_server_id', vsId);
+  if (logType) params.set('log_type', logType);
+  if (level)   params.set('level', level);
+  if (vsId)    params.set('virtual_server_id', vsId);
+
+  const statsParams = vsId ? `?virtual_server_id=${vsId}` : '';
 
   const [data, statsData] = await Promise.all([
     api('/audit?' + params.toString()),
-    api('/audit/stats' + (vsId ? `?virtual_server_id=${vsId}` : '')).catch(() => null),
+    api('/audit/stats' + statsParams).catch(() => null),
   ]);
 
   auditTotalEntries = data.total;
 
-  // Stats bar
   if (statsData && statsData.stats) {
-    document.getElementById('al-total').textContent   = statsData.stats.total.toLocaleString();
-    document.getElementById('al-allowed').textContent = statsData.stats.allowed.toLocaleString();
-    document.getElementById('al-denied').textContent  = statsData.stats.denied.toLocaleString();
+    const s = statsData.stats;
+    document.getElementById('al-total').textContent            = (s.total             || 0).toLocaleString();
+    document.getElementById('al-allowed').textContent          = (s.allowed            || 0).toLocaleString();
+    document.getElementById('al-denied').textContent           = (s.denied             || 0).toLocaleString();
+    document.getElementById('al-blocked').textContent          = (s.blocked            || 0).toLocaleString();
+    document.getElementById('al-proxy-calls').textContent      = (s.proxy_calls        || 0).toLocaleString();
+    document.getElementById('al-interceptor-scans').textContent= (s.interceptor_scans  || 0).toLocaleString();
   } else {
-    document.getElementById('al-total').textContent   = data.total.toLocaleString();
-    document.getElementById('al-allowed').textContent = '—';
-    document.getElementById('al-denied').textContent  = '—';
+    document.getElementById('al-total').textContent = data.total.toLocaleString();
+    ['al-allowed','al-denied','al-blocked','al-proxy-calls','al-interceptor-scans'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
   }
 
   renderAuditList(data.entries);
@@ -5996,6 +8585,14 @@ function auditEscHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+const LEVEL_BADGE = {
+  info:  { cls:'allow',  icon:'✓', label:'Info'  },
+  warn:  { cls:'',       icon:'⚠', label:'Warn', style:'background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.25)' },
+  block: { cls:'deny',   icon:'✕', label:'Block' },
+  error: { cls:'deny',   icon:'!', label:'Error' },
+};
+const TYPE_LABEL = { proxy_call:'Proxy', interceptor:'Scan' };
+
 function renderAuditList(entries) {
   auditEntriesMap = {};
   entries.forEach(e => { auditEntriesMap[e.id] = e; });
@@ -6003,7 +8600,7 @@ function renderAuditList(entries) {
   const list = document.getElementById('al-list');
 
   if (!entries.length) {
-    list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div class="msg">No audit entries found.</div></div>';
+    list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div class="msg">No events found.</div></div>';
     document.getElementById('al-page-info').textContent = '';
     return;
   }
@@ -6011,24 +8608,43 @@ function renderAuditList(entries) {
   const start = auditCurrentPage * AUDIT_PAGE_SIZE + 1;
   const end   = start + entries.length - 1;
   document.getElementById('al-page-info').textContent =
-    `Showing ${start}–${end} of ${auditTotalEntries.toLocaleString()} entries`;
+    `Showing ${start}–${end} of ${auditTotalEntries.toLocaleString()} events`;
 
   list.innerHTML = entries.map(e => {
-    const isDeny       = e.decision === 'deny';
-    const userDisplay  = auditFmtSub(e.user_sub);
-    const vsDisplay    = e.virtual_server_name || e.virtual_server_id || '—';
-    const reasonShort  = e.reason ? (e.reason.length > 80 ? e.reason.slice(0, 77) + '…' : e.reason) : '';
+    const lv         = LEVEL_BADGE[e.level] || LEVEL_BADGE.info;
+    const isBad      = e.level === 'block' || e.level === 'error';
+    const typeLabel  = TYPE_LABEL[e.log_type] || e.log_type || '?';
+    const vsDisplay  = e.virtual_server_name || e.vs_id || '—';
+    const summaryTxt = e.summary || '';
 
-    return `<div class="al-row${isDeny ? ' deny-row' : ''}" data-id="${auditEscHtml(e.id)}" onclick="auditToggleRow(this)">
+    // Primary label differs per type
+    const primaryLabel = e.log_type === 'proxy_call'
+      ? auditEscHtml(e.tool_name || '—')
+      : `${auditEscHtml(e.scanner || '—')} · ${auditEscHtml(e.action_taken || '—')}`;
+
+    // Secondary label
+    const userDisplay = e.user_email || (e.user_sub ? auditFmtSub(e.user_sub) : null);
+    const secondaryLabel = e.log_type === 'proxy_call'
+      ? auditEscHtml(auditFmtSub(e.user_sub))
+      : (userDisplay
+          ? `${auditEscHtml(userDisplay)}${e.categories && e.categories.length ? `<span style="color:var(--text-3);margin:0 4px">·</span><span style="font-size:11px;color:var(--text-3)">${auditEscHtml(e.categories.join(', '))}</span>` : ''}`
+          : (e.categories && e.categories.length ? auditEscHtml(e.categories.join(', ')) : '—'));
+
+    const levelStyle = lv.style ? ` style="${lv.style}"` : '';
+
+    return `<div class="al-row${isBad ? ' deny-row' : ''}" data-id="${auditEscHtml(e.id)}" onclick="auditToggleRow(this)">
       <div class="al-row-head">
         <div class="al-row-time">${fmtDate(e.created_at)}</div>
-        <span class="al-decision-badge ${e.decision}">${isDeny ? '✕ Deny' : '✓ Allow'}</span>
-        <span class="al-tool">${auditEscHtml(e.tool_name || '—')}</span>
-        <div class="al-user" title="${auditEscHtml(e.user_sub || '')}">${auditEscHtml(userDisplay)}</div>
+        <span class="al-decision-badge ${lv.cls}"${levelStyle}>${lv.icon} ${lv.label}</span>
+        <span class="al-tool">${primaryLabel}</span>
+        <div class="al-user" style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text-3);white-space:nowrap">${typeLabel}</span>
+          ${secondaryLabel}
+        </div>
         <div class="al-vs-badge" title="${auditEscHtml(vsDisplay)}">${auditEscHtml(vsDisplay)}</div>
         <div class="al-chevron">▶</div>
       </div>
-      ${reasonShort ? `<div class="al-reason-strip">${auditEscHtml(reasonShort)}</div>` : ''}
+      ${summaryTxt ? `<div class="al-reason-strip">${auditEscHtml(summaryTxt)}</div>` : ''}
       <div class="al-detail" id="al-detail-${auditEscHtml(e.id)}"></div>
     </div>`;
   }).join('');
@@ -6052,16 +8668,49 @@ function auditToggleRow(rowEl) {
 }
 
 function buildAuditDetail(e) {
-  const scopes  = (e.user_scopes  || []).map(s => `<span class="tag">${auditEscHtml(s)}</span>`).join('');
-  const groups  = (e.user_groups  || []).map(g => `<span class="tag">${auditEscHtml(g)}</span>`).join('');
+  const lv = LEVEL_BADGE[e.level] || LEVEL_BADGE.info;
+  const lvStyle = lv.style ? ` style="${lv.style}"` : '';
+  const cell = (label, val, mono=false) => `
+    <div class="al-detail-cell">
+      <div class="al-detail-cell-label">${label}</div>
+      <div class="al-detail-cell-value${mono?' mono':''}">${auditEscHtml(val||'—')}</div>
+    </div>`;
 
+  if (e.log_type === 'interceptor') {
+    const cats = (e.categories||[]).map(c=>`<span class="tag">${auditEscHtml(c)}</span>`).join('');
+    const piis = (e.pii_types ||[]).map(p=>`<span class="tag">${auditEscHtml(p)}</span>`).join('');
+    return `<div class="al-detail-inner">
+      <div class="al-detail-grid">
+        <div class="al-detail-cell">
+          <div class="al-detail-cell-label">Level</div>
+          <div class="al-detail-cell-value"><span class="al-decision-badge ${lv.cls}" style="font-size:12px"${lvStyle}>${lv.icon} ${lv.label}</span></div>
+        </div>
+        ${cell('Scanner', e.scanner, true)}
+        ${cell('Direction', e.direction)}
+        ${cell('Action Taken', e.action_taken, true)}
+        ${cell('Score', e.score != null ? e.score.toFixed(3) : null)}
+        ${cell('Flagged', e.flagged ? 'Yes' : 'No')}
+        ${cell('Degraded', e.degraded ? 'Yes' : 'No')}
+        ${cell('Virtual Server', e.virtual_server_name || e.vs_id)}
+        ${e.user_email || e.user_sub ? cell('User', e.user_email || e.user_sub, true) : ''}
+        ${e.user_name ? cell('Name', e.user_name) : ''}
+        ${cell('Timestamp', e.created_at)}
+      </div>
+      ${cats ? `<div class="al-detail-section"><div class="al-detail-section-label">Categories</div><div class="tag-list">${cats}</div></div>` : ''}
+      ${piis ? `<div class="al-detail-section"><div class="al-detail-section-label">PII Types</div><div class="tag-list">${piis}</div></div>` : ''}
+    </div>`;
+  }
+
+  // proxy_call type
+  const scopes = (e.user_scopes||[]).map(s=>`<span class="tag">${auditEscHtml(s)}</span>`).join('');
+  const groups = (e.user_groups||[]).map(g=>`<span class="tag">${auditEscHtml(g)}</span>`).join('');
   let payloadHtml = '';
   if (e.request_payload) {
     try {
-      const pretty = JSON.stringify(JSON.parse(e.request_payload), null, 2);
+      const p = typeof e.request_payload === 'string' ? JSON.parse(e.request_payload) : e.request_payload;
       payloadHtml = `<div class="al-detail-section">
         <div class="al-detail-section-label">Request Payload</div>
-        <pre class="al-payload-pre">${auditEscHtml(pretty)}</pre>
+        <pre class="al-payload-pre">${auditEscHtml(JSON.stringify(p, null, 2))}</pre>
       </div>`;
     } catch {}
   }
@@ -6069,52 +8718,25 @@ function buildAuditDetail(e) {
   return `<div class="al-detail-inner">
     <div class="al-detail-grid">
       <div class="al-detail-cell">
-        <div class="al-detail-cell-label">Decision</div>
-        <div class="al-detail-cell-value">
-          <span class="al-decision-badge ${e.decision}" style="font-size:12px">${e.decision === 'allow' ? '✓ Allow' : '✕ Deny'}</span>
-        </div>
+        <div class="al-detail-cell-label">Level</div>
+        <div class="al-detail-cell-value"><span class="al-decision-badge ${lv.cls}" style="font-size:12px"${lvStyle}>${lv.icon} ${lv.label}</span></div>
       </div>
-      <div class="al-detail-cell">
-        <div class="al-detail-cell-label">Tool</div>
-        <div class="al-detail-cell-value mono">${auditEscHtml(e.tool_name || '—')}</div>
-      </div>
-      <div class="al-detail-cell">
-        <div class="al-detail-cell-label">MCP Server</div>
-        <div class="al-detail-cell-value mono">${auditEscHtml(e.mcp_server_id || '—')}</div>
-      </div>
-      <div class="al-detail-cell">
-        <div class="al-detail-cell-label">Virtual Server</div>
-        <div class="al-detail-cell-value">${auditEscHtml(e.virtual_server_name || e.virtual_server_id || '—')}</div>
-      </div>
-      <div class="al-detail-cell">
-        <div class="al-detail-cell-label">User Sub</div>
-        <div class="al-detail-cell-value mono">${auditEscHtml(e.user_sub || '—')}</div>
-      </div>
-      <div class="al-detail-cell">
-        <div class="al-detail-cell-label">Token JTI</div>
-        <div class="al-detail-cell-value mono">${auditEscHtml(e.user_token_jti || '—')}</div>
-      </div>
-      <div class="al-detail-cell">
-        <div class="al-detail-cell-label">Matched Policy</div>
-        <div class="al-detail-cell-value mono">${auditEscHtml(e.matched_policy_id || '—')}</div>
-      </div>
-      <div class="al-detail-cell">
-        <div class="al-detail-cell-label">Timestamp</div>
-        <div class="al-detail-cell-value" style="font-size:11px">${auditEscHtml(e.created_at || '—')}</div>
-      </div>
+      ${cell('Decision', e.decision, true)}
+      ${cell('Tool', e.tool_name, true)}
+      ${cell('Virtual Server', e.virtual_server_name || e.vs_id)}
+      ${cell('Agent', e.agent_name || e.agent_id)}
+      ${cell('MCP Server', e.mcp_server_id, true)}
+      ${cell('User Sub', e.user_sub, true)}
+      ${cell('Token JTI', e.user_token_jti, true)}
+      ${cell('Matched Policy', e.matched_policy_id, true)}
+      ${cell('Timestamp', e.created_at)}
     </div>
     ${e.reason ? `<div class="al-detail-section">
       <div class="al-detail-section-label">Reason</div>
       <div style="font-size:13px;color:var(--text-2);line-height:1.6;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">${auditEscHtml(e.reason)}</div>
     </div>` : ''}
-    ${scopes ? `<div class="al-detail-section">
-      <div class="al-detail-section-label">Token Scopes</div>
-      <div class="tag-list">${scopes}</div>
-    </div>` : ''}
-    ${groups ? `<div class="al-detail-section">
-      <div class="al-detail-section-label">Groups</div>
-      <div class="tag-list">${groups}</div>
-    </div>` : ''}
+    ${scopes ? `<div class="al-detail-section"><div class="al-detail-section-label">Token Scopes</div><div class="tag-list">${scopes}</div></div>` : ''}
+    ${groups ? `<div class="al-detail-section"><div class="al-detail-section-label">Groups</div><div class="tag-list">${groups}</div></div>` : ''}
     ${payloadHtml}
   </div>`;
 }

@@ -5,6 +5,44 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { run } = require('../interceptors/InterceptorPipeline');
 
+// Decode a JWT payload (base64, no verification) to extract user identity
+function extractUserFromToken(tokenHeader) {
+  try {
+    if (!tokenHeader) return null;
+    const raw    = tokenHeader.replace(/^Bearer\s+/i, '');
+    const parts  = raw.split('.');
+    if (parts.length < 2) return null;
+    const padded = parts[1] + '='.repeat((4 - parts[1].length % 4) % 4);
+    const payload = JSON.parse(Buffer.from(padded, 'base64url').toString('utf8'));
+    if (!payload.sub) return null;
+    return {
+      sub:   payload.sub,
+      email: payload.email || payload.preferred_username || null,
+      name:  payload.name  || null,
+      iss:   payload.iss   || null,
+    };
+  } catch { return null; }
+}
+
+// Resolve user identity from x-id-token (or x-user-token fallback),
+// but only when the VS has at least one active IDP config whose issuer matches.
+function resolveUserForVs(vsId, req) {
+  try {
+    const configs = db.prepare(
+      'SELECT issuer FROM vs_idp_configs WHERE virtual_server_id = ? AND is_active = 1'
+    ).all(vsId);
+    if (!configs.length) return null;
+
+    const tokenHeader = req.headers['x-id-token'] || req.headers['x-user-token'];
+    const user = extractUserFromToken(tokenHeader);
+    if (!user) return null;
+
+    // Only attach identity if the token's issuer matches a trusted IDP config
+    const trusted = configs.some(c => c.issuer === user.iss);
+    return trusted ? user : null;
+  } catch { return null; }
+}
+
 const router = express.Router();
 
 const SCANNER_CATALOG = [
@@ -122,26 +160,44 @@ router.patch('/:vsId/rules/:id/toggle', (req, res) => {
 
 // GET /api/interceptors/:vsId/log?limit=20&offset=0&scanner=regex&flagged=1
 router.get('/:vsId/log', (req, res) => {
-  const limit  = Math.min(parseInt(req.query.limit)  || 20, 200);
-  const offset = parseInt(req.query.offset) || 0;
+  const limit   = Math.min(parseInt(req.query.limit) || 20, 200);
+  const offset  = parseInt(req.query.offset) || 0;
   const scanner = req.query.scanner || '';
-  const flagged = req.query.flagged;   // '1' | '0' | undefined
+  const flagged = req.query.flagged;  // '1' | '0' | undefined
 
-  const conditions = ['virtual_server_id = ?'];
+  const conditions = ["vs_id = ? AND log_type = 'interceptor'"];
   const params     = [req.params.vsId];
-
-  if (scanner) { conditions.push('scanner = ?'); params.push(scanner); }
-  if (flagged === '1' || flagged === '0') { conditions.push('flagged = ?'); params.push(Number(flagged)); }
 
   const where = conditions.join(' AND ');
 
-  const rows  = db.prepare(`SELECT * FROM interceptor_log WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
-  const total = db.prepare(`SELECT COUNT(*) as n FROM interceptor_log WHERE ${where}`).get(...params).n;
+  const rawRows = db.prepare(`
+    SELECT * FROM event_log WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?
+  `).all(...params, limit, offset);
 
-  rows.forEach(r => {
-    try { r.categories = JSON.parse(r.categories); } catch { r.categories = []; }
-    try { r.pii_types  = JSON.parse(r.pii_types);  } catch { r.pii_types  = []; }
+  // Reshape event_log rows into the old interceptor_log shape for UI compat
+  let rows = rawRows.map(r => {
+    const d = (() => { try { return JSON.parse(r.data || '{}'); } catch { return {}; } })();
+    return {
+      id:                r.id,
+      virtual_server_id: r.vs_id,
+      created_at:        r.created_at,
+      direction:         d.direction || null,
+      scanner:           d.scanner   || null,
+      flagged:           d.flagged   || 0,
+      action_taken:      d.action_taken || null,
+      categories:        Array.isArray(d.categories) ? d.categories : [],
+      pii_types:         Array.isArray(d.pii_types)  ? d.pii_types  : [],
+      score:             d.score  || 0,
+      degraded:          d.degraded || 0,
+    };
   });
+
+  // Apply in-memory filters for scanner and flagged (since they're in the JSON data)
+  if (scanner)  rows = rows.filter(r => r.scanner === scanner);
+  if (flagged === '1') rows = rows.filter(r => r.flagged === 1);
+  if (flagged === '0') rows = rows.filter(r => r.flagged === 0);
+
+  const total = db.prepare(`SELECT COUNT(*) as n FROM event_log WHERE ${where}`).get(...params).n;
 
   res.json({ rows, total, limit, offset });
 });
@@ -149,11 +205,22 @@ router.get('/:vsId/log', (req, res) => {
 // ── Test endpoint ─────────────────────────────────────────────────────────────
 
 // POST /api/interceptors/:vsId/scan  — run a message through the pipeline (also aliased as /test for the UI)
+// Optional body fields: agent_name (string) or agent_id (UUID) to attach to the event_log entry.
 router.post('/:vsId/scan', async (req, res) => {
-  const { text, direction } = req.body;
+  const { text, direction, agent_name, agent_id } = req.body;
   if (!text) return res.status(400).json({ error: 'text is required' });
 
-  const result = await run(text, direction || 'inbound', req.params.vsId);
+  // Resolve agent_id: prefer explicit UUID, otherwise look up by name
+  let resolvedAgentId = agent_id || null;
+  if (!resolvedAgentId && agent_name) {
+    const row = db.prepare('SELECT id FROM agents WHERE name = ?').get(agent_name);
+    if (row) resolvedAgentId = row.id;
+  }
+
+  // Resolve user identity from IDP token if the VS has IDP Connect configured
+  const user = resolveUserForVs(req.params.vsId, req);
+
+  const result = await run(text, direction || 'inbound', req.params.vsId, resolvedAgentId, null, user);
   res.json(result);
 });
 

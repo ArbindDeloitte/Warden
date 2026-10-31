@@ -260,4 +260,94 @@ try {
   `);
 }
 
+// ── Agent Identity Hub ────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS agents (
+    id           TEXT PRIMARY KEY,
+    name         TEXT NOT NULL UNIQUE,
+    description  TEXT,
+    token_hash   TEXT NOT NULL,
+    token_prefix TEXT NOT NULL,
+    metadata     TEXT DEFAULT '{}',
+    is_active    INTEGER DEFAULT 1,
+    created_at   TEXT DEFAULT (datetime('now')),
+    last_seen_at TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_agents_hash   ON agents(token_hash);
+  CREATE INDEX IF NOT EXISTS idx_agents_active ON agents(is_active);
+`);
+
+// Phase 2: VS-level agent enforcement
+try { db.exec(`ALTER TABLE virtual_servers ADD COLUMN require_agent_token INTEGER DEFAULT 0`); } catch {}
+
+// Phase 2: Per-VS agent allowlist (junction table)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS virtual_server_agents (
+    id         TEXT PRIMARY KEY,
+    vs_id      TEXT NOT NULL,
+    agent_id   TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(vs_id, agent_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_vsa_vs    ON virtual_server_agents(vs_id);
+  CREATE INDEX IF NOT EXISTS idx_vsa_agent ON virtual_server_agents(agent_id);
+`);
+
+// Enrich audit_log with agent identity columns
+try { db.exec(`ALTER TABLE audit_log ADD COLUMN agent_id TEXT`);   } catch {}
+try { db.exec(`ALTER TABLE audit_log ADD COLUMN agent_name TEXT`); } catch {}
+
+// ── Unified Event Log ─────────────────────────────────────────────────────────
+// Single table for all log types. log_type discriminates the schema of `data`.
+// log_type values: 'proxy_call' | 'interceptor' | (future: 'system', 'auth', ...)
+// level values: 'info' | 'warn' | 'block' | 'error'
+db.exec(`
+  CREATE TABLE IF NOT EXISTS event_log (
+    id         TEXT PRIMARY KEY,
+    created_at TEXT DEFAULT (datetime('now')),
+    vs_id      TEXT,
+    log_type   TEXT NOT NULL,
+    level      TEXT DEFAULT 'info',
+    summary    TEXT,
+    data       TEXT DEFAULT '{}'
+  );
+  CREATE INDEX IF NOT EXISTS idx_elog_created ON event_log(created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_elog_vs      ON event_log(vs_id);
+  CREATE INDEX IF NOT EXISTS idx_elog_type    ON event_log(log_type);
+  CREATE INDEX IF NOT EXISTS idx_elog_level   ON event_log(level);
+`);
+
+// ── Scoring configuration ─────────────────────────────────────────────────────
+// entity_type: 'vs' | 'agent'   mode: 'default' | 'custom'
+db.exec(`
+  CREATE TABLE IF NOT EXISTS scoring_configs (
+    id           TEXT PRIMARY KEY,
+    entity_type  TEXT NOT NULL CHECK(entity_type IN ('vs','agent')),
+    entity_id    TEXT NOT NULL,
+    mode         TEXT NOT NULL DEFAULT 'default' CHECK(mode IN ('default','custom')),
+    config_json  TEXT DEFAULT '{}',
+    updated_at   TEXT DEFAULT (datetime('now')),
+    UNIQUE(entity_type, entity_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_scoring_entity ON scoring_configs(entity_type, entity_id);
+`);
+
+// ── IDP Connect — trusted issuers per VS ──────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS vs_idp_configs (
+    id                TEXT PRIMARY KEY,
+    virtual_server_id TEXT NOT NULL,
+    name              TEXT NOT NULL,
+    provider          TEXT NOT NULL DEFAULT 'okta',
+    issuer            TEXT NOT NULL,
+    audience          TEXT,
+    jwks_uri          TEXT,
+    full_verification INTEGER DEFAULT 0,
+    is_active         INTEGER DEFAULT 1,
+    created_at        TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (virtual_server_id) REFERENCES virtual_servers(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_idp_vs ON vs_idp_configs(virtual_server_id);
+`);
+
 module.exports = db;

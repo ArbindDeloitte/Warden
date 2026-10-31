@@ -24,7 +24,7 @@
  */
 
 function evaluatePolicies(policies, context) {
-  const { mcpServerId, toolName, scopes, groups, sub } = context;
+  const { mcpServerId, toolName, scopes, groups, sub, agentName } = context;
 
   const activePolicies = policies
     .filter((p) => p.is_active)
@@ -45,7 +45,7 @@ function evaluatePolicies(policies, context) {
     }
 
     if (!matchesAction(policyDef, mcpServerId, toolName)) continue;
-    if (!matchesConditions(policyDef.conditions || [], scopes, groups, sub)) continue;
+    if (!matchesConditions(policyDef.conditions || [], scopes, groups, sub, agentName)) continue;
 
     if (policy.effect === 'forbid' && !matchedForbid) {
       matchedForbid = policy;
@@ -103,11 +103,11 @@ function matchesAction(policyDef, mcpServerId, toolName) {
   });
 }
 
-function matchesConditions(conditions, scopes, groups, sub) {
-  return conditions.every((cond) => evaluateCondition(cond, scopes, groups, sub));
+function matchesConditions(conditions, scopes, groups, sub, agentName) {
+  return conditions.every((cond) => evaluateCondition(cond, scopes, groups, sub, agentName));
 }
 
-function evaluateCondition(cond, scopes, groups, sub) {
+function evaluateCondition(cond, scopes, groups, sub, agentName) {
   switch (cond.type) {
     case 'scope_contains':
       return scopes.includes(cond.value);
@@ -139,6 +139,16 @@ function evaluateCondition(cond, scopes, groups, sub) {
     case 'not_group_contains':
       return !groups.includes(cond.value);
 
+    // ── Agent identity conditions (Phase 3) ─────────────────────────────────
+    case 'agent_is':
+      return (agentName || '') === (cond.value || '');
+
+    case 'agent_in':
+      return (cond.values || []).includes(agentName || '');
+
+    case 'not_agent_is':
+      return (agentName || '') !== (cond.value || '');
+
     default:
       console.warn('[PolicyEngine] Unknown condition type:', cond.type);
       return false;
@@ -150,7 +160,7 @@ function evaluateCondition(cond, scopes, groups, sub) {
  * Returns detailed trace of which policies matched/didn't match and why.
  */
 function simulatePolicies(policies, context) {
-  const { mcpServerId, toolName, scopes, groups, sub } = context;
+  const { mcpServerId, toolName, scopes, groups, sub, agentName } = context;
 
   const activePolicies = policies.filter((p) => p.is_active);
   const trace = [];
@@ -169,7 +179,7 @@ function simulatePolicies(policies, context) {
     const actionMatched = matchesAction(policyDef, mcpServerId, toolName);
     const conditionResults = (policyDef.conditions || []).map((cond) => ({
       condition: cond,
-      passed: evaluateCondition(cond, scopes, groups, sub),
+      passed: evaluateCondition(cond, scopes, groups, sub, agentName || ''),
     }));
     const allConditionsPassed = conditionResults.every((r) => r.passed);
 

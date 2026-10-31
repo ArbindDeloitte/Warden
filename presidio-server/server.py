@@ -60,7 +60,7 @@ def _init_presidio():
     try:
         import spacy
         from presidio_analyzer import AnalyzerEngine
-        from presidio_analyzer.nlp_engine import SpacyNlpEngine
+        from presidio_analyzer.nlp_engine import SpacyNlpEngine, NerModelConfiguration
 
         # Workaround for Python 3.14: spacy.load() with exclude=['tokenizer']
         # bypasses Tokenizer._flush_specials() which overflows C ssize_t.
@@ -74,8 +74,19 @@ def _init_presidio():
                         model["model_name"], exclude=["tokenizer"]
                     )
 
+        # spaCy en_core_web_sm produces these entity types that presidio has no
+        # built-in mapping for. Adding them to labels_to_ignore suppresses the
+        # "Entity X is not mapped to a Presidio entity" warnings at startup.
+        ner_config = NerModelConfiguration(
+            labels_to_ignore=[
+                "CARDINAL", "MONEY", "QUANTITY", "ORDINAL", "PERCENT",
+                "WORK_OF_ART", "EVENT", "LANGUAGE", "LAW", "PRODUCT", "TIME",
+            ]
+        )
+
         nlp_engine = _Py314SpacyEngine(
-            models=[{"lang_code": "en", "model_name": "en_core_web_sm"}]
+            models=[{"lang_code": "en", "model_name": "en_core_web_sm"}],
+            ner_model_configuration=ner_config,
         )
         nlp_engine.load()
         _presidio_analyzer = AnalyzerEngine(nlp_engine=nlp_engine)

@@ -355,6 +355,68 @@ export default function Agent() {
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, ...updates } : m));
   }
 
+  // Flatten structured agent data into a scannable text string so the outbound
+  // interceptor can check account numbers, IBANs, payee names, etc. for PII.
+  function flattenForScan(type, content, data) {
+    const parts = [content];
+    if (!data) return parts.join(' ');
+    const push = (...vals) => vals.forEach(v => v && parts.push(String(v)));
+    if (type === 'accounts' && data.accounts) {
+      data.accounts.forEach(a => push(a.name, a.accountName, a.accountNumber, a.iban, a.sortCode));
+    } else if (type === 'transactions' && data.transactions) {
+      data.transactions.forEach(t => push(t.description, t.merchant, t.payee, t.reference, t.counterpartyName));
+    } else if (type === 'payments' && data.payments) {
+      data.payments.forEach(p => push(p.payeeName, p.to, p.accountNumber, p.sortCode, p.reference, p.description));
+    } else if (type === 'standing_orders' && data.orders) {
+      data.orders.forEach(o => push(o.payeeName, o.beneficiary, o.accountNumber, o.reference));
+    } else {
+      try { parts.push(JSON.stringify(data)); } catch {}
+    }
+    return parts.filter(Boolean).join(' ');
+  }
+
+  const SCANNER_LABELS = {
+    regex: 'Regex + Keyword', embedding: 'Embedding Scanner',
+    presidio: 'Presidio PII', 'llama-guard': 'Llama Guard 3',
+  };
+
+  // Scan an agent response outbound through banking-chatbot before showing it.
+  // For structured types the key fields are flattened to text for scanning;
+  // if the scan is clean the card still renders normally.
+  async function addAgentMsg(type, content, data = null) {
+    const textToScan = type === 'text' ? content : flattenForScan(type, content, data);
+    const scan = await scanMessage(textToScan, 'outbound');
+
+    if (scan.action === 'block') {
+      addMsg('agent', 'text',
+        `🚫 **Warden blocked this response**\n\n• **Reason:** ${scan.reason || 'policy violation'}`
+      );
+      return;
+    }
+
+    const scannerLabel = SCANNER_LABELS[scan.scanner] || scan.scanner || 'Unknown';
+    const ruleSuffix   = scan.rule ? ` · Rule: ${scan.rule}` : '';
+
+    if (type === 'text') {
+      const safeContent = (scan.action === 'mask' && scan.text && scan.text !== content)
+        ? scan.text : content;
+      if (safeContent !== content) {
+        addMsg('agent', 'text',
+          `🛡 **Warden (outbound):** Response contained sensitive data and was masked.\n• **Scanner:** ${scannerLabel}${ruleSuffix}`
+        );
+      }
+      addMsg('agent', 'text', safeContent, data);
+    } else {
+      // Structured card — masking individual fields isn't supported; warn if flagged
+      if (scan.action === 'mask' || scan.flagged) {
+        addMsg('agent', 'text',
+          `🛡 **Warden (outbound):** Sensitive data detected in this response.\n• **Scanner:** ${scannerLabel}${ruleSuffix}`
+        );
+      }
+      addMsg('agent', type, content, data);
+    }
+  }
+
   // Parse a stored MCP result (from an approval ticket) into { type, content, data }
   // for rich rendering, the same way a normal agent response would look.
   function parseMcpResult(rawResult, toolName) {
@@ -498,27 +560,27 @@ export default function Agent() {
 
     if (action.type === 'select_account' && action.purpose === 'balance') {
       const acc = resolveAccount(text, action.accounts);
-      if (!acc) { addMsg('agent', 'text', `I couldn't find that account. Type a number (1–${action.accounts.length}) or the account name.`); return; }
+      if (!acc) { await addAgentMsg('text', `I couldn't find that account. Type a number (1–${action.accounts.length}) or the account name.`); return; }
       setPendingAction(null);
       addMsg('agent', 'text', `Fetching balance for **${acc.name || acc.accountName || 'account'}**…`);
       const id = acc.id || acc.accountId;
       const res = await mcpBanking.getAccountBalance(id);
       const bal = res?.balance ?? res?.amount ?? acc.balance?.amount ?? acc.currentBalance ?? 0;
       const cur = res?.currency || acc.balance?.currency || acc.currency || 'USD';
-      addMsg('agent', 'text', `**Current balance:** ${fmtCurrency(bal, cur)}`);
+      await addAgentMsg('text', `**Current balance:** ${fmtCurrency(bal, cur)}`);
       return;
     }
 
     if (action.type === 'select_account' && action.purpose === 'transactions') {
       const acc = resolveAccount(text, action.accounts);
-      if (!acc) { addMsg('agent', 'text', `I couldn't find that account. Type a number (1–${action.accounts.length}) or the account name.`); return; }
+      if (!acc) { await addAgentMsg('text', `I couldn't find that account. Type a number (1–${action.accounts.length}) or the account name.`); return; }
       setPendingAction(null);
       addMsg('agent', 'text', `Fetching transactions for **${acc.name || acc.accountName || 'account'}**…`);
       const id = acc.id || acc.accountId;
       const res = await mcpBanking.getTransactions(id, { limit: 20 });
       const txns = Array.isArray(res) ? res : (res?.transactions || res?.data || []);
       const cur = acc.balance?.currency || acc.currency || 'USD';
-      addMsg('agent', 'transactions', `Here are the latest transactions for **${acc.name || 'account'}**:`, { transactions: txns, currency: cur });
+      await addAgentMsg('transactions', `Here are the latest transactions for **${acc.name || 'account'}**:`, { transactions: txns, currency: cur });
       return;
     }
 
@@ -529,12 +591,12 @@ export default function Agent() {
         setPendingAction(null);
         addMsg('agent', 'text', `Approving payment to **${action.to}**…`);
         await mcpBanking.approvePayment(action.paymentId);
-        addMsg('agent', 'text', `✅ Payment of ${action.amount} to **${action.to}** has been approved.`);
+        await addAgentMsg('text', `✅ Payment of ${action.amount} to **${action.to}** has been approved.`);
       } else if (no) {
         setPendingAction(null);
-        addMsg('agent', 'text', 'Approval cancelled. Let me know if there\'s anything else I can help with.');
+        await addAgentMsg('text', 'Approval cancelled. Let me know if there\'s anything else I can help with.');
       } else {
-        addMsg('agent', 'text', 'Please reply **yes** to approve or **no** to cancel.');
+        await addAgentMsg('text', 'Please reply **yes** to approve or **no** to cancel.');
       }
       return;
     }
@@ -557,35 +619,35 @@ export default function Agent() {
     if (step === 'from_account') {
       const acc = resolveAccount(text, action.accounts);
       if (!acc) {
-        addMsg('agent', 'text', `I couldn't find that account. Type a number (1–${action.accounts.length}) or the account name.`);
+        await addAgentMsg('text', `I couldn't find that account. Type a number (1–${action.accounts.length}) or the account name.`);
         return;
       }
       data.fromAccountId = acc.id || acc.accountId;
       data.fromAccountName = acc.name || acc.accountName || 'account';
       setPendingAction({ type: 'payment_flow', step: 'payee', data });
-      addMsg('agent', 'text', `Paying from **${data.fromAccountName}**. Who would you like to pay?`);
+      await addAgentMsg('text', `Paying from **${data.fromAccountName}**. Who would you like to pay?`);
     } else if (step === 'payee') {
       data.payeeName = text;
       setPendingAction({ type: 'payment_flow', step: 'account', data });
-      addMsg('agent', 'text', `Got it. What's **${text}'s** account number?`);
+      await addAgentMsg('text', `Got it. What's **${text}'s** account number?`);
     } else if (step === 'account') {
       data.accountNumber = text.replace(/\s/g, '');
       setPendingAction({ type: 'payment_flow', step: 'sortcode', data });
-      addMsg('agent', 'text', 'And the sort code? (e.g. `20-00-00`)');
+      await addAgentMsg('text', 'And the sort code? (e.g. `20-00-00`)');
     } else if (step === 'sortcode') {
       data.sortCode = text.replace(/[-\s]/g, '');
       setPendingAction({ type: 'payment_flow', step: 'amount', data });
-      addMsg('agent', 'text', 'How much would you like to send?');
+      await addAgentMsg('text', 'How much would you like to send?');
     } else if (step === 'amount') {
       const amt = parseFloat(text.replace(/[£$,]/g, ''));
-      if (isNaN(amt) || amt <= 0) { addMsg('agent', 'text', 'Please enter a valid amount (e.g. `150` or `£150.00`).'); return; }
+      if (isNaN(amt) || amt <= 0) { await addAgentMsg('text', 'Please enter a valid amount (e.g. `150` or `£150.00`).'); return; }
       data.amount = amt;
       setPendingAction({ type: 'payment_flow', step: 'reference', data });
-      addMsg('agent', 'text', 'Add a reference (or type `skip` to leave it blank):');
+      await addAgentMsg('text', 'Add a reference (or type `skip` to leave it blank):');
     } else if (step === 'reference') {
       data.reference = /^skip$/i.test(text) ? '' : text;
       setPendingAction({ type: 'payment_flow', step: 'confirm', data });
-      addMsg('agent', 'text',
+      await addAgentMsg('text',
         `Here's a summary of the payment:\n\n**From:** ${data.fromAccountName}\n**Payee:** ${data.payeeName}\n**Account:** ****${data.accountNumber.slice(-4)}\n**Sort code:** ${data.sortCode.replace(/(\d{2})(\d{2})(\d{2})/, '$1-$2-$3')}\n**Amount:** ${fmtCurrency(data.amount)}\n**Reference:** ${data.reference || '(none)'}\n\nShall I send this? (yes / no)`
       );
     } else if (step === 'confirm') {
@@ -602,12 +664,12 @@ export default function Agent() {
           currency: 'USD',
           reference: data.reference,
         });
-        addMsg('agent', 'text', `✅ Payment of ${fmtCurrency(data.amount)} to **${data.payeeName}** has been submitted.`);
+        await addAgentMsg('text', `✅ Payment of ${fmtCurrency(data.amount)} to **${data.payeeName}** has been submitted.`);
       } else if (no) {
         setPendingAction(null);
-        addMsg('agent', 'text', 'Payment cancelled. Let me know if you\'d like to try again.');
+        await addAgentMsg('text', 'Payment cancelled. Let me know if you\'d like to try again.');
       } else {
-        addMsg('agent', 'text', 'Reply **yes** to send or **no** to cancel.');
+        await addAgentMsg('text', 'Reply **yes** to send or **no** to cancel.');
       }
     }
   }
@@ -618,11 +680,11 @@ export default function Agent() {
 
     switch (intent) {
       case 'greet':
-        addMsg('agent', 'text', `Hello! Great to see you, **${userName}**! How can I help you with your banking today?`);
+        await addAgentMsg('text', `Hello! Great to see you, **${userName}**! How can I help you with your banking today?`);
         return;
 
       case 'help':
-        addMsg('agent', 'text', HELP_TEXT);
+        await addAgentMsg('text', HELP_TEXT);
         return;
 
       case 'list_accounts': {
@@ -630,7 +692,7 @@ export default function Agent() {
         const res = await mcpBanking.getAccounts();
         const accounts = Array.isArray(res) ? res : (res?.accounts || res?.data || []);
         setCachedAccounts(accounts);
-        addMsg('agent', 'accounts', `You have **${accounts.length}** account${accounts.length !== 1 ? 's' : ''}:`, { accounts });
+        await addAgentMsg('accounts', `You have **${accounts.length}** account${accounts.length !== 1 ? 's' : ''}:`, { accounts });
         return;
       }
 
@@ -641,17 +703,17 @@ export default function Agent() {
           setCachedAccounts(a);
           return a;
         })();
-        if (!accounts.length) { addMsg('agent', 'text', 'No accounts found.'); return; }
+        if (!accounts.length) { await addAgentMsg('text', 'No accounts found.'); return; }
         if (accounts.length === 1) {
           const acc = accounts[0];
           const id = acc.id || acc.accountId;
           const res = await mcpBanking.getAccountBalance(id);
           const bal = res?.balance ?? res?.amount ?? acc.balance?.amount ?? acc.currentBalance ?? 0;
           const cur = res?.currency || acc.balance?.currency || acc.currency || 'USD';
-          addMsg('agent', 'text', `**Current balance:** ${fmtCurrency(bal, cur)}`);
+          await addAgentMsg('text', `**Current balance:** ${fmtCurrency(bal, cur)}`);
         } else {
           setPendingAction({ type: 'select_account', purpose: 'balance', accounts });
-          addMsg('agent', 'accounts', 'Which account would you like to check? Tap one or type its number:', { accounts, selectable: true, onSelectPurpose: 'balance' });
+          await addAgentMsg('accounts', 'Which account would you like to check? Tap one or type its number:', { accounts, selectable: true, onSelectPurpose: 'balance' });
         }
         return;
       }
@@ -671,10 +733,10 @@ export default function Agent() {
           const res = await mcpBanking.getTransactions(id, { limit: 20 });
           const txns = Array.isArray(res) ? res : (res?.transactions || res?.data || []);
           const cur = acc.balance?.currency || acc.currency || 'USD';
-          addMsg('agent', 'transactions', `Here are the latest transactions:`, { transactions: txns, currency: cur });
+          await addAgentMsg('transactions', `Here are the latest transactions:`, { transactions: txns, currency: cur });
         } else {
           setPendingAction({ type: 'select_account', purpose: 'transactions', accounts });
-          addMsg('agent', 'accounts', 'Which account\'s transactions? Tap one or type its number:', { accounts, selectable: true, onSelectPurpose: 'transactions' });
+          await addAgentMsg('accounts', 'Which account\'s transactions? Tap one or type its number:', { accounts, selectable: true, onSelectPurpose: 'transactions' });
         }
         return;
       }
@@ -683,7 +745,7 @@ export default function Agent() {
         addMsg('agent', 'text', 'Fetching your payments…');
         const res = await mcpBanking.listPayments();
         const payments = Array.isArray(res) ? res : (res?.payments || res?.data || []);
-        addMsg('agent', 'payments', `Here are your payments (${payments.length} total):`, { payments });
+        await addAgentMsg('payments', `Here are your payments (${payments.length} total):`, { payments });
         return;
       }
 
@@ -692,9 +754,9 @@ export default function Agent() {
         const res = await mcpBanking.listPayments();
         const payments = (Array.isArray(res) ? res : (res?.payments || res?.data || [])).filter(p => (p.status || '').toLowerCase() === 'pending');
         if (!payments.length) {
-          addMsg('agent', 'text', 'No pending payments to approve right now.');
+          await addAgentMsg('text', 'No pending payments to approve right now.');
         } else {
-          addMsg('agent', 'payments', `You have **${payments.length}** pending payment${payments.length !== 1 ? 's' : ''}. Tap Approve on any:`, { payments, approvable: true });
+          await addAgentMsg('payments', `You have **${payments.length}** pending payment${payments.length !== 1 ? 's' : ''}. Tap Approve on any:`, { payments, approvable: true });
         }
         return;
       }
@@ -703,7 +765,7 @@ export default function Agent() {
         addMsg('agent', 'text', 'Fetching standing orders…');
         const res = await banking.getStandingOrders();
         const orders = Array.isArray(res) ? res : (res?.standingOrders || res?.data || []);
-        addMsg('agent', 'standing_orders', `You have **${orders.length}** standing order${orders.length !== 1 ? 's' : ''}:`, { orders });
+        await addAgentMsg('standing_orders', `You have **${orders.length}** standing order${orders.length !== 1 ? 's' : ''}:`, { orders });
         return;
       }
 
@@ -711,7 +773,7 @@ export default function Agent() {
         addMsg('agent', 'text', 'Fetching external transfers…');
         const res = await banking.getExternalTransfers().catch(() => []);
         const transfers = Array.isArray(res) ? res : (res?.transfers || res?.data || []);
-        addMsg('agent', 'payments', `Here are your external transfers (${transfers.length} total):`, { payments: transfers });
+        await addAgentMsg('payments', `Here are your external transfers (${transfers.length} total):`, { payments: transfers });
         return;
       }
 
@@ -721,12 +783,12 @@ export default function Agent() {
         const payAccounts = Array.isArray(payAccRes) ? payAccRes : (payAccRes?.accounts || payAccRes?.data || []);
         if (!payAccounts.length) { addMsg('agent', 'text', 'No accounts found to pay from.'); return; }
         setPendingAction({ type: 'payment_flow', step: 'from_account', data: {}, accounts: payAccounts });
-        addMsg('agent', 'accounts', 'Which account would you like to pay from? Tap or type the number:', { accounts: payAccounts, selectable: true });
+        await addAgentMsg('accounts', 'Which account would you like to pay from? Tap or type the number:', { accounts: payAccounts, selectable: true });
         return;
       }
 
       default:
-        addMsg('agent', 'text', `I'm not sure how to help with that. Try asking about your **accounts**, **transactions**, **payments**, or **standing orders** — or type **help** for a full list.`);
+        await addAgentMsg('text', `I'm not sure how to help with that. Try asking about your **accounts**, **transactions**, **payments**, or **standing orders** — or type **help** for a full list.`);
     }
   }
 

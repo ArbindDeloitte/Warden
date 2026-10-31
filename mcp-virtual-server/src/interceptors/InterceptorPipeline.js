@@ -23,7 +23,7 @@ function getEnabledScanners(virtualServerId, direction) {
   }
 }
 
-async function run(text, direction, virtualServerId) {
+async function run(text, direction, virtualServerId, agentId, callId, user) {
   if (!text || typeof text !== 'string' || text.trim() === '') {
     return { action: 'allow', text, reason: null };
   }
@@ -49,14 +49,14 @@ async function run(text, direction, virtualServerId) {
     }
   }
 
-  const decision = await actionEngine.decide(syncResults, text, virtualServerId, direction);
+  const decision = await actionEngine.decide(syncResults, text, virtualServerId, direction, agentId, callId, user);
 
   // Fire async scanners (non-blocking, audit-log only)
   for (const scanner of registry.async()) {
     if (!enabledNames.includes(scanner.name)) continue;
     scanner.scan(text, { virtualServerId, direction }).then(result => {
       if (result.flagged) {
-        actionEngine.decide([result], text, virtualServerId, `${direction}_async`).catch(() => {});
+        actionEngine.decide([result], text, virtualServerId, `${direction}_async`, agentId, callId, user).catch(() => {});
       }
     }).catch(() => {});
   }

@@ -16,6 +16,16 @@ export async function getToken() {
   }
 }
 
+export async function getIdToken() {
+  if (!_oktaAuth) return null;
+  try {
+    return await _oktaAuth.getIdToken();
+  } catch (e) {
+    console.error('Failed to get ID token', e);
+    return null;
+  }
+}
+
 async function request(method, path, body) {
   const token = await getToken();
   const headers = {

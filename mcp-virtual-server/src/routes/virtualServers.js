@@ -30,9 +30,17 @@ router.get('/:id', (req, res) => {
     SELECT * FROM policies WHERE virtual_server_id = ? ORDER BY priority DESC, created_at
   `).all(req.params.id);
 
+  const agents = db.prepare(`
+    SELECT a.id, a.name, a.description, a.token_prefix, a.is_active, vsa.created_at AS assigned_at
+    FROM virtual_server_agents vsa
+    JOIN agents a ON a.id = vsa.agent_id
+    WHERE vsa.vs_id = ?
+    ORDER BY vsa.created_at DESC
+  `).all(req.params.id);
+
   if (server.okta_client_secret) server.okta_client_secret = '***';
 
-  res.json({ ...server, tools, policies });
+  res.json({ ...server, tools, policies, agents });
 });
 
 function parseFeatures(raw) {
@@ -43,16 +51,17 @@ function parseFeatures(raw) {
 
 // Create a virtual server
 router.post('/', (req, res) => {
-  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, features_enabled } = req.body;
+  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, require_agent_token, features_enabled } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   const id = uuidv4();
   db.prepare(`
-    INSERT INTO virtual_servers (id, name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, features_enabled)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO virtual_servers (id, name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, require_agent_token, features_enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, name, description || null, okta_issuer || null, okta_client_id || null,
     okta_client_secret || null, okta_audience || null, jwks_uri || null,
     require_obo === false || require_obo === 0 ? 0 : 1,
+    require_agent_token ? 1 : 0,
     JSON.stringify(parseFeatures(features_enabled)));
 
   res.status(201).json({ id, name });
@@ -60,30 +69,71 @@ router.post('/', (req, res) => {
 
 // Update a virtual server
 router.put('/:id', (req, res) => {
-  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, is_active, require_obo, features_enabled } = req.body;
+  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, is_active, require_obo, require_agent_token, features_enabled } = req.body;
   const server = db.prepare('SELECT id FROM virtual_servers WHERE id = ?').get(req.params.id);
   if (!server) return res.status(404).json({ error: 'Virtual server not found' });
 
   const secretUpdate = okta_client_secret && okta_client_secret !== '***' ? okta_client_secret : null;
-  const oboVal = require_obo === false || require_obo === 0 ? 0 : 1;
+  const oboVal      = require_obo === false || require_obo === 0 ? 0 : 1;
+  const agentVal    = require_agent_token ? 1 : 0;
   const featuresJson = JSON.stringify(parseFeatures(features_enabled));
 
   if (secretUpdate) {
     db.prepare(`
       UPDATE virtual_servers SET name=?, description=?, okta_issuer=?, okta_client_id=?,
-        okta_client_secret=?, okta_audience=?, jwks_uri=?, is_active=?, require_obo=?, features_enabled=? WHERE id=?
+        okta_client_secret=?, okta_audience=?, jwks_uri=?, is_active=?, require_obo=?, require_agent_token=?, features_enabled=? WHERE id=?
     `).run(name, description || null, okta_issuer || null, okta_client_id || null,
       secretUpdate, okta_audience || null, jwks_uri || null,
-      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, featuresJson, req.params.id);
+      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, agentVal, featuresJson, req.params.id);
   } else {
     db.prepare(`
       UPDATE virtual_servers SET name=?, description=?, okta_issuer=?, okta_client_id=?,
-        okta_audience=?, jwks_uri=?, is_active=?, require_obo=?, features_enabled=? WHERE id=?
+        okta_audience=?, jwks_uri=?, is_active=?, require_obo=?, require_agent_token=?, features_enabled=? WHERE id=?
     `).run(name, description || null, okta_issuer || null, okta_client_id || null,
       okta_audience || null, jwks_uri || null,
-      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, featuresJson, req.params.id);
+      is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, agentVal, featuresJson, req.params.id);
   }
 
+  res.json({ ok: true });
+});
+
+// ── Per-VS Agent Allowlist ────────────────────────────────────────────────────
+
+// GET /api/virtual-servers/:id/agents
+router.get('/:id/agents', (req, res) => {
+  const agents = db.prepare(`
+    SELECT a.id, a.name, a.description, a.token_prefix, a.is_active, vsa.created_at AS assigned_at
+    FROM virtual_server_agents vsa
+    JOIN agents a ON a.id = vsa.agent_id
+    WHERE vsa.vs_id = ?
+    ORDER BY vsa.created_at DESC
+  `).all(req.params.id);
+  res.json(agents);
+});
+
+// POST /api/virtual-servers/:id/agents  — assign an agent
+router.post('/:id/agents', (req, res) => {
+  const { agent_id } = req.body;
+  if (!agent_id) return res.status(400).json({ error: 'agent_id is required' });
+  const vs    = db.prepare('SELECT id FROM virtual_servers WHERE id = ?').get(req.params.id);
+  if (!vs) return res.status(404).json({ error: 'Virtual server not found' });
+  const agent = db.prepare('SELECT id FROM agents WHERE id = ?').get(agent_id);
+  if (!agent) return res.status(404).json({ error: 'Agent not found' });
+  try {
+    const id = require('uuid').v4();
+    db.prepare(`INSERT INTO virtual_server_agents (id, vs_id, agent_id) VALUES (?, ?, ?)`)
+      .run(id, req.params.id, agent_id);
+    res.status(201).json({ id });
+  } catch (err) {
+    if (err.message?.includes('UNIQUE')) return res.status(409).json({ error: 'Agent already assigned to this virtual server' });
+    throw err;
+  }
+});
+
+// DELETE /api/virtual-servers/:id/agents/:agentId
+router.delete('/:id/agents/:agentId', (req, res) => {
+  db.prepare('DELETE FROM virtual_server_agents WHERE vs_id = ? AND agent_id = ?')
+    .run(req.params.id, req.params.agentId);
   res.json({ ok: true });
 });
 

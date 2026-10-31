@@ -22,7 +22,7 @@ function applyMasks(text, matches) {
   return result;
 }
 
-async function decide(results, text, virtualServerId, direction) {
+async function decide(results, text, virtualServerId, direction, agentId, callId, user) {
   let rules = [];
   try {
     rules = db.prepare(`
@@ -86,32 +86,58 @@ async function decide(results, text, virtualServerId, direction) {
     maskedText = applyMasks(text, allMatches);
   }
 
-  writeInterceptorLog({ virtualServerId, direction, results, finalAction });
+  writeInterceptorLog({ virtualServerId, direction, results, finalAction, agentId, callId, user });
 
   return { action: finalAction, text: maskedText, reason: finalReason, scanner: finalScanner, rule: finalRule, score: finalScore };
 }
 
-function writeInterceptorLog({ virtualServerId, direction, results, finalAction }) {
-  for (const result of results) {
-    try {
-      db.prepare(`
-        INSERT INTO interceptor_log
-          (id, virtual_server_id, direction, scanner, flagged, action_taken,
-           categories, pii_types, score, degraded)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        uuidv4(), virtualServerId || null, direction || null,
-        result.scanner,
-        result.flagged ? 1 : 0,
-        finalAction,
-        JSON.stringify(result.categories || []),
-        JSON.stringify((result.matches || []).map(m => m.type).filter((v, i, a) => a.indexOf(v) === i)),
-        result.score || 0,
-        result.degraded ? 1 : 0
-      );
-    } catch (err) {
-      console.error('[ActionEngine] Log write failed:', err.message);
-    }
+function writeInterceptorLog({ virtualServerId, direction, results, finalAction, agentId, callId, user }) {
+  // Write ONE aggregate event per call direction — not one per scanner.
+  // Per-scanner writes would count a single blocked call multiple times in scoring
+  // when several scanners detect the same content.
+  if (!results || results.length === 0) return;
+  try {
+    const active        = results.filter(r => !r.degraded);
+    const flagged       = active.filter(r => r.flagged);
+    const anyFlagged    = flagged.length > 0;
+    const allCategories = [...new Set(flagged.flatMap(r => r.categories || []))];
+    const allPiiTypes   = [...new Set(flagged.flatMap(r => (r.matches || []).map(m => m.type)))];
+    const maxScore      = flagged.reduce((m, r) => Math.max(m, r.score || 0), 0);
+    const primaryScanner = flagged.length > 0 ? flagged[0].scanner : (active[0]?.scanner || 'unknown');
+    const allScanners   = active.map(r => r.scanner);
+    const anyDegraded   = results.some(r => r.degraded);
+
+    const level = !anyFlagged       ? 'info'
+      : finalAction === 'block'     ? 'block'
+      : finalAction === 'mask'      ? 'warn'
+      : finalAction === 'warn'      ? 'warn'
+      : 'info';
+
+    const summary = `${primaryScanner} · ${finalAction}${anyFlagged ? ` [${allCategories[0] || 'flagged'}]` : ''}`;
+
+    const data = JSON.stringify({
+      direction:    direction || null,
+      scanner:      primaryScanner,
+      scanners:     allScanners,
+      flagged:      anyFlagged ? 1 : 0,
+      action_taken: finalAction,
+      categories:   allCategories,
+      pii_types:    allPiiTypes,
+      score:        maxScore,
+      degraded:     anyDegraded ? 1 : 0,
+      agent_id:     agentId || null,
+      call_id:      callId  || null,
+      user_email:   user?.email || null,
+      user_sub:     user?.sub   || null,
+      user_name:    user?.name  || null,
+    });
+
+    db.prepare(`
+      INSERT INTO event_log (id, vs_id, log_type, level, summary, data)
+      VALUES (?, ?, 'interceptor', ?, ?, ?)
+    `).run(uuidv4(), virtualServerId || null, level, summary, data);
+  } catch (err) {
+    console.error('[ActionEngine] Log write failed:', err.message);
   }
 }
 

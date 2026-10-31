@@ -7,8 +7,91 @@ const { exchangeForOboToken } = require('../services/oboService');
 const { callMcpTool } = require('../services/mcpClient');
 const { evaluatePolicies } = require('../services/policyEngine');
 const pipeline = require('../interceptors/InterceptorPipeline');
+const jwt = require('jsonwebtoken');
+const jwksClient = require('jwks-rsa');
 
 const router = express.Router();
+
+function decodeJwtPayload(token) {
+  try {
+    const raw = token.replace(/^Bearer\s+/i, '');
+    const parts = raw.split('.');
+    if (parts.length < 2) return null;
+    const padded = parts[1] + '='.repeat((4 - parts[1].length % 4) % 4);
+    return JSON.parse(Buffer.from(padded, 'base64url').toString('utf8'));
+  } catch { return null; }
+}
+
+async function verifyJwtWithJwks(token, jwksUri) {
+  const raw = token.replace(/^Bearer\s+/i, '');
+  const client = jwksClient({ jwksUri, cache: true, cacheMaxEntries: 10, cacheMaxAge: 600000 });
+  return new Promise((resolve, reject) => {
+    jwt.verify(raw, (header, callback) => {
+      client.getSigningKey(header.kid, (err, key) => {
+        if (err) return callback(err);
+        callback(null, key.getPublicKey());
+      });
+    }, { algorithms: ['RS256', 'ES256'] }, (err, decoded) => {
+      if (err) return reject(err);
+      resolve(decoded);
+    });
+  });
+}
+
+async function enforceIdpConnect(virtualServerId, userTokenHeader) {
+  const configs = db.prepare(
+    'SELECT * FROM vs_idp_configs WHERE virtual_server_id = ? AND is_active = 1'
+  ).all(virtualServerId);
+
+  if (!configs.length) {
+    return { ok: false, error: 'IDP Connect is enabled but no trusted issuers are configured', hint: 'Add at least one IDP issuer in Warden → Virtual Servers → Edit.' };
+  }
+
+  if (!userTokenHeader) {
+    return { ok: false, error: 'IDP Connect requires x-user-token header', hint: "Include the user's ID/access token in the x-user-token header." };
+  }
+
+  const rawToken = userTokenHeader.replace(/^Bearer\s+/i, '');
+  const payload = decodeJwtPayload(rawToken);
+  if (!payload || !payload.iss) {
+    return { ok: false, error: 'Could not decode x-user-token — missing iss claim' };
+  }
+
+  const matched = configs.find(c => {
+    if (payload.iss !== c.issuer) return false;
+    if (c.audience && payload.aud) {
+      const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+      if (!aud.includes(c.audience)) return false;
+    }
+    return true;
+  });
+
+  if (!matched) {
+    return {
+      ok: false,
+      error: `Token issuer "${payload.iss}" is not in the trusted IDP list for this virtual server`,
+      hint: 'The x-user-token must be issued by a trusted IDP configured in Warden.',
+    };
+  }
+
+  if (matched.full_verification) {
+    try {
+      const jwksUri = matched.jwks_uri || `${matched.issuer.replace(/\/$/, '')}/v1/keys`;
+      await verifyJwtWithJwks(rawToken, jwksUri);
+    } catch (err) {
+      return { ok: false, error: `IDP token signature verification failed: ${err.message}` };
+    }
+  }
+
+  const user = {
+    sub: payload.sub || null,
+    email: payload.email || payload.preferred_username || null,
+    name: payload.name || null,
+    iss: payload.iss,
+  };
+
+  return { ok: true, user, configId: matched.id, configName: matched.name };
+}
 
 /**
  * GET /api/proxy/:virtualServerId/timing?token=<user_token>
@@ -84,6 +167,8 @@ router.post('/:virtualServerId', async (req, res) => {
   const { mcp_server_id, tool_name, arguments: toolArgs } = req.body;
   const t0 = Date.now();
   const lap = (label) => console.log(`[Proxy] ${label} +${Date.now() - t0}ms`);
+  // Unique ID linking the inbound + outbound interceptor events for this request
+  const callId = uuidv4();
 
   // Hard 20-second deadline — sends a 504 and stops the flow if anything hangs
   let _deadlineTimer;
@@ -136,6 +221,50 @@ router.post('/:virtualServerId', async (req, res) => {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
+  // ── Agent identity resolution ──────────────────────────────────────────────
+  // X-Agent-Token identifies the calling agent. Fails open by default;
+  // if VS.require_agent_token is set, missing/invalid tokens get 401.
+  let agentId   = null;
+  let agentName = null;
+  const agentTokenHeader = req.headers['x-agent-token'];
+  if (agentTokenHeader) {
+    const agentHash = crypto.createHash('sha256').update(agentTokenHeader).digest('hex');
+    const agentRow  = db.prepare('SELECT id, name, is_active FROM agents WHERE token_hash = ?').get(agentHash);
+    if (agentRow) {
+      if (!agentRow.is_active) {
+        done();
+        return res.status(403).json({
+          error: 'Agent is disabled',
+          hint: `Agent "${agentRow.name}" has been deactivated. Re-enable it in the Warden Agent Hub before making calls.`,
+        });
+      }
+      agentId   = agentRow.id;
+      agentName = agentRow.name;
+      try { db.prepare('UPDATE agents SET last_seen_at = ? WHERE id = ?').run(new Date().toISOString(), agentId); } catch {}
+    }
+  }
+  if (virtualServer.require_agent_token) {
+    if (!agentId) {
+      done();
+      return res.status(401).json({
+        error: 'Agent identity required',
+        hint: 'Include X-Agent-Token header with a registered Warden agent token.',
+      });
+    }
+    // Check agent is in this VS's allowlist
+    const allowed = db.prepare(
+      'SELECT id FROM virtual_server_agents WHERE vs_id = ? AND agent_id = ?'
+    ).get(virtualServer.id, agentId);
+    if (!allowed) {
+      done();
+      return res.status(403).json({
+        error: 'Agent not authorized for this virtual server',
+        hint: `Agent "${agentName}" is registered but not in the allowlist for this virtual server. Add it via the Warden UI.`,
+      });
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Attach for auth middleware
   req.virtualServer = virtualServer;
 
@@ -177,6 +306,36 @@ router.post('/:virtualServerId', async (req, res) => {
   catch { enabledFeatures = ['interceptors', 'policy']; }
   const featureOn = (f) => enabledFeatures.includes(f);
 
+  // ── IDP Connect enforcement ────────────────────────────────────────────────
+  let idpUser = null; // populated when IDP Connect is on and verification passes
+  if (featureOn('idp_connect')) {
+    try {
+      // Prefer x-id-token (ID token with client aud) over x-user-token (access token for OBO)
+      const idpTokenHeader = req.headers['x-id-token'] || req.headers['x-user-token'];
+      const idpResult = await withDeadline(enforceIdpConnect(virtualServerId, idpTokenHeader));
+      if (!idpResult.ok) {
+        done();
+        return res.status(401).json({ error: idpResult.error, hint: idpResult.hint });
+      }
+      if (idpResult.user) {
+        idpUser = idpResult.user;
+        try {
+          db.prepare(`INSERT INTO event_log (id, vs_id, log_type, level, summary, data) VALUES (?,?,?,?,?,?)`)
+            .run(uuidv4(), virtualServerId, 'idp_auth', 'info',
+              `IDP verified: ${idpResult.user.email || idpResult.user.sub}`,
+              JSON.stringify({ sub: idpResult.user.sub, email: idpResult.user.email, name: idpResult.user.name, iss: idpResult.user.iss, idp_config: idpResult.configName })
+            );
+        } catch {}
+      }
+    } catch (err) {
+      if (err.silent) return;
+      done();
+      return res.status(401).json({ error: 'IDP Connect validation failed', detail: err.message });
+    }
+    lap('IDP Connect verified');
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Check if the tool is assigned to this virtual server
   const toolAssignment = db.prepare(`
     SELECT vst.*, ms.url AS mcp_url, ms.name AS mcp_name,
@@ -193,7 +352,7 @@ router.post('/:virtualServerId', async (req, res) => {
     writeAudit({
       virtualServerId, mcpServerId: mcp_server_id, toolName: tool_name,
       sub, jti, scopes: atAScopes, groups, decision: 'deny', reason: 'Tool not assigned to this virtual server',
-      payload: toolArgs,
+      payload: toolArgs, agentId, agentName,
     });
     return res.status(403).json({ error: 'Tool not permitted on this virtual server' });
   }
@@ -202,7 +361,7 @@ router.post('/:virtualServerId', async (req, res) => {
   if (featureOn('interceptors')) {
     const inboundText = JSON.stringify(toolArgs || {});
     try {
-      const inbound = await pipeline.run(inboundText, 'inbound', virtualServerId);
+      const inbound = await pipeline.run(inboundText, 'inbound', virtualServerId, agentId, callId, idpUser);
       if (inbound.action === 'block') {
         return res.status(403).json({ error: 'Request blocked by interceptor', reason: inbound.reason, intercepted: true });
       }
@@ -247,6 +406,7 @@ router.post('/:virtualServerId', async (req, res) => {
       scopes: oboScopes,
       groups: groups || [],
       sub: sub || '',
+      agentName: agentName || '',
     });
   } else {
     policyResult = { decision: 'allow', reason: 'Policy evaluation disabled for this virtual server' };
@@ -258,7 +418,7 @@ router.post('/:virtualServerId', async (req, res) => {
     decision: policyResult.decision,
     matchedPolicyId: policyResult.policyId,
     reason: policyResult.reason,
-    payload: toolArgs,
+    payload: toolArgs, agentId, agentName,
   });
 
   if (policyResult.decision === 'approval') {
@@ -324,7 +484,7 @@ router.post('/:virtualServerId', async (req, res) => {
       const textItems = extractMcpTextItems(result);
       if (textItems.length > 0) {
         const combinedText = textItems.map(t => t.text).join('\n\n---\n\n');
-        const outbound = await pipeline.run(combinedText, 'outbound', virtualServerId);
+        const outbound = await pipeline.run(combinedText, 'outbound', virtualServerId, agentId, callId, idpUser);
         if (outbound.action === 'block') {
           done();
           return res.status(403).json({ error: 'Response blocked by interceptor', reason: outbound.reason, intercepted: true });
@@ -374,19 +534,34 @@ function injectMcpTextItems(result, maskedCombined, originalItems) {
   return { ...result, content: newContent };
 }
 
-function writeAudit({ virtualServerId, mcpServerId, toolName, sub, jti, scopes, groups, decision, matchedPolicyId, reason, payload }) {
+function writeAudit({ virtualServerId, mcpServerId, toolName, sub, jti, scopes, groups, decision, matchedPolicyId, reason, payload, agentId, agentName }) {
   try {
+    const level = decision === 'deny' ? 'warn'
+      : decision === 'block'    ? 'block'
+      : decision === 'error'    ? 'error'
+      : 'info';
+
+    const summary = `${toolName || '?'} → ${decision}${agentName ? ` (${agentName})` : ''}`;
+
+    const data = JSON.stringify({
+      tool_name:         toolName || null,
+      decision,
+      mcp_server_id:     mcpServerId || null,
+      matched_policy_id: matchedPolicyId || null,
+      reason:            reason || null,
+      user_sub:          sub || null,
+      user_token_jti:    jti || null,
+      user_scopes:       scopes || [],
+      user_groups:       groups || [],
+      agent_id:          agentId || null,
+      agent_name:        agentName || null,
+      request_payload:   payload || null,
+    });
+
     db.prepare(`
-      INSERT INTO audit_log
-        (id, virtual_server_id, mcp_server_id, tool_name, user_sub, user_token_jti,
-         user_scopes, user_groups, decision, matched_policy_id, reason, request_payload)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      uuidv4(), virtualServerId, mcpServerId, toolName, sub || null, jti || null,
-      JSON.stringify(scopes || []), JSON.stringify(groups || []),
-      decision, matchedPolicyId || null, reason || null,
-      payload ? JSON.stringify(payload) : null
-    );
+      INSERT INTO event_log (id, vs_id, log_type, level, summary, data)
+      VALUES (?, ?, 'proxy_call', ?, ?, ?)
+    `).run(uuidv4(), virtualServerId || null, level, summary, data);
   } catch (err) {
     console.error('[Audit] Failed to write audit log:', err.message);
   }

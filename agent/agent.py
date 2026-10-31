@@ -226,6 +226,8 @@ def main():
     gateway_token     = os.environ.get("PG_GATEWAY_TOKEN", "").strip()
     virtual_server_id = os.environ.get("PG_VIRTUAL_SERVER_ID", "").strip()
     agent_name        = os.environ.get("PG_AGENT_NAME", "banking-agent").strip()
+    warden_url        = os.environ.get("WARDEN_URL", "http://localhost:3003").strip()
+    warden_vs_id      = os.environ.get("WARDEN_VS_ID", "").strip()
 
     missing = [v for v, val in [
         ("PG_GATEWAY_URL", gateway_url),
@@ -262,6 +264,8 @@ def main():
         virtual_server_id=virtual_server_id,
         user_token=user_token,
         agent_name=agent_name,
+        warden_url=warden_url,
+        warden_vs_id=warden_vs_id,
     )
 
     kwargs = {"api_key": anthropic_key}
@@ -304,7 +308,15 @@ def main():
             print(_grey("  Conversation cleared.\n"))
             continue
 
-        messages.append({"role": "user", "content": user_input})
+        # ── Inbound scan: user message → agent ───────────────────────────────
+        inbound = mcp.scan(user_input, "inbound")
+        if inbound.get("action") == "block":
+            print(_yellow(f"\n  [Interceptor] Message blocked: {inbound.get('reason') or 'policy violation'}\n"))
+            continue
+        # Use masked text if the pipeline redacted anything
+        safe_input = inbound.get("text") or user_input
+
+        messages.append({"role": "user", "content": safe_input})
 
         try:
             reply = _run_turn(llm, model, SYSTEM_PROMPT, messages, anth_tools, mcp)
@@ -316,6 +328,14 @@ def main():
             print(_yellow(f"\n  Error: {exc}\n"))
             messages.pop()
             continue
+
+        # ── Outbound scan: agent response → user ─────────────────────────────
+        outbound = mcp.scan(reply, "outbound")
+        if outbound.get("action") == "block":
+            reply = "[Response blocked by security policy]"
+        else:
+            # Use masked version if the pipeline redacted anything
+            reply = outbound.get("text") or reply
 
         # Wrap long lines for readability
         wrapped = "\n".join(

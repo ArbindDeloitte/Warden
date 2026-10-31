@@ -1,4 +1,4 @@
-import { getToken } from './api.js';
+import { getToken, getIdToken } from './api.js';
 
 const VIRTUAL_SERVER_URL = import.meta.env.VITE_VIRTUAL_SERVER_URL
   || 'http://localhost:3003/api/proxy/da2223c8-2b2a-429c-9220-d9e75b36f330';
@@ -6,11 +6,13 @@ const VIRTUAL_SERVER_URL = import.meta.env.VITE_VIRTUAL_SERVER_URL
 const MCP_SERVER_ID = import.meta.env.VITE_MCP_SERVER_ID
   || 'b49d5d6e-f465-4d3d-8963-c74dd1bb1101';
 
-const WARDEN_API_KEY = import.meta.env.VITE_WARDEN_API_KEY || '';
+const WARDEN_API_KEY    = import.meta.env.VITE_WARDEN_API_KEY    || '';
+const WARDEN_AGENT_TOKEN = import.meta.env.VITE_WARDEN_AGENT_TOKEN || 'wag_0f74dd0b9e87f63040e7988ac2b551f4';
 
 // Warden interceptor for chat messages — uses the banking-chatbot virtual server
-const WARDEN_BASE = import.meta.env.VITE_WARDEN_URL || 'http://localhost:3003';
-const CHAT_VS_ID  = import.meta.env.VITE_WARDEN_CHAT_VS_ID || '35250de9-689d-4284-a197-0aca282c2c4d';
+const WARDEN_BASE       = import.meta.env.VITE_WARDEN_URL || 'http://localhost:3003';
+const CHAT_VS_ID        = import.meta.env.VITE_WARDEN_CHAT_VS_ID || '35250de9-689d-4284-a197-0aca282c2c4d';
+const CHAT_AGENT_NAME   = import.meta.env.VITE_WARDEN_CHAT_AGENT_NAME || 'banking-chatbot-agent';
 
 /**
  * Thrown by callTool when the virtual server returns 202 pending_approval.
@@ -44,10 +46,14 @@ export async function pollApprovalStatus(ticketId) {
  */
 export async function scanMessage(text, direction = 'inbound') {
   try {
+    const idToken = await getIdToken();
     const res = await fetch(`${WARDEN_BASE}/api/interceptors/${CHAT_VS_ID}/scan`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, direction }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { 'x-id-token': `Bearer ${idToken}` } : {}),
+      },
+      body: JSON.stringify({ text, direction, agent_name: CHAT_AGENT_NAME }),
     });
     if (!res.ok) return { action: 'allow', text };
     return res.json();
@@ -68,14 +74,17 @@ export async function scanMessage(text, direction = 'inbound') {
  * @returns {*}              - Parsed tool result (JSON parsed from MCP content)
  */
 export async function callTool(toolName, args = {}) {
-  const token = await getToken();
+  const [token, idToken] = await Promise.all([getToken(), getIdToken()]);
 
   const response = await fetch(VIRTUAL_SERVER_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(WARDEN_API_KEY ? { 'X-API-Key': WARDEN_API_KEY } : {}),
+      ...(token    ? { Authorization:  `Bearer ${token}` }   : {}),
+      ...(token    ? { 'x-user-token': `Bearer ${token}` }   : {}),
+      ...(idToken  ? { 'x-id-token':   `Bearer ${idToken}` } : {}),
+      ...(WARDEN_API_KEY    ? { 'X-API-Key':     WARDEN_API_KEY }    : {}),
+      ...(WARDEN_AGENT_TOKEN ? { 'X-Agent-Token': WARDEN_AGENT_TOKEN } : {}),
     },
     body: JSON.stringify({
       mcp_server_id: MCP_SERVER_ID,
