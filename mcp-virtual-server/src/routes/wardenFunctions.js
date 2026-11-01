@@ -41,9 +41,10 @@ router.get('/:id', (req, res) => {
   const fn = db.prepare('SELECT * FROM warden_functions WHERE id = ?').get(req.params.id);
   if (!fn) return res.status(404).json({ error: 'Not found' });
   const triggers   = db.prepare(`
-    SELECT wft.*, vs.name AS vs_name
+    SELECT wft.*, vs.name AS vs_name, ag.name AS group_name
     FROM warden_function_triggers wft
     LEFT JOIN virtual_servers vs ON vs.id = wft.vs_id
+    LEFT JOIN agent_groups ag    ON ag.id  = wft.group_id
     WHERE wft.function_id = ? ORDER BY wft.created_at DESC
   `).all(req.params.id);
   const secretKeys = db.prepare('SELECT id, key, created_at FROM warden_function_secrets WHERE function_id = ? ORDER BY created_at').all(req.params.id);
@@ -99,8 +100,9 @@ router.post('/:id/triggers', (req, res) => {
   const fn = db.prepare('SELECT id FROM warden_functions WHERE id = ?').get(req.params.id);
   if (!fn) return res.status(404).json({ error: 'Not found' });
 
-  const { vs_id, threshold, trigger_type, interval_minutes } = req.body;
+  const { vs_id, threshold, trigger_type, interval_minutes, trigger_scope, group_id } = req.body;
   const ttype = VALID_TRIGGER_TYPES.includes(trigger_type) ? trigger_type : 'user_score_below';
+  const scope = (ttype === 'agent_score_below' && trigger_scope === 'group') ? 'group' : 'agent';
 
   let thresh = null, intervalMin = null;
   if (ttype === 'scheduled') {
@@ -111,9 +113,10 @@ router.post('/:id/triggers', (req, res) => {
       return res.status(400).json({ error: 'threshold must be 0–1000' });
   }
 
+  const resolvedGroupId = (scope === 'group' && group_id) ? group_id : null;
   const tid = uuidv4();
-  db.prepare(`INSERT INTO warden_function_triggers (id,function_id,vs_id,trigger_type,threshold,interval_minutes) VALUES (?,?,?,?,?,?)`)
-    .run(tid, req.params.id, vs_id || null, ttype, thresh, intervalMin);
+  db.prepare(`INSERT INTO warden_function_triggers (id,function_id,vs_id,trigger_type,threshold,interval_minutes,trigger_scope,group_id) VALUES (?,?,?,?,?,?,?,?)`)
+    .run(tid, req.params.id, vs_id || null, ttype, thresh, intervalMin, scope, resolvedGroupId);
   res.status(201).json({ id: tid });
 });
 

@@ -417,5 +417,51 @@ db.exec(`
 try { db.exec(`ALTER TABLE warden_functions ADD COLUMN function_type TEXT NOT NULL DEFAULT 'user_risk'`); } catch {}
 // interval_minutes for scheduled triggers
 try { db.exec(`ALTER TABLE warden_function_triggers ADD COLUMN interval_minutes INTEGER`); } catch {}
+// trigger_scope: 'agent' | 'group' — for agent_risk functions
+try { db.exec(`ALTER TABLE warden_function_triggers ADD COLUMN trigger_scope TEXT DEFAULT 'agent'`); } catch {}
+try { db.exec(`ALTER TABLE warden_function_triggers ADD COLUMN group_id TEXT`); } catch {}
+
+// ── Agent Groups ──────────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS agent_groups (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL UNIQUE,
+    description TEXT DEFAULT '',
+    owner       TEXT DEFAULT '',
+    color_tag   TEXT DEFAULT '#6366f1',
+    is_active   INTEGER DEFAULT 1,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS agent_group_members (
+    id        TEXT PRIMARY KEY,
+    group_id  TEXT NOT NULL,
+    agent_id  TEXT NOT NULL,
+    joined_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(group_id, agent_id),
+    FOREIGN KEY (group_id) REFERENCES agent_groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (agent_id) REFERENCES agents(id)       ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_agm_group ON agent_group_members(group_id);
+  CREATE INDEX IF NOT EXISTS idx_agm_agent ON agent_group_members(agent_id);
+
+  CREATE TABLE IF NOT EXISTS agent_group_rules (
+    id         TEXT PRIMARY KEY,
+    group_id   TEXT NOT NULL,
+    name       TEXT DEFAULT '',
+    match_mode TEXT DEFAULT 'all',
+    conditions TEXT DEFAULT '[]',
+    is_active  INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (group_id) REFERENCES agent_groups(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_agr_group ON agent_group_rules(group_id);
+`);
+
+// source: 'manual' | 'rule' — tracks how the agent was added to the group
+try { db.exec(`ALTER TABLE agent_group_members ADD COLUMN source TEXT DEFAULT 'manual'`); } catch {}
+try { db.exec(`ALTER TABLE agent_group_members ADD COLUMN rule_id TEXT`);                 } catch {}
 
 module.exports = db;

@@ -3,6 +3,7 @@ const express = require('express');
 const crypto  = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
+const { evaluateAgentRules } = require('../services/ruleEngine');
 
 const router = express.Router();
 
@@ -48,6 +49,8 @@ router.post('/', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(id, String(name).trim(), description || null, hashToken(token), prefix, JSON.stringify(metadata || {}));
     res.status(201).json({ id, name: String(name).trim(), token, token_prefix: prefix, message: 'Token shown once — save it now.' });
+    // Evaluate group rules for the new agent (async, don't block response)
+    setImmediate(() => { try { evaluateAgentRules(id); } catch {} });
   } catch (err) {
     if (err.message?.includes('UNIQUE')) return res.status(409).json({ error: `Agent named "${name}" already exists` });
     throw err;
@@ -68,6 +71,8 @@ router.put('/:id', (req, res) => {
       req.params.id
     );
     res.json({ ok: true });
+    // Re-evaluate group rules after metadata change
+    setImmediate(() => { try { evaluateAgentRules(req.params.id); } catch {} });
   } catch (err) {
     if (err.message?.includes('UNIQUE')) return res.status(409).json({ error: `Agent named "${name}" already exists` });
     throw err;

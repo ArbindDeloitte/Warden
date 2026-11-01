@@ -313,6 +313,8 @@
       transition: border-color .15s;
     }
     .cond-select:focus { border-color: var(--accent); }
+    .cond-cat-select { flex: 0 0 148px; }
+    .cond-op-select  { flex: 0 0 134px; }
     .tok-badge {
       font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
       letter-spacing: .04em; white-space: nowrap; flex-shrink: 0;
@@ -413,6 +415,12 @@
 
     <button class="nav-item" data-page="agents">
       <span class="icon">🤖</span> Agent Identity Hub
+    </button>
+    <button class="nav-item" data-page="agent-groups">
+      <span class="icon">🫂</span> Agent Groups
+    </button>
+    <button class="nav-item" data-page="agent-group-rules">
+      <span class="icon">📋</span> Agent Group Rules
     </button>
 
     <div class="nav-section-label">Corridor</div>
@@ -5805,6 +5813,1001 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     </div><!-- end page-agents -->
 
     <!-- ═══════════════════════════════════════════════════════════
+         AGENT GROUPS PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-agent-groups">
+      <style>
+        /* ── Agent Groups ── */
+        .ag-layout { display:grid; grid-template-columns:280px 1fr; gap:0; height:calc(100vh - 60px); overflow:hidden; }
+        .ag-list-col { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+        .ag-list-header { display:flex; align-items:center; justify-content:space-between; padding:16px 16px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+        .ag-list-title  { font-size:13px; font-weight:700; color:var(--text); }
+        .ag-list-body   { flex:1; overflow-y:auto; padding:8px; }
+        .ag-list-item   { padding:10px 12px; border-radius:9px; cursor:pointer; transition:background .15s; position:relative; margin-bottom:2px; }
+        .ag-list-item:hover  { background:var(--surface2); }
+        .ag-list-item.active { background:var(--surface2); }
+        .ag-list-item.active::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px; background:var(--primary,#818cf8); border-radius:0 3px 3px 0; }
+        .ag-item-name   { font-size:13px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:8px; }
+        .ag-item-dot    { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+        .ag-item-meta   { font-size:11px; color:var(--text-muted); margin-top:3px; padding-left:17px; display:flex; gap:8px; }
+        .ag-item-badge  { font-size:10px; font-weight:700; padding:1px 6px; border-radius:100px; background:rgba(99,102,241,.15); color:#818cf8; }
+
+        .ag-detail-col  { display:flex; flex-direction:column; overflow:hidden; }
+        .ag-empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); }
+        .ag-empty-icon  { font-size:40px; opacity:.4; }
+
+        .ag-detail-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); flex-shrink:0; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+        .ag-detail-name-row { display:flex; align-items:center; gap:10px; }
+        .ag-detail-dot  { width:13px; height:13px; border-radius:50%; flex-shrink:0; }
+        .ag-detail-title { font-size:20px; font-weight:700; color:var(--text); }
+        .ag-detail-desc { font-size:13px; color:var(--text-muted); margin-top:4px; }
+        .ag-detail-body { flex:1; overflow-y:auto; padding:20px 24px; }
+
+        .ag-stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+        .ag-stat-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+        .ag-stat-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+        .ag-stat-value { font-size:22px; font-weight:700; color:var(--text); }
+        .ag-stat-sub   { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+        .ag-section-title { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+        .ag-members-list  { background:var(--surface2); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:24px; }
+        .ag-member-row    { display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border); }
+        .ag-member-row:last-child { border-bottom:none; }
+        .ag-member-avatar { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
+        .ag-member-name   { font-size:13px; font-weight:600; color:var(--text); flex:1; }
+        .ag-member-meta   { font-size:11px; color:var(--text-muted); }
+        .ag-member-score  { font-size:12px; font-weight:700; padding:2px 8px; border-radius:100px; }
+
+        .ag-add-member    { display:flex; gap:8px; margin-bottom:24px; }
+        .ag-add-member select { flex:1; padding:8px 10px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; outline:none; color-scheme:light dark; }
+
+        .ag-edit-section  { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:24px; }
+        .ag-edit-row      { display:grid; grid-template-columns:120px 1fr; gap:8px; align-items:center; margin-bottom:10px; }
+        .ag-edit-row:last-child { margin-bottom:0; }
+        .ag-edit-label    { font-size:12px; color:var(--text-muted); font-weight:600; }
+        .ag-edit-input    { padding:7px 10px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:7px; font-size:13px; font-family:inherit; outline:none; width:100%; }
+        .ag-color-picker  { display:flex; gap:8px; flex-wrap:wrap; }
+        .ag-color-swatch  { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:border-color .15s; }
+        .ag-color-swatch.selected { border-color:var(--text); }
+
+        /* ── Group Rules ── */
+        .ag-rules-list    { margin-bottom:16px; display:flex; flex-direction:column; gap:8px; }
+        .ag-rule-card     { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+        .ag-rule-header   { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .ag-rule-name     { font-size:13px; font-weight:600; color:var(--text); flex:1; }
+        .ag-mode-badge    { font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; border:1px solid; }
+        .ag-mode-badge.all { color:#818cf8; background:rgba(99,102,241,.12); border-color:rgba(99,102,241,.3); }
+        .ag-mode-badge.any { color:#10b981; background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.3); }
+        .ag-cond-pills    { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+        .ag-cond-pill     { font-size:11px; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:2px 8px; color:var(--text); font-family:monospace; }
+        .ag-rule-footer   { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+        .ag-rule-auto-count { font-size:11px; color:var(--text-muted); flex:1; }
+        .ag-source-badge  { font-size:10px; font-weight:700; padding:1px 6px; border-radius:100px; }
+        .ag-source-badge.auto   { background:rgba(99,102,241,.12); color:#818cf8; }
+        .ag-source-badge.manual { background:var(--surface); color:var(--text-muted); border:1px solid var(--border); }
+
+        /* ── Rule Modal ── */
+        .ag-rule-modal-card { background:var(--surface2); border:1px solid var(--border); border-radius:14px; width:560px; max-width:96vw; max-height:88vh; overflow-y:auto; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+        .ag-cond-row  { display:grid; grid-template-columns:1fr 120px 1fr auto; gap:6px; align-items:center; margin-bottom:6px; }
+        .ag-cond-inp  { padding:7px 10px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:monospace; outline:none; width:100%; }
+        .ag-cond-sel  { padding:7px 8px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:inherit; outline:none; width:100%; color-scheme:light dark; }
+        .ag-mode-toggle { display:flex; gap:3px; background:var(--surface); border:1px solid var(--border); border-radius:7px; padding:2px; }
+        .ag-mode-btn  { padding:5px 14px; border-radius:5px; border:none; font-size:12px; font-weight:600; cursor:pointer; background:transparent; color:var(--text-muted); transition:background .15s,color .15s; }
+        .ag-mode-btn.active { background:var(--surface2); color:var(--text); }
+
+        /* ── New Group Modal ── */
+        .ag-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .ag-modal-card     { background:var(--surface2); border:1px solid var(--border); border-radius:14px; width:440px; max-width:96vw; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+        .ag-modal-header   { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .ag-modal-title    { font-size:16px; font-weight:700; color:var(--text); }
+        .ag-modal-close    { background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer; line-height:1; }
+        .ag-modal-field    { margin-bottom:14px; }
+        .ag-modal-label    { font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px; }
+        .ag-modal-input    { width:100%; padding:9px 11px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; outline:none; }
+        .ag-modal-input:focus { border-color:var(--primary,#818cf8); }
+        .ag-modal-footer   { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+      </style>
+
+      <div class="ag-layout">
+        <!-- Left: group list -->
+        <div class="ag-list-col">
+          <div class="ag-list-header">
+            <span class="ag-list-title">Groups <span id="ag-count" style="color:var(--text-muted);font-weight:400"></span></span>
+            <button class="btn btn-primary btn-sm" onclick="agOpenNewModal()">+ New Group</button>
+          </div>
+          <div class="ag-list-body" id="ag-list-body">
+            <div style="font-size:12px;color:var(--text-muted);padding:12px 4px">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Right: group detail -->
+        <div class="ag-detail-col" id="ag-detail-col">
+          <div class="ag-empty-state" id="ag-empty-state">
+            <div class="ag-empty-icon">🫂</div>
+            <div style="font-size:14px;font-weight:600">Select a group</div>
+            <div style="font-size:12px">or create one to get started</div>
+          </div>
+          <div id="ag-detail-panel" style="display:none;flex:1;overflow:hidden;flex-direction:column;display:none">
+            <!-- header -->
+            <div class="ag-detail-header">
+              <div>
+                <div class="ag-detail-name-row">
+                  <div class="ag-detail-dot" id="ag-dp-dot"></div>
+                  <div class="ag-detail-title" id="ag-dp-name"></div>
+                  <div id="ag-dp-status-badge"></div>
+                </div>
+                <div class="ag-detail-desc" id="ag-dp-desc"></div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px" id="ag-dp-owner"></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="navigate('agent-group-rules')" title="Manage membership rules">📋 Rules</button>
+                <button class="btn btn-ghost btn-sm" id="ag-dp-toggle-btn" onclick="agToggleGroup()"></button>
+                <button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="agDeleteGroup()">Delete</button>
+              </div>
+            </div>
+
+            <!-- body -->
+            <div class="ag-detail-body">
+              <!-- Stats -->
+              <div class="ag-stat-row">
+                <div class="ag-stat-card">
+                  <div class="ag-stat-label">Members</div>
+                  <div class="ag-stat-value" id="ag-dp-member-count">0</div>
+                  <div class="ag-stat-sub">agents in group</div>
+                </div>
+                <div class="ag-stat-card">
+                  <div class="ag-stat-label">Avg Risk Score</div>
+                  <div class="ag-stat-value" id="ag-dp-avg-score">—</div>
+                  <div class="ag-stat-sub" id="ag-dp-avg-tier">no data</div>
+                </div>
+                <div class="ag-stat-card">
+                  <div class="ag-stat-label">At-Risk Agents</div>
+                  <div class="ag-stat-value" id="ag-dp-atrisk-count">0</div>
+                  <div class="ag-stat-sub">score &lt; 500</div>
+                </div>
+              </div>
+
+              <!-- Edit group -->
+              <div class="ag-section-title">Group Settings</div>
+              <div class="ag-edit-section" id="ag-edit-section">
+                <div class="ag-edit-row">
+                  <label class="ag-edit-label">Name</label>
+                  <input class="ag-edit-input" id="ag-edit-name" placeholder="Group name">
+                </div>
+                <div class="ag-edit-row">
+                  <label class="ag-edit-label">Description</label>
+                  <input class="ag-edit-input" id="ag-edit-desc" placeholder="What is this group for?">
+                </div>
+                <div class="ag-edit-row">
+                  <label class="ag-edit-label">Owner / Team</label>
+                  <input class="ag-edit-input" id="ag-edit-owner" placeholder="e.g. Security Team">
+                </div>
+                <div class="ag-edit-row">
+                  <label class="ag-edit-label">Color</label>
+                  <div class="ag-color-picker" id="ag-color-picker"></div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-top:12px">
+                  <button class="btn btn-primary btn-sm" onclick="agSaveEdits()">Save Changes</button>
+                </div>
+              </div>
+
+              <!-- Members -->
+              <div class="ag-section-title">Members</div>
+              <div class="ag-add-member">
+                <select id="ag-add-agent-select">
+                  <option value="">— Add an agent to group —</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="agAddMember()">Add</button>
+              </div>
+              <div id="ag-members-list" class="ag-members-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Group Modal -->
+      <div class="ag-modal-backdrop" id="ag-new-modal" onclick="if(event.target===this)agCloseModal()" style="display:none">
+        <div class="ag-modal-card">
+          <div class="ag-modal-header">
+            <span class="ag-modal-title">New Agent Group</span>
+            <button class="ag-modal-close" onclick="agCloseModal()">✕</button>
+          </div>
+          <div class="ag-modal-field">
+            <label class="ag-modal-label">Group name <span style="color:#ef4444">*</span></label>
+            <input id="ag-new-name" class="ag-modal-input" placeholder="e.g. Finance Agents" onkeydown="if(event.key==='Enter')agSubmitModal()">
+          </div>
+          <div class="ag-modal-field">
+            <label class="ag-modal-label">Description</label>
+            <input id="ag-new-desc-modal" class="ag-modal-input" placeholder="What does this group do?" onkeydown="if(event.key==='Enter')agSubmitModal()">
+          </div>
+          <div class="ag-modal-field">
+            <label class="ag-modal-label">Owner / Team</label>
+            <input id="ag-new-owner-modal" class="ag-modal-input" placeholder="e.g. Security Team" onkeydown="if(event.key==='Enter')agSubmitModal()">
+          </div>
+          <div class="ag-modal-field">
+            <label class="ag-modal-label">Color</label>
+            <div class="ag-color-picker" id="ag-new-color-picker"></div>
+          </div>
+          <div class="ag-modal-footer">
+            <button class="btn btn-ghost btn-sm" onclick="agCloseModal()">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="agSubmitModal()">Create Group</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+      // ── Agent Groups state ──────────────────────────────────────────────────
+      let agGroups  = [];
+      let agCurrentId = null;
+      let agSelectedColor = '#6366f1';
+      let agNewSelectedColor = '#6366f1';
+      const AG_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+
+      function agScoreTier(s) {
+        if (s >= 800) return { name:'Trusted',   color:'#10b981' };
+        if (s >= 500) return { name:'Monitored', color:'#f59e0b' };
+        if (s >= 200) return { name:'At Risk',   color:'#f97316' };
+        return               { name:'Critical',  color:'#ef4444' };
+      }
+
+      // ── Load groups ─────────────────────────────────────────────────────────
+      async function loadAgentGroups() {
+        agGroups = await api('/agent-groups').catch(() => []);
+        const body = document.getElementById('ag-list-body');
+        const count = document.getElementById('ag-count');
+        count.textContent = `(${agGroups.length})`;
+        if (!agGroups.length) {
+          body.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:12px 4px">No groups yet. Create one to start.</div>';
+          return;
+        }
+        body.innerHTML = agGroups.map(g => `
+          <div class="ag-list-item ${g.id === agCurrentId ? 'active' : ''}" onclick="agSelectGroup('${g.id}')">
+            <div class="ag-item-name">
+              <div class="ag-item-dot" style="background:${escHtml(g.color_tag)}"></div>
+              ${escHtml(g.name)}
+              ${g.is_active ? '' : '<span style="font-size:10px;color:var(--text-muted)">(inactive)</span>'}
+            </div>
+            <div class="ag-item-meta">
+              <span>${g.member_count} agent${g.member_count===1?'':'s'}</span>
+              ${g.owner ? `<span>· ${escHtml(g.owner)}</span>` : ''}
+            </div>
+          </div>`).join('');
+        if (agCurrentId) agSelectGroup(agCurrentId);
+      }
+
+      async function agSelectGroup(id) {
+        agCurrentId = id;
+        // update active state in list
+        document.querySelectorAll('#ag-list-body .ag-list-item').forEach(el => el.classList.remove('active'));
+        const listItem = [...document.querySelectorAll('#ag-list-body .ag-list-item')].find(el => el.onclick?.toString().includes(id));
+        if (listItem) listItem.classList.add('active');
+
+        const data = await api(`/agent-groups/${id}`).catch(() => null);
+        if (!data) return;
+        agCurrentGroupData = data;
+
+        document.getElementById('ag-empty-state').style.display   = 'none';
+        const panel = document.getElementById('ag-detail-panel');
+        panel.style.display = 'flex';
+        panel.style.flexDirection = 'column';
+
+        document.getElementById('ag-dp-dot').style.background = data.color_tag;
+        document.getElementById('ag-dp-name').textContent     = data.name;
+        document.getElementById('ag-dp-desc').textContent     = data.description || '';
+        document.getElementById('ag-dp-owner').textContent    = data.owner ? `Owner: ${data.owner}` : '';
+        document.getElementById('ag-dp-status-badge').innerHTML = data.is_active
+          ? '<span style="font-size:11px;font-weight:700;color:#10b981;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:100px;padding:2px 8px">Active</span>'
+          : '<span style="font-size:11px;font-weight:700;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:2px 8px">Inactive</span>';
+        document.getElementById('ag-dp-toggle-btn').textContent = data.is_active ? 'Deactivate' : 'Activate';
+        document.getElementById('ag-dp-member-count').textContent = data.members.length;
+
+        // populate edit fields
+        document.getElementById('ag-edit-name').value  = data.name;
+        document.getElementById('ag-edit-desc').value  = data.description || '';
+        document.getElementById('ag-edit-owner').value = data.owner || '';
+        agSelectedColor = data.color_tag;
+        agSetupColorPicker('ag-color-picker', agSelectedColor, 'agSelectedColor');
+
+        // fetch scores for each member
+        const members = data.members;
+        let scores = [];
+        await Promise.all(members.map(async m => {
+          try {
+            const s = await api(`/scoring/agent/${m.id}`);
+            scores.push(s.score ?? 500);
+            m._score = s.score ?? 500;
+            m._tier  = s.tier?.name || 'Monitored';
+            m._tcolor = s.tier?.color || '#f59e0b';
+          } catch {
+            m._score = null; m._tier = '—'; m._tcolor = 'var(--text-muted)';
+          }
+        }));
+
+        // update stats
+        if (scores.length) {
+          const avg = Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+          const tier = agScoreTier(avg);
+          document.getElementById('ag-dp-avg-score').textContent = avg;
+          document.getElementById('ag-dp-avg-score').style.color = tier.color;
+          document.getElementById('ag-dp-avg-tier').textContent  = tier.name;
+          document.getElementById('ag-dp-atrisk-count').textContent = scores.filter(s=>s<500).length;
+        } else {
+          document.getElementById('ag-dp-avg-score').textContent = '—';
+          document.getElementById('ag-dp-avg-score').style.color = 'var(--text)';
+          document.getElementById('ag-dp-avg-tier').textContent  = 'no data';
+          document.getElementById('ag-dp-atrisk-count').textContent = '0';
+        }
+
+        // render members
+        const ml = document.getElementById('ag-members-list');
+        if (!members.length) {
+          ml.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:14px 16px">No members yet. Add agents above.</div>';
+        } else {
+          ml.innerHTML = members.map(m => {
+            const initials = (m.name || '?').slice(0,2).toUpperCase();
+            const score = m._score !== null ? m._score : null;
+            const scoreBadge = score !== null
+              ? `<span class="ag-member-score" style="background:${m._tcolor}22;color:${m._tcolor}">${score}</span>`
+              : '<span class="ag-member-score" style="background:var(--surface);color:var(--text-muted)">—</span>';
+            return `
+              <div class="ag-member-row">
+                <div class="ag-member-avatar" style="background:rgba(99,102,241,.12);color:#818cf8">${escHtml(initials)}</div>
+                <div style="flex:1;min-width:0">
+                  <div class="ag-member-name">${escHtml(m.name)}</div>
+                  <div class="ag-member-meta">${escHtml(m.token_prefix)}… · ${m.is_active ? 'Active' : 'Inactive'}
+                    ${m.rule_name ? ` · <span style="color:#818cf8">rule: ${escHtml(m.rule_name)}</span>` : ''}
+                  </div>
+                </div>
+                <span class="ag-source-badge ${m.source === 'rule' ? 'auto' : 'manual'}">${m.source === 'rule' ? 'auto' : 'manual'}</span>
+                ${scoreBadge}
+                <button class="btn btn-ghost btn-sm" style="color:#ef4444;font-size:11px" onclick="agRemoveMember('${escHtml(m.id)}')">✕</button>
+              </div>`;
+          }).join('');
+        }
+
+        // populate add-member select (agents not already in group)
+        const allAgents = await api('/agents').catch(() => []);
+        const memberIds = new Set(members.map(m => m.id));
+        const sel = document.getElementById('ag-add-agent-select');
+        sel.innerHTML = '<option value="">— Add an agent —</option>' +
+          allAgents.filter(a => !memberIds.has(a.id)).map(a =>
+            `<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`
+          ).join('');
+      }
+
+      // ── Color picker ─────────────────────────────────────────────────────────
+      function agRenderColorPicker(containerId, selected, onPick) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = AG_COLORS.map(c => `
+          <div class="ag-color-swatch ${c===selected?'selected':''}"
+               style="background:${c}"
+               onclick="agPickColor(this,'${containerId}','${c}',${onPick.toString().replace(/\n/g,' ')})">
+          </div>`).join('');
+      }
+      // inline onclick approach won't work cleanly, use a closure list instead
+      function agPickColor(el, containerId, color, onPick) {
+        document.querySelectorAll(`#${containerId} .ag-color-swatch`).forEach(s => s.classList.remove('selected'));
+        el.classList.add('selected');
+        onPick(color);
+      }
+      // simpler approach: direct onclick strings
+      function agSetupColorPicker(containerId, initial, stateVar) {
+        const el = document.getElementById(containerId);
+        if (stateVar === 'agSelectedColor') agSelectedColor = initial;
+        else agNewSelectedColor = initial;
+        el.innerHTML = AG_COLORS.map(c => `
+          <div class="ag-color-swatch${c===initial?' selected':''}"
+               style="background:${c}"
+               onclick="agPickColorSimple(this,'${containerId}','${c}','${stateVar}')">
+          </div>`).join('');
+      }
+      function agPickColorSimple(el, containerId, color, stateVar) {
+        document.querySelectorAll(`#${containerId} .ag-color-swatch`).forEach(s=>s.classList.remove('selected'));
+        el.classList.add('selected');
+        if (stateVar === 'agSelectedColor') agSelectedColor = color;
+        else agNewSelectedColor = color;
+      }
+
+      // ── Actions ──────────────────────────────────────────────────────────────
+      async function agToggleGroup() {
+        const g = agGroups.find(x=>x.id===agCurrentId);
+        if (!g) return;
+        await api(`/agent-groups/${agCurrentId}`, { method:'PUT', body:{ is_active: !g.is_active } });
+        await loadAgentGroups();
+      }
+
+      async function agDeleteGroup() {
+        const g = agGroups.find(x=>x.id===agCurrentId);
+        if (!g || !confirm(`Delete group "${g.name}"? This cannot be undone.`)) return;
+        await api(`/agent-groups/${agCurrentId}`, { method:'DELETE' });
+        agCurrentId = null;
+        document.getElementById('ag-empty-state').style.display = 'flex';
+        document.getElementById('ag-detail-panel').style.display = 'none';
+        await loadAgentGroups();
+      }
+
+      async function agSaveEdits() {
+        const name  = document.getElementById('ag-edit-name').value.trim();
+        const desc  = document.getElementById('ag-edit-desc').value.trim();
+        const owner = document.getElementById('ag-edit-owner').value.trim();
+        if (!name) { alert('Name is required'); return; }
+        await api(`/agent-groups/${agCurrentId}`, { method:'PUT', body:{ name, description:desc, owner, color_tag:agSelectedColor } });
+        await loadAgentGroups();
+      }
+
+      async function agAddMember() {
+        const agentId = document.getElementById('ag-add-agent-select').value;
+        if (!agentId) { alert('Select an agent to add'); return; }
+        try {
+          await api(`/agent-groups/${agCurrentId}/members`, { method:'POST', body:{ agent_id:agentId } });
+          await agSelectGroup(agCurrentId);
+          await loadAgentGroups();
+        } catch(e) { alert('Failed: '+e.message); }
+      }
+
+      async function agRemoveMember(agentId) {
+        if (!confirm('Remove this agent from the group?')) return;
+        await api(`/agent-groups/${agCurrentId}/members/${agentId}`, { method:'DELETE' });
+        await agSelectGroup(agCurrentId);
+        await loadAgentGroups();
+      }
+
+      // ── Rules rendering ───────────────────────────────────────────────────────
+      const OP_LABELS = { eq:'==', ne:'!=', contains:'contains', startsWith:'starts with', regex:'regex' };
+
+      function agRenderRules(rules) {
+        const el = document.getElementById('ag-rules-list');
+        if (!rules.length) {
+          el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:4px 0 12px">No rules yet. Agents added manually above.</div>';
+          return;
+        }
+        el.innerHTML = rules.map(r => {
+          let conds = [];
+          try { conds = JSON.parse(r.conditions || '[]'); } catch {}
+          const pills = conds.map(c =>
+            `<span class="ag-cond-pill">${escHtml(c.field)} <strong>${escHtml(OP_LABELS[c.operator]||c.operator)}</strong> "${escHtml(c.value)}"</span>`
+          ).join('');
+          return `
+            <div class="ag-rule-card">
+              <div class="ag-rule-header">
+                <span class="ag-rule-name">${escHtml(r.name || 'Unnamed rule')}</span>
+                <span class="ag-mode-badge ${r.match_mode}">${r.match_mode === 'any' ? 'ANY (OR)' : 'ALL (AND)'}</span>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer">
+                  <input type="checkbox" ${r.is_active?'checked':''} onchange="agToggleRule('${escHtml(r.id)}',this.checked)" style="accent-color:var(--accent)">
+                  ${r.is_active ? 'Active' : 'Paused'}
+                </label>
+              </div>
+              <div class="ag-cond-pills">${pills || '<span style="font-size:11px;color:var(--text-muted)">No conditions</span>'}</div>
+              <div class="ag-rule-footer">
+                <span class="ag-rule-auto-count"></span>
+                <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="agOpenRuleModal('${escHtml(r.id)}')">Edit</button>
+                <button class="btn btn-ghost btn-sm" style="color:#ef4444;font-size:11px" onclick="agDeleteRule('${escHtml(r.id)}')">Delete</button>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      async function agToggleRule(ruleId, isActive) {
+        await api(`/agent-groups/${agCurrentId}/rules/${ruleId}`, { method:'PUT', body:{ is_active: isActive } });
+        await agSelectGroup(agCurrentId);
+        await loadAgentGroups();
+      }
+
+      async function agDeleteRule(ruleId) {
+        if (!confirm('Delete this rule? Auto-added members from this rule will be removed.')) return;
+        await api(`/agent-groups/${agCurrentId}/rules/${ruleId}`, { method:'DELETE' });
+        await agSelectGroup(agCurrentId);
+        await loadAgentGroups();
+      }
+
+      async function agSyncRules() {
+        const btn = event.target;
+        btn.textContent = 'Syncing…';
+        btn.disabled = true;
+        try {
+          const res = await api(`/agent-groups/${agCurrentId}/sync`, { method:'POST', body:{} });
+          btn.textContent = `↻ Synced (${res.member_count} members)`;
+          await agSelectGroup(agCurrentId);
+          await loadAgentGroups();
+        } catch(e) { alert('Sync failed: '+e.message); btn.textContent = '↻ Sync Rules'; }
+        setTimeout(() => { btn.textContent = '↻ Sync Rules'; btn.disabled = false; }, 2000);
+      }
+
+      // ── Rule modal (add + edit) ────────────────────────────────────────────────
+      let _agRuleModalRuleId = null;
+      let _agRuleConditions  = [];
+      let _agRuleMatchMode   = 'all';
+
+      function agOpenRuleModal(ruleId = null) {
+        _agRuleModalRuleId = ruleId;
+        _agRuleMatchMode   = 'all';
+        _agRuleConditions  = [{ field:'', operator:'eq', value:'' }];
+
+        if (ruleId) {
+          // Load existing rule data
+          const rules = agCurrentGroupData?.rules || [];
+          const rule  = rules.find(r => r.id === ruleId);
+          if (rule) {
+            document.getElementById('ag-rule-modal-name').value = rule.name || '';
+            _agRuleMatchMode = rule.match_mode || 'all';
+            try { _agRuleConditions = JSON.parse(rule.conditions || '[]'); } catch {}
+            if (!_agRuleConditions.length) _agRuleConditions = [{ field:'', operator:'eq', value:'' }];
+          }
+        } else {
+          document.getElementById('ag-rule-modal-name').value = '';
+        }
+
+        agRenderRuleModalMode();
+        agRenderConditionRows();
+        document.getElementById('ag-rule-modal-title').textContent = ruleId ? 'Edit Rule' : 'Add Membership Rule';
+        document.getElementById('ag-rule-modal').style.display = 'flex';
+        setTimeout(() => document.getElementById('ag-rule-modal-name').focus(), 50);
+      }
+
+      function agCloseRuleModal() {
+        document.getElementById('ag-rule-modal').style.display = 'none';
+      }
+
+      function agSetRuleMode(mode) {
+        _agRuleMatchMode = mode;
+        agRenderRuleModalMode();
+      }
+
+      function agRenderRuleModalMode() {
+        document.getElementById('ag-mode-all-btn').classList.toggle('active', _agRuleMatchMode === 'all');
+        document.getElementById('ag-mode-any-btn').classList.toggle('active', _agRuleMatchMode === 'any');
+      }
+
+      function agRenderConditionRows() {
+        const container = document.getElementById('ag-cond-rows');
+        container.innerHTML = _agRuleConditions.map((c, i) => `
+          <div class="ag-cond-row">
+            <input class="ag-cond-inp" placeholder="metadata key (e.g. team)"
+              value="${escHtml(c.field)}" oninput="_agRuleConditions[${i}].field=this.value">
+            <select class="ag-cond-sel" onchange="_agRuleConditions[${i}].operator=this.value">
+              ${['eq','ne','contains','startsWith','regex'].map(op =>
+                `<option value="${op}" ${c.operator===op?'selected':''}>${escHtml(OP_LABELS[op]||op)}</option>`
+              ).join('')}
+            </select>
+            <input class="ag-cond-inp" placeholder="value"
+              value="${escHtml(c.value)}" oninput="_agRuleConditions[${i}].value=this.value">
+            <button class="btn btn-ghost btn-sm" style="color:#ef4444;padding:4px 8px"
+              onclick="_agRuleConditions.splice(${i},1);agRenderConditionRows()">✕</button>
+          </div>`).join('');
+      }
+
+      function agAddConditionRow() {
+        _agRuleConditions.push({ field:'', operator:'eq', value:'' });
+        agRenderConditionRows();
+      }
+
+      async function agSubmitRuleModal() {
+        const name = document.getElementById('ag-rule-modal-name').value.trim();
+        const conds = _agRuleConditions.filter(c => c.field.trim());
+        if (!conds.length) { alert('Add at least one condition with a field name.'); return; }
+        try {
+          if (_agRuleModalRuleId) {
+            await api(`/agent-groups/${agCurrentId}/rules/${_agRuleModalRuleId}`, {
+              method:'PUT', body:{ name, match_mode:_agRuleMatchMode, conditions:conds }
+            });
+          } else {
+            await api(`/agent-groups/${agCurrentId}/rules`, {
+              method:'POST', body:{ name, match_mode:_agRuleMatchMode, conditions:conds }
+            });
+          }
+          agCloseRuleModal();
+          await agSelectGroup(agCurrentId);
+          await loadAgentGroups();
+        } catch(e) { alert('Failed: '+e.message); }
+      }
+
+      let agCurrentGroupData = null;
+
+      // ── New group modal ───────────────────────────────────────────────────────
+      function agOpenNewModal() {
+        agNewSelectedColor = '#6366f1';
+        document.getElementById('ag-new-name').value        = '';
+        document.getElementById('ag-new-desc-modal').value  = '';
+        document.getElementById('ag-new-owner-modal').value = '';
+        agSetupColorPicker('ag-new-color-picker', '#6366f1', 'agNewSelectedColor');
+        document.getElementById('ag-new-modal').style.display = 'flex';
+        setTimeout(() => document.getElementById('ag-new-name').focus(), 50);
+      }
+      function agCloseModal() {
+        document.getElementById('ag-new-modal').style.display = 'none';
+      }
+      async function agSubmitModal() {
+        const name  = document.getElementById('ag-new-name').value.trim();
+        if (!name) { document.getElementById('ag-new-name').focus(); return; }
+        const desc  = document.getElementById('ag-new-desc-modal').value.trim();
+        const owner = document.getElementById('ag-new-owner-modal').value.trim();
+        try {
+          const { id } = await api('/agent-groups', { method:'POST', body:{ name, description:desc, owner, color_tag:agNewSelectedColor } });
+          agCloseModal();
+          agCurrentId = id;
+          await loadAgentGroups();
+        } catch(e) { alert('Failed: '+e.message); }
+      }
+      </script>
+
+      <!-- Rule Modal -->
+      <div class="ag-modal-backdrop" id="ag-rule-modal" onclick="if(event.target===this)agCloseRuleModal()" style="display:none">
+        <div class="ag-rule-modal-card">
+          <div class="ag-modal-header">
+            <span class="ag-modal-title" id="ag-rule-modal-title">Add Membership Rule</span>
+            <button class="ag-modal-close" onclick="agCloseRuleModal()">✕</button>
+          </div>
+          <div class="ag-modal-field">
+            <label class="ag-modal-label">Rule name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+            <input id="ag-rule-modal-name" class="ag-modal-input" placeholder="e.g. Finance team agents">
+          </div>
+          <div class="ag-modal-field">
+            <label class="ag-modal-label">Match mode</label>
+            <div class="ag-mode-toggle">
+              <button class="ag-mode-btn active" id="ag-mode-all-btn" onclick="agSetRuleMode('all')">ALL conditions (AND)</button>
+              <button class="ag-mode-btn" id="ag-mode-any-btn" onclick="agSetRuleMode('any')">ANY condition (OR)</button>
+            </div>
+          </div>
+          <div class="ag-modal-field">
+            <label class="ag-modal-label" style="margin-bottom:8px">Conditions <span style="color:var(--text-muted);font-weight:400">— metadata key + operator + value</span></label>
+            <div style="display:grid;grid-template-columns:1fr 120px 1fr auto;gap:6px;margin-bottom:5px;padding:0 2px">
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600">FIELD (key)</span>
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600">OPERATOR</span>
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600">VALUE</span>
+              <span></span>
+            </div>
+            <div id="ag-cond-rows"></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:12px" onclick="agAddConditionRow()">+ Add condition</button>
+          </div>
+          <div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:11px;color:var(--text-muted);line-height:1.6">
+            <strong style="color:var(--text)">Field</strong> is a top-level key in the agent's Metadata object (e.g. <code style="font-family:monospace;background:var(--surface);padding:1px 4px;border-radius:3px">team</code>, <code style="font-family:monospace;background:var(--surface);padding:1px 4px;border-radius:3px">env</code>, <code style="font-family:monospace;background:var(--surface);padding:1px 4px;border-radius:3px">region</code>).
+            Values are compared as strings. Regex uses JS syntax (<code style="font-family:monospace;background:var(--surface);padding:1px 4px;border-radius:3px">^banking-.*</code>).
+          </div>
+          <div class="ag-modal-footer">
+            <button class="btn btn-ghost btn-sm" onclick="agCloseRuleModal()">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="agSubmitRuleModal()">Save Rule</button>
+          </div>
+        </div>
+      </div>
+    </div><!-- end page-agent-groups -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         AGENT GROUP RULES PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-agent-group-rules">
+      <style>
+        .agr-header      { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+        .agr-title-group h1 { margin-bottom:4px; }
+        .agr-subtitle    { font-size:13px; color:var(--text-muted); }
+        .agr-toolbar     { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .agr-filter-sel  { padding:7px 10px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; outline:none; color-scheme:light dark; }
+        .agr-search      { padding:7px 10px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; outline:none; width:200px; }
+        .agr-search::placeholder { color:var(--text-muted); }
+
+        .agr-table-wrap  { background:var(--surface2); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+        .agr-table       { width:100%; border-collapse:collapse; }
+        .agr-table th    { padding:10px 14px; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--border); text-align:left; background:var(--surface); }
+        .agr-table td    { padding:12px 14px; border-bottom:1px solid var(--border); font-size:13px; color:var(--text); vertical-align:middle; }
+        .agr-table tr:last-child td { border-bottom:none; }
+        .agr-table tr:hover td { background:rgba(99,102,241,.04); }
+
+        .agr-group-chip  { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:100px; font-size:11px; font-weight:600; border:1px solid; }
+        .agr-mode-badge  { font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; border:1px solid; white-space:nowrap; }
+        .agr-mode-badge.all { color:#818cf8; background:rgba(99,102,241,.12); border-color:rgba(99,102,241,.3); }
+        .agr-mode-badge.any { color:#10b981; background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.3); }
+        .agr-cond-pills  { display:flex; flex-wrap:wrap; gap:4px; }
+        .agr-cond-pill   { font-size:11px; background:var(--surface); border:1px solid var(--border); border-radius:5px; padding:2px 7px; font-family:monospace; color:var(--text); }
+        .agr-status-dot  { width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+        .agr-actions     { display:flex; gap:6px; justify-content:flex-end; }
+        .agr-empty       { padding:60px 20px; text-align:center; color:var(--text-muted); }
+        .agr-empty-icon  { font-size:36px; opacity:.4; margin-bottom:12px; }
+
+        /* ── New Rule Modal ── */
+        .agr-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .agr-modal-card  { background:var(--surface2); border:1px solid var(--border); border-radius:14px; width:580px; max-width:96vw; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+        .agr-modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .agr-modal-title { font-size:16px; font-weight:700; color:var(--text); }
+        .agr-modal-close { background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer; line-height:1; }
+        .agr-modal-field { margin-bottom:16px; }
+        .agr-modal-label { font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px; }
+        .agr-modal-input { width:100%; padding:9px 11px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; outline:none; }
+        .agr-modal-input:focus { border-color:var(--primary,#818cf8); }
+        .agr-modal-select { width:100%; padding:9px 11px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; outline:none; color-scheme:light dark; }
+        .agr-modal-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+
+        .agr-mode-toggle { display:flex; gap:3px; background:var(--surface); border:1px solid var(--border); border-radius:7px; padding:2px; }
+        .agr-mode-btn    { padding:6px 16px; border-radius:5px; border:none; font-size:12px; font-weight:600; cursor:pointer; background:transparent; color:var(--text-muted); transition:background .15s,color .15s; }
+        .agr-mode-btn.active { background:var(--surface2); color:var(--text); }
+
+        .agr-cond-row    { display:grid; grid-template-columns:1fr 120px 1fr auto; gap:6px; align-items:center; margin-bottom:6px; }
+        .agr-cond-inp    { padding:7px 10px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:monospace; outline:none; width:100%; }
+        .agr-cond-sel    { padding:7px 8px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:inherit; outline:none; width:100%; color-scheme:light dark; }
+
+        .agr-hint-box    { background:rgba(99,102,241,.07); border:1px solid rgba(99,102,241,.2); border-radius:8px; padding:10px 12px; font-size:11px; color:var(--text-muted); line-height:1.6; margin-bottom:16px; }
+      </style>
+
+      <div class="agr-header">
+        <div class="agr-title-group">
+          <h1>Agent Group Rules</h1>
+          <div class="agr-subtitle">Automatically assign agents to groups based on metadata conditions.</div>
+        </div>
+        <div class="agr-toolbar">
+          <input class="agr-search" id="agr-search" placeholder="Search rules…" oninput="agrFilter()">
+          <select class="agr-filter-sel" id="agr-group-filter" onchange="agrFilter()">
+            <option value="">All groups</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="agrSyncAll()" title="Re-evaluate all rules across all groups">↻ Sync All</button>
+          <button class="btn btn-primary btn-sm" onclick="agrOpenModal()">+ New Rule</button>
+        </div>
+      </div>
+
+      <div class="agr-table-wrap">
+        <table class="agr-table">
+          <thead>
+            <tr>
+              <th>Rule Name</th>
+              <th>Group</th>
+              <th>Mode</th>
+              <th>Conditions</th>
+              <th>Auto Members</th>
+              <th>Status</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="agr-table-body">
+            <tr><td colspan="7"><div class="agr-empty"><div class="agr-empty-icon">📋</div>Loading…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- New / Edit Rule Modal -->
+      <div class="agr-modal-backdrop" id="agr-modal" onclick="if(event.target===this)agrCloseModal()" style="display:none">
+        <div class="agr-modal-card">
+          <div class="agr-modal-header">
+            <span class="agr-modal-title" id="agr-modal-title">New Group Rule</span>
+            <button class="agr-modal-close" onclick="agrCloseModal()">✕</button>
+          </div>
+          <div class="agr-modal-field">
+            <label class="agr-modal-label">Target Group <span style="color:#ef4444">*</span></label>
+            <select id="agr-modal-group" class="agr-modal-select"></select>
+          </div>
+          <div class="agr-modal-field">
+            <label class="agr-modal-label">Rule name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+            <input id="agr-modal-name" class="agr-modal-input" placeholder="e.g. Finance team agents">
+          </div>
+          <div class="agr-modal-field">
+            <label class="agr-modal-label">Match mode</label>
+            <div class="agr-mode-toggle">
+              <button class="agr-mode-btn active" id="agr-mode-all-btn" onclick="agrSetMode('all')">ALL conditions (AND)</button>
+              <button class="agr-mode-btn" id="agr-mode-any-btn" onclick="agrSetMode('any')">ANY condition (OR)</button>
+            </div>
+          </div>
+          <div class="agr-modal-field">
+            <label class="agr-modal-label">Conditions</label>
+            <div style="display:grid;grid-template-columns:1fr 120px 1fr auto;gap:6px;margin-bottom:6px;padding:0 2px">
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600">METADATA KEY</span>
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600">OPERATOR</span>
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600">VALUE</span>
+              <span></span>
+            </div>
+            <div id="agr-cond-rows"></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:12px" onclick="agrAddCondRow()">+ Add condition</button>
+          </div>
+          <div class="agr-hint-box">
+            <strong style="color:var(--text)">Metadata key</strong> is a top-level property of the agent's Metadata object (e.g. <code style="font-family:monospace;background:var(--surface);padding:1px 4px;border-radius:3px">team</code>, <code style="font-family:monospace;background:var(--surface);padding:1px 4px;border-radius:3px">env</code>, <code style="font-family:monospace;background:var(--surface);padding:1px 4px;border-radius:3px">region</code>).
+            All comparisons are string-based. Regex uses JS syntax.
+          </div>
+          <div class="agr-modal-footer">
+            <button class="btn btn-ghost btn-sm" onclick="agrCloseModal()">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="agrSubmitModal()">Save Rule</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+      // ── Agent Group Rules state ─────────────────────────────────────────────
+      let _agrAllRules   = [];
+      let _agrAllGroups  = [];
+      let _agrModalMode  = 'all';
+      let _agrModalConds = [{ field:'', operator:'eq', value:'' }];
+      let _agrEditId     = null;
+      let _agrEditGroupId = null;
+
+      const AGR_OP_LABELS = { eq:'==', ne:'!=', contains:'contains', startsWith:'starts with', regex:'regex' };
+
+      async function loadAgentGroupRules() {
+        [_agrAllRules, _agrAllGroups] = await Promise.all([
+          api('/agent-groups/rules').catch(() => []),
+          api('/agent-groups').catch(()  => []),
+        ]);
+
+        // Populate group filter
+        const filterSel = document.getElementById('agr-group-filter');
+        filterSel.innerHTML = '<option value="">All groups</option>' +
+          _agrAllGroups.map(g => `<option value="${escHtml(g.id)}">${escHtml(g.name)}</option>`).join('');
+
+        agrFilter();
+      }
+
+      function agrFilter() {
+        const q       = document.getElementById('agr-search')?.value.toLowerCase() || '';
+        const groupId = document.getElementById('agr-group-filter')?.value || '';
+        const filtered = _agrAllRules.filter(r => {
+          const matchesGroup = !groupId || r.group_id === groupId;
+          const matchesQ = !q || (r.name || '').toLowerCase().includes(q) ||
+            (r.group_name || '').toLowerCase().includes(q) ||
+            (r.conditions || '').toLowerCase().includes(q);
+          return matchesGroup && matchesQ;
+        });
+        agrRenderTable(filtered);
+      }
+
+      function agrRenderTable(rules) {
+        const tbody = document.getElementById('agr-table-body');
+        if (!rules.length) {
+          tbody.innerHTML = `<tr><td colspan="7"><div class="agr-empty">
+            <div class="agr-empty-icon">📋</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:6px">No rules yet</div>
+            <div style="font-size:12px">Create a rule to automatically assign agents to groups based on their metadata.</div>
+          </div></td></tr>`;
+          return;
+        }
+        tbody.innerHTML = rules.map(r => {
+          let conds = [];
+          try { conds = JSON.parse(r.conditions || '[]'); } catch {}
+          const pills = conds.map(c =>
+            `<span class="agr-cond-pill">${escHtml(c.field)} <strong>${escHtml(AGR_OP_LABELS[c.operator]||c.operator)}</strong> "${escHtml(c.value)}"</span>`
+          ).join('');
+          const color  = r.group_color || '#6366f1';
+          const colorA = color + '22';
+          const groupChip = `<span class="agr-group-chip" style="background:${colorA};color:${escHtml(color)};border-color:${colorA}">
+            <span style="width:6px;height:6px;border-radius:50%;background:${escHtml(color)};flex-shrink:0"></span>
+            ${escHtml(r.group_name)}
+          </span>`;
+          const statusDot = `<span class="agr-status-dot" style="background:${r.is_active?'#10b981':'var(--border)'}"></span>
+            <span style="font-size:12px;color:${r.is_active?'#10b981':'var(--text-muted)'};margin-left:5px">${r.is_active?'Active':'Paused'}</span>`;
+
+          return `<tr>
+            <td style="font-weight:600">${escHtml(r.name || '—')}</td>
+            <td>${groupChip}</td>
+            <td><span class="agr-mode-badge ${r.match_mode}">${r.match_mode==='any'?'ANY (OR)':'ALL (AND)'}</span></td>
+            <td><div class="agr-cond-pills">${pills || '<span style="font-size:11px;color:var(--text-muted)">No conditions</span>'}</div></td>
+            <td style="text-align:center;font-weight:600;color:${r.auto_member_count>0?'#818cf8':'var(--text-muted)'}">${r.auto_member_count}</td>
+            <td>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" ${r.is_active?'checked':''} onchange="agrToggle('${escHtml(r.group_id)}','${escHtml(r.id)}',this.checked)" style="accent-color:var(--accent)">
+                ${statusDot}
+              </label>
+            </td>
+            <td>
+              <div class="agr-actions">
+                <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="agrOpenModal('${escHtml(r.id)}','${escHtml(r.group_id)}')">Edit</button>
+                <button class="btn btn-ghost btn-sm" style="color:#ef4444;font-size:11px" onclick="agrDelete('${escHtml(r.group_id)}','${escHtml(r.id)}')">Delete</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+
+      // ── Actions ─────────────────────────────────────────────────────────────
+      async function agrToggle(groupId, ruleId, isActive) {
+        await api(`/agent-groups/${groupId}/rules/${ruleId}`, { method:'PUT', body:{ is_active:isActive } });
+        await loadAgentGroupRules();
+      }
+
+      async function agrDelete(groupId, ruleId) {
+        if (!confirm('Delete this rule? Auto-assigned members from it will be removed.')) return;
+        await api(`/agent-groups/${groupId}/rules/${ruleId}`, { method:'DELETE' });
+        await loadAgentGroupRules();
+      }
+
+      async function agrSyncAll() {
+        const btn = event.target;
+        btn.textContent = 'Syncing…'; btn.disabled = true;
+        try {
+          await Promise.all(_agrAllGroups.map(g =>
+            api(`/agent-groups/${g.id}/sync`, { method:'POST', body:{} }).catch(()=>{})
+          ));
+          await loadAgentGroupRules();
+          btn.textContent = '✓ Synced';
+        } catch { btn.textContent = '↻ Sync All'; }
+        setTimeout(() => { btn.textContent = '↻ Sync All'; btn.disabled = false; }, 2000);
+      }
+
+      // ── Modal ────────────────────────────────────────────────────────────────
+      function agrOpenModal(ruleId = null, groupId = null) {
+        _agrEditId      = ruleId;
+        _agrEditGroupId = groupId;
+        _agrModalMode   = 'all';
+        _agrModalConds  = [{ field:'', operator:'eq', value:'' }];
+
+        // Populate group dropdown
+        const sel = document.getElementById('agr-modal-group');
+        sel.innerHTML = '<option value="">— Select a group —</option>' +
+          _agrAllGroups.map(g => `<option value="${escHtml(g.id)}"${g.id===groupId?' selected':''}>${escHtml(g.name)}</option>`).join('');
+        sel.disabled = !!ruleId; // can't change group on edit
+
+        document.getElementById('agr-modal-title').textContent = ruleId ? 'Edit Rule' : 'New Group Rule';
+        document.getElementById('agr-modal-name').value = '';
+
+        if (ruleId) {
+          const rule = _agrAllRules.find(r => r.id === ruleId);
+          if (rule) {
+            document.getElementById('agr-modal-name').value = rule.name || '';
+            _agrModalMode = rule.match_mode || 'all';
+            try { _agrModalConds = JSON.parse(rule.conditions || '[]'); } catch {}
+            if (!_agrModalConds.length) _agrModalConds = [{ field:'', operator:'eq', value:'' }];
+          }
+        }
+
+        agrRenderMode();
+        agrRenderCondRows();
+        document.getElementById('agr-modal').style.display = 'flex';
+        setTimeout(() => document.getElementById(ruleId ? 'agr-modal-name' : 'agr-modal-group').focus(), 50);
+      }
+
+      function agrCloseModal() {
+        document.getElementById('agr-modal').style.display = 'none';
+      }
+
+      function agrSetMode(m) {
+        _agrModalMode = m;
+        agrRenderMode();
+      }
+
+      function agrRenderMode() {
+        document.getElementById('agr-mode-all-btn').classList.toggle('active', _agrModalMode === 'all');
+        document.getElementById('agr-mode-any-btn').classList.toggle('active', _agrModalMode === 'any');
+      }
+
+      function agrRenderCondRows() {
+        const c = document.getElementById('agr-cond-rows');
+        c.innerHTML = _agrModalConds.map((cond, i) => `
+          <div class="agr-cond-row">
+            <input class="agr-cond-inp" placeholder="key (e.g. team)"
+              value="${escHtml(cond.field)}" oninput="_agrModalConds[${i}].field=this.value">
+            <select class="agr-cond-sel" onchange="_agrModalConds[${i}].operator=this.value">
+              ${['eq','ne','contains','startsWith','regex'].map(op =>
+                `<option value="${op}"${cond.operator===op?' selected':''}>${escHtml(AGR_OP_LABELS[op]||op)}</option>`
+              ).join('')}
+            </select>
+            <input class="agr-cond-inp" placeholder="value"
+              value="${escHtml(cond.value)}" oninput="_agrModalConds[${i}].value=this.value">
+            <button class="btn btn-ghost btn-sm" style="color:#ef4444;padding:4px 8px"
+              onclick="_agrModalConds.splice(${i},1);agrRenderCondRows()">✕</button>
+          </div>`).join('');
+      }
+
+      function agrAddCondRow() {
+        _agrModalConds.push({ field:'', operator:'eq', value:'' });
+        agrRenderCondRows();
+      }
+
+      async function agrSubmitModal() {
+        const groupId = _agrEditGroupId || document.getElementById('agr-modal-group').value;
+        if (!groupId) { alert('Please select a target group.'); return; }
+        const name  = document.getElementById('agr-modal-name').value.trim();
+        const conds = _agrModalConds.filter(c => c.field.trim());
+        if (!conds.length) { alert('Add at least one condition with a metadata key.'); return; }
+        try {
+          if (_agrEditId) {
+            await api(`/agent-groups/${groupId}/rules/${_agrEditId}`, {
+              method:'PUT', body:{ name, match_mode:_agrModalMode, conditions:conds }
+            });
+          } else {
+            await api(`/agent-groups/${groupId}/rules`, {
+              method:'POST', body:{ name, match_mode:_agrModalMode, conditions:conds }
+            });
+          }
+          agrCloseModal();
+          await loadAgentGroupRules();
+        } catch(e) { alert('Failed: '+e.message); }
+      }
+      </script>
+    </div><!-- end page-agent-group-rules -->
+
+    <!-- ═══════════════════════════════════════════════════════════
          SCORING PAGE
     ═══════════════════════════════════════════════════════════ -->
     <div class="page" id="page-scoring">
@@ -6484,6 +7487,24 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
             <div id="wf-triggers-list"></div>
             <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:4px;margin-bottom:8px">Add trigger</div>
 
+            <!-- agent_risk: Individual vs Group scope toggle -->
+            <div id="wf-agent-scope-row" style="display:none;margin-bottom:10px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;align-items:center;gap:12px;flex-wrap:wrap">
+              <span style="font-size:12px;color:var(--text-muted);font-weight:600;white-space:nowrap">Target</span>
+              <div style="display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:2px">
+                <button class="btn btn-ghost btn-sm wf-scope-btn" id="wf-scope-agent-btn"
+                  onclick="wfSetTriggerScope('agent')"
+                  style="border-radius:5px;font-size:12px">Individual Agents</button>
+                <button class="btn btn-ghost btn-sm wf-scope-btn" id="wf-scope-group-btn"
+                  onclick="wfSetTriggerScope('group')"
+                  style="border-radius:5px;font-size:12px">Group</button>
+              </div>
+              <div id="wf-group-picker-wrap" style="display:none;flex:1;min-width:160px">
+                <select id="wf-new-trigger-group" style="width:100%;padding:6px 10px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none;color-scheme:light dark">
+                  <option value="">— Select a group —</option>
+                </select>
+              </div>
+            </div>
+
             <!-- user_risk & vs_risk: VS picker + threshold -->
             <input type="hidden" id="wf-new-trigger-vs" value="">
             <div class="wf-add-trigger" id="wf-trigger-form-score">
@@ -6881,6 +7902,8 @@ function handleRoute() {
   if (page === 'interceptors')    loadInterceptorsPage();
   if (page === 'keys')            loadKeys();
   if (page === 'agents')          loadAgents();
+  if (page === 'agent-groups')      loadAgentGroups();
+  if (page === 'agent-group-rules') loadAgentGroupRules();
   if (page === 'approvals')       loadApprovals();
   if (page === 'scoring')         loadScoring();
   if (page === 'user-risk')       loadUserRisk();
@@ -7784,6 +8807,10 @@ function wfSwitchTab(tab) {
     document.getElementById('wf-trigger-form-score').style.display = isScore ? 'grid' : 'none';
     document.getElementById('wf-trigger-form-sched').style.display = isSched ? 'grid' : 'none';
 
+    // Show/hide the agent scope row
+    const agentScopeRow = document.getElementById('wf-agent-scope-row');
+    if (agentScopeRow) agentScopeRow.style.display = fnType === 'agent_risk' ? 'flex' : 'none';
+
     // VS picker label adapts: optional for user_risk, required for vs_risk
     const scoreLabel = document.getElementById('wf-trigger-score-label');
     if (scoreLabel) scoreLabel.textContent = fnType === 'vs_risk' ? 'VS score below' : fnType === 'agent_risk' ? 'Agent score below' : 'Score below';
@@ -7798,6 +8825,7 @@ function wfSwitchTab(tab) {
       }
     }
     if (isScore) wfPopulateVsDropdown();
+    if (fnType === 'agent_risk') wfPopulateGroupPicker();
   }
   if (tab === 'logs')     wfLoadLogs();
 }
@@ -7825,6 +8853,29 @@ function wfSelectVs(id, name) {
   document.querySelectorAll('.wf-vs-picker-opt').forEach(o =>
     o.classList.toggle('selected', String(o.dataset.id) === String(id))
   );
+}
+
+let _wfTriggerScope = 'agent';
+
+function wfSetTriggerScope(scope) {
+  _wfTriggerScope = scope;
+  document.getElementById('wf-scope-agent-btn').style.background = scope === 'agent' ? 'var(--surface2)' : '';
+  document.getElementById('wf-scope-agent-btn').style.color      = scope === 'agent' ? 'var(--text)'     : '';
+  document.getElementById('wf-scope-group-btn').style.background = scope === 'group' ? 'var(--surface2)' : '';
+  document.getElementById('wf-scope-group-btn').style.color      = scope === 'group' ? 'var(--text)'     : '';
+  document.getElementById('wf-group-picker-wrap').style.display  = scope === 'group' ? 'block' : 'none';
+}
+
+async function wfPopulateGroupPicker() {
+  const sel = document.getElementById('wf-new-trigger-group');
+  if (!sel) return;
+  try {
+    const groups = await api('/agent-groups');
+    sel.innerHTML = '<option value="">— All agents (any group) —</option>' +
+      groups.filter(g => g.is_active).map(g =>
+        `<option value="${escHtml(g.id)}">${escHtml(g.name)}${g.member_count ? ` (${g.member_count} agents)` : ''}</option>`
+      ).join('');
+  } catch { sel.innerHTML = '<option value="">Failed to load groups</option>'; }
 }
 
 async function wfPopulateVsDropdown() {
@@ -8013,7 +9064,10 @@ function wfRenderTriggers(triggers) {
       sub   = `🖥 ${escHtml(vsLabel)} · Fires once per crossing`;
     } else if (t.trigger_type === 'agent_score_below') {
       title = `Agent score drops below <strong>${t.threshold}</strong>`;
-      sub   = `🤖 ${escHtml(vsLabel)} · Fires once per crossing`;
+      const scopeLabel = t.trigger_scope === 'group'
+        ? `Group · ${escHtml(t.group_name || t.group_id?.slice(0,8) || 'unknown')}`
+        : 'Individual Agents';
+      sub   = `🤖 ${scopeLabel} · ${escHtml(vsLabel)} · Fires once per crossing`;
     } else {
       title = `Score drops below <strong>${t.threshold}</strong>`;
       sub   = `👤 ${escHtml(vsLabel)} · Fires once per crossing`;
@@ -8049,7 +9103,14 @@ async function wfAddTrigger() {
     if (fnType === 'vs_risk' && !vsId) { alert('Please select a Virtual Server for VS Risk triggers.'); return; }
     if (isNaN(threshold) || threshold < 0 || threshold > 1000) { alert('Threshold must be 0–1000'); return; }
     const triggerType = fnType === 'vs_risk' ? 'vs_score_below' : fnType === 'agent_risk' ? 'agent_score_below' : 'user_score_below';
-    body = { trigger_type: triggerType, vs_id: vsId, threshold };
+    const triggerScope = fnType === 'agent_risk' ? _wfTriggerScope : 'agent';
+    const groupId = (fnType === 'agent_risk' && _wfTriggerScope === 'group')
+      ? (document.getElementById('wf-new-trigger-group')?.value || null)
+      : null;
+    if (fnType === 'agent_risk' && _wfTriggerScope === 'group' && !groupId) {
+      alert('Please select a group, or switch to "Individual Agents" scope.'); return;
+    }
+    body = { trigger_type: triggerType, vs_id: vsId, threshold, trigger_scope: triggerScope, group_id: groupId };
   }
 
   try {
@@ -8979,77 +10040,110 @@ function addActionRow(existing = null) {
   document.getElementById('pol-actions').appendChild(row);
 }
 
-const CONDITION_TYPES = [
-  // ── OBO Scope (AT_B) conditions ─────────────────────────────
-  { value: 'scope_contains',     label: 'OBO Scope (AT_B) contains',
-    hint: 'Checks the OBO token scopes — not the user\'s original AT_A scope set',
-    badge: 'AT_B', badgeCls: 'atb', color: '#6366f1', placeholder: 'e.g. banking:read' },
-  { value: 'scope_contains_any', label: 'OBO Scope (AT_B) contains any',
-    hint: 'Pass if AT_B carries at least one of the listed scopes (comma-separated)',
-    badge: 'AT_B', badgeCls: 'atb', color: '#6366f1', placeholder: 'e.g. banking:read, banking:write' },
-  { value: 'scope_contains_all', label: 'OBO Scope (AT_B) contains all',
-    hint: 'Pass only if AT_B carries every listed scope',
-    badge: 'AT_B', badgeCls: 'atb', color: '#6366f1', placeholder: 'e.g. banking:read, banking:write' },
-  { value: 'not_scope_contains', label: 'OBO Scope (AT_B) does NOT contain',
-    hint: 'Forbid when AT_B holds this scope — useful for blocking elevated permissions',
-    badge: 'NOT', badgeCls: 'not', color: '#ef4444', placeholder: 'e.g. banking:admin' },
-  // ── User identity (AT_A) conditions ─────────────────────────
-  { value: 'group_contains',     label: 'User group contains',
-    hint: 'Group from AT_A — identity is preserved through OBO, unaffected by downscoping',
-    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. BankingUsers' },
-  { value: 'group_contains_any', label: 'User group contains any',
-    hint: 'Pass if user belongs to at least one listed group (comma-separated)',
-    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. BankingUsers, Admins' },
-  { value: 'group_contains_all', label: 'User group contains all',
-    hint: 'Pass only if user belongs to every listed group',
-    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. BankingUsers, MFA-Required' },
-  { value: 'not_group_contains', label: 'User group does NOT contain',
-    hint: 'Forbid when user is a member of this group',
-    badge: 'NOT', badgeCls: 'not', color: '#ef4444', placeholder: 'e.g. ExternalContractors' },
-  { value: 'sub_equals',         label: 'User sub equals',
-    hint: 'Exact match on the user\'s subject identifier (sub claim from AT_A)',
-    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. 00u1x2y3z4a5b6c7d8' },
-  { value: 'sub_in',             label: 'User sub in list',
-    hint: 'Pass if user sub matches any entry in a comma-separated list',
-    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7', placeholder: 'e.g. user1@co, user2@co' },
-  // ── Agent identity conditions (Phase 3) ─────────────────────────────────
-  { value: 'agent_is',           label: 'Agent name equals',
-    hint: 'Pass only when the calling agent\'s registered name matches exactly',
-    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b', placeholder: 'e.g. banking-chatbot-app' },
-  { value: 'agent_in',           label: 'Agent name in list',
-    hint: 'Pass if the calling agent is any of the listed registered names (comma-separated)',
-    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b', placeholder: 'e.g. banking-chatbot-app, python-agent' },
-  { value: 'not_agent_is',       label: 'Agent name is NOT',
-    hint: 'Deny when called by this specific agent — useful for restricting sensitive tools',
-    badge: 'NOT', badgeCls: 'not', color: '#ef4444', placeholder: 'e.g. external-partner-agent' },
+const CONDITION_SCHEMA = [
+  {
+    category: 'obo_scope', label: 'OBO Scope (AT_B)',
+    badge: 'AT_B', badgeCls: 'atb', color: '#6366f1',
+    operators: [
+      { value: 'scope_contains',     label: 'contains',         hint: 'Checks the OBO token scopes — not the user\'s original AT_A scope set', placeholder: 'e.g. banking:read' },
+      { value: 'scope_contains_any', label: 'contains any',     hint: 'Pass if AT_B carries at least one of the listed scopes (comma-separated)', placeholder: 'e.g. banking:read, banking:write' },
+      { value: 'scope_contains_all', label: 'contains all',     hint: 'Pass only if AT_B carries every listed scope', placeholder: 'e.g. banking:read, banking:write' },
+      { value: 'not_scope_contains', label: 'does NOT contain', hint: 'Forbid when AT_B holds this scope — useful for blocking elevated permissions', placeholder: 'e.g. banking:admin', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
+    ]
+  },
+  {
+    category: 'user_group', label: 'User Group',
+    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7',
+    operators: [
+      { value: 'group_contains',     label: 'contains',         hint: 'Group from AT_A — identity is preserved through OBO, unaffected by downscoping', placeholder: 'e.g. BankingUsers' },
+      { value: 'group_contains_any', label: 'contains any',     hint: 'Pass if user belongs to at least one listed group (comma-separated)', placeholder: 'e.g. BankingUsers, Admins' },
+      { value: 'group_contains_all', label: 'contains all',     hint: 'Pass only if user belongs to every listed group', placeholder: 'e.g. BankingUsers, MFA-Required' },
+      { value: 'not_group_contains', label: 'does NOT contain', hint: 'Forbid when user is a member of this group', placeholder: 'e.g. ExternalContractors', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
+    ]
+  },
+  {
+    category: 'user_sub', label: 'User Sub',
+    badge: 'AT_A', badgeCls: 'ata', color: '#a855f7',
+    operators: [
+      { value: 'sub_equals', label: 'equals',  hint: 'Exact match on the user\'s subject identifier (sub claim from AT_A)', placeholder: 'e.g. 00u1x2y3z4a5b6c7d8' },
+      { value: 'sub_in',     label: 'in list', hint: 'Pass if user sub matches any entry in a comma-separated list', placeholder: 'e.g. user1@co, user2@co' },
+    ]
+  },
+  {
+    category: 'agent_name', label: 'Agent Name',
+    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b',
+    operators: [
+      { value: 'agent_is',     label: 'equals',  hint: 'Pass only when the calling agent\'s registered name matches exactly', placeholder: 'e.g. banking-chatbot-app' },
+      { value: 'agent_in',     label: 'in list', hint: 'Pass if the calling agent is any of the listed registered names (comma-separated)', placeholder: 'e.g. banking-chatbot-app, python-agent' },
+      { value: 'not_agent_is', label: 'is NOT',  hint: 'Deny when called by this specific agent — useful for restricting sensitive tools', placeholder: 'e.g. external-partner-agent', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
+    ]
+  },
+  {
+    category: 'agent_id', label: 'Agent ID',
+    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b',
+    operators: [
+      { value: 'agent_id_equals', label: 'equals',  hint: 'Match by the calling agent\'s unique ID (UUID) — more stable than name if agents are renamed', placeholder: 'e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6' },
+      { value: 'agent_id_in',     label: 'in list', hint: 'Pass if the calling agent\'s ID matches any entry in a comma-separated list of UUIDs', placeholder: 'e.g. uuid-1, uuid-2' },
+      { value: 'not_agent_id_equals', label: 'is NOT', hint: 'Deny when called by an agent with this specific ID', placeholder: 'e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
+    ]
+  },
+  {
+    category: 'agent_group', label: 'Agent Group Name',
+    badge: 'AGT', badgeCls: 'atb', color: '#10b981',
+    operators: [
+      { value: 'agent_group_contains',     label: 'contains',         hint: 'Pass when the calling agent belongs to this agent group (matched by name)', placeholder: 'e.g. finance-agents' },
+      { value: 'agent_group_not_contains', label: 'does NOT contain', hint: 'Deny when the calling agent belongs to this group (matched by name)', placeholder: 'e.g. external-agents', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
+    ]
+  },
+  {
+    category: 'agent_group_id', label: 'Agent Group ID',
+    badge: 'AGT', badgeCls: 'atb', color: '#06b6d4',
+    operators: [
+      { value: 'agent_group_id_contains',     label: 'contains',         hint: 'Pass when the calling agent belongs to the group with this UUID — stable across group renames', placeholder: 'e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6' },
+      { value: 'agent_group_id_not_contains', label: 'does NOT contain', hint: 'Deny when the calling agent belongs to the group with this UUID', placeholder: 'e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
+    ]
+  },
 ];
+
+function _condFindCatAndOp(typeValue) {
+  for (const cat of CONDITION_SCHEMA) {
+    const op = cat.operators.find(o => o.value === typeValue);
+    if (op) return { cat, op };
+  }
+  return { cat: CONDITION_SCHEMA[0], op: CONDITION_SCHEMA[0].operators[0] };
+}
 
 function addConditionRow(existing = null) {
   const row = document.createElement('div');
   row.className = 'condition-row';
-  const sel = CONDITION_TYPES.find(ct => ct.value === existing?.type) || CONDITION_TYPES[0];
-  row.style.borderLeftColor = sel.color;
+
+  const { cat: initCat, op: initOp } = existing?.type
+    ? _condFindCatAndOp(existing.type)
+    : { cat: CONDITION_SCHEMA[0], op: CONDITION_SCHEMA[0].operators[0] };
+
+  const badge    = initOp.badge    || initCat.badge;
+  const badgeCls = initOp.badgeCls || initCat.badgeCls;
+  const color    = initOp.color    || initCat.color;
+
+  const catOptions = CONDITION_SCHEMA.map(c =>
+    `<option value="${c.category}" ${c.category === initCat.category ? 'selected' : ''}>${c.label}</option>`
+  ).join('');
+  const opOptions = initCat.operators.map(o =>
+    `<option value="${o.value}" ${o.value === initOp.value ? 'selected' : ''}>${o.label}</option>`
+  ).join('');
+
+  row.style.borderLeftColor = color;
   row.innerHTML = `
     <div class="cond-left">
       <div class="cond-select-row">
-        <select class="cond-select" onchange="updateConditionHint(this)">
-          ${CONDITION_TYPES.map(ct =>
-            `<option value="${ct.value}"
-              data-hint="${ct.hint}"
-              data-badge="${ct.badge}"
-              data-badge-cls="${ct.badgeCls}"
-              data-color="${ct.color}"
-              data-placeholder="${ct.placeholder}"
-              ${existing?.type === ct.value ? 'selected' : ''}
-            >${ct.label}</option>`
-          ).join('')}
-        </select>
-        <span class="tok-badge ${sel.badgeCls}">${sel.badge}</span>
+        <select class="cond-select cond-cat-select" onchange="updateConditionCategory(this)">${catOptions}</select>
+        <select class="cond-select cond-op-select" onchange="updateConditionOperator(this)">${opOptions}</select>
+        <span class="tok-badge ${badgeCls}">${badge}</span>
       </div>
-      <span class="cond-hint-text">${sel.hint}</span>
+      <span class="cond-hint-text">${initOp.hint}</span>
     </div>
     <input class="cond-value"
-      placeholder="${sel.placeholder}"
+      placeholder="${initOp.placeholder}"
       value="${existing?.value || existing?.values?.join(', ') || ''}" />
     <button onclick="this.closest('.condition-row').remove()"
       class="btn btn-danger btn-sm btn-icon" style="align-self:center;flex-shrink:0">✕</button>
@@ -9057,15 +10151,29 @@ function addConditionRow(existing = null) {
   document.getElementById('pol-conditions').appendChild(row);
 }
 
-function updateConditionHint(selectEl) {
-  const opt = selectEl.options[selectEl.selectedIndex];
-  const row = selectEl.closest('.condition-row');
-  row.style.borderLeftColor = opt.dataset.color;
-  row.querySelector('.cond-hint-text').textContent = opt.dataset.hint;
-  row.querySelector('.cond-value').placeholder = opt.dataset.placeholder;
-  const badge = row.querySelector('.tok-badge');
-  badge.textContent = opt.dataset.badge;
-  badge.className = `tok-badge ${opt.dataset.badgeCls}`;
+function updateConditionCategory(catSelect) {
+  const cat = CONDITION_SCHEMA.find(c => c.category === catSelect.value) || CONDITION_SCHEMA[0];
+  const row = catSelect.closest('.condition-row');
+  const opSelect = row.querySelector('.cond-op-select');
+  opSelect.innerHTML = cat.operators.map(o =>
+    `<option value="${o.value}">${o.label}</option>`
+  ).join('');
+  updateConditionOperator(opSelect);
+}
+
+function updateConditionOperator(opSelect) {
+  const row = opSelect.closest('.condition-row');
+  const cat = CONDITION_SCHEMA.find(c => c.category === row.querySelector('.cond-cat-select').value) || CONDITION_SCHEMA[0];
+  const op  = cat.operators.find(o => o.value === opSelect.value) || cat.operators[0];
+  const badge    = op.badge    || cat.badge;
+  const badgeCls = op.badgeCls || cat.badgeCls;
+  const color    = op.color    || cat.color;
+  row.style.borderLeftColor = color;
+  row.querySelector('.cond-hint-text').textContent = op.hint;
+  row.querySelector('.cond-value').placeholder = op.placeholder;
+  const badgeEl = row.querySelector('.tok-badge');
+  badgeEl.textContent = badge;
+  badgeEl.className = `tok-badge ${badgeCls}`;
 }
 
 async function savePolicy() {
@@ -9080,7 +10188,7 @@ async function savePolicy() {
   });
   const condRows = document.querySelectorAll('#pol-conditions .condition-row');
   const conditions = Array.from(condRows).map(row => {
-    const type = row.querySelector('select').value;
+    const type = row.querySelector('.cond-op-select').value;
     const rawValue = row.querySelector('input').value;
     const isMulti = type.endsWith('_any') || type.endsWith('_all') || type === 'sub_in' || type === 'agent_in';
     if (isMulti) return { type, values: rawValue.split(',').map(v => v.trim()).filter(Boolean) };
