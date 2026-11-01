@@ -6113,7 +6113,7 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
         let scores = [];
         await Promise.all(members.map(async m => {
           try {
-            const s = await api(`/scoring/agent/${m.id}`);
+            const s = await api(`/scoring/agents/${m.id}`);
             scores.push(s.score ?? 500);
             m._score = s.score ?? 500;
             m._tier  = s.tier?.name || 'Monitored';
