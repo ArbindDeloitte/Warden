@@ -912,7 +912,7 @@
 
       <!-- Identities section -->
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin-bottom:14px;margin-top:36px">Identities</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:720px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px">
 
         <!-- Identity Model card -->
         <div onclick="navigate('identities')" style="cursor:pointer;border:1px solid var(--border-strong);border-radius:14px;padding:28px 24px;background:var(--surface);transition:all .18s;position:relative;overflow:hidden"
@@ -922,6 +922,26 @@
           <div style="font-size:15px;font-weight:700;margin-bottom:8px">Identity Model</div>
           <div style="font-size:13px;color:var(--text-2);line-height:1.6">Two-layer identity framework — how user and agent identities compose, enforce, and audit every call through the gateway.</div>
           <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#f59e0b;font-weight:600">Read →</div>
+        </div>
+
+        <!-- Agent Groups card -->
+        <div onclick="navigate('agent-groups-doc')" style="cursor:pointer;border:1px solid var(--border-strong);border-radius:14px;padding:28px 24px;background:var(--surface);transition:all .18s;position:relative;overflow:hidden"
+          onmouseover="this.style.borderColor='#10b981';this.style.background='var(--surface2)'"
+          onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px">🫂</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px">Agent Groups</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.6">How agents are organized into groups — manual membership, risk rollups, and group-scoped policy enforcement.</div>
+          <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#10b981;font-weight:600">Read →</div>
+        </div>
+
+        <!-- Agent Group Rules card -->
+        <div onclick="navigate('agent-group-rules-doc')" style="cursor:pointer;border:1px solid var(--border-strong);border-radius:14px;padding:28px 24px;background:var(--surface);transition:all .18s;position:relative;overflow:hidden"
+          onmouseover="this.style.borderColor='#6366f1';this.style.background='var(--surface2)'"
+          onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.25);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px">📋</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px">Agent Group Rules</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.6">Okta-style dynamic membership rules — how metadata conditions automatically assign agents to the right groups.</div>
+          <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#6366f1;font-weight:600">Read →</div>
         </div>
 
       </div>
@@ -4375,6 +4395,436 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
 
       </div>
     </div><!-- end page-identities -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         AGENT GROUPS DOC PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-agent-groups-doc">
+    <style>
+      #page-agent-groups-doc { background: #07091a; color: #e2e8f0; }
+      .agd-back { display:inline-flex;align-items:center;gap:7px;color:#94a3b8;font-size:13px;cursor:pointer;margin-bottom:28px;transition:color .15s; }
+      .agd-back:hover { color:#e2e8f0; }
+      .agd-hero { background:linear-gradient(135deg,#0d1326 0%,#0a1f1a 50%,#0d1326 100%);border-bottom:1px solid #1e2540;padding:48px 0 40px;margin:-28px -36px 0; }
+      .agd-hero-inner { max-width:860px;margin:0 auto;padding:0 36px; }
+      .agd-badge { display:inline-block;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:4px 12px;border-radius:100px;margin-bottom:18px; }
+      .agd-title { font-size:38px;font-weight:800;letter-spacing:-.6px;background:linear-gradient(135deg,#e2e8f0 30%,#34d399 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;line-height:1.15; }
+      .agd-sub { color:#94a3b8;font-size:15px;line-height:1.7;max-width:680px;margin-bottom:32px; }
+      .agd-wrap { max-width:860px;margin:0 auto;padding:44px 0 60px; }
+      .agd-section { margin-bottom:48px; }
+      .agd-h2 { font-size:17px;font-weight:700;margin-bottom:5px; }
+      .agd-sub2 { color:#64748b;font-size:13px;margin-bottom:20px; }
+
+      /* Diagram */
+      .agd-diagram { background:#0a0e1a;border:1px solid #1a2035;border-radius:16px;padding:32px;margin-bottom:0; }
+
+      /* Concept cards */
+      .agd-cards { display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px; }
+      .agd-card { background:#0e1225;border:1px solid #1a2035;border-radius:12px;padding:20px; }
+      .agd-card-icon { font-size:22px;margin-bottom:10px; }
+      .agd-card-title { font-size:13.5px;font-weight:700;margin-bottom:6px; }
+      .agd-card-body { font-size:12.5px;color:#64748b;line-height:1.6; }
+
+      /* Source badge */
+      .agd-src { display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.04em; }
+      .agd-src.manual { background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3); }
+      .agd-src.auto { background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.3); }
+
+      /* Membership table */
+      .agd-table { width:100%;border-collapse:collapse;font-size:13px; }
+      .agd-table th { text-align:left;padding:9px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569;border-bottom:1px solid #1a2035; }
+      .agd-table td { padding:10px 14px;border-bottom:1px solid #111827;color:#94a3b8;vertical-align:middle; }
+      .agd-table tr:last-child td { border-bottom:none; }
+      .agd-table tr:hover td { background:rgba(255,255,255,.02); }
+
+      /* Risk tier chips */
+      .agd-tier { display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px; }
+      .agd-tier.trusted  { background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.3); }
+      .agd-tier.monitored{ background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.3); }
+      .agd-tier.at-risk  { background:rgba(249,115,22,.12);color:#fb923c;border:1px solid rgba(249,115,22,.3); }
+
+      /* Callout */
+      .agd-callout { background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:16px 20px;font-size:13px;color:#94a3b8;line-height:1.7; }
+      .agd-callout strong { color:#34d399; }
+
+      [data-theme="light"] #page-agent-groups-doc { background:#f0faf6;color:#0f172a; }
+      [data-theme="light"] .agd-hero { background:linear-gradient(135deg,#ecfdf5,#f0f9ff);border-bottom:1px solid #d1fae5; }
+      [data-theme="light"] .agd-title { background:linear-gradient(135deg,#0f172a 30%,#059669 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+      [data-theme="light"] .agd-sub { color:#475569; }
+      [data-theme="light"] .agd-h2 { color:#0f172a; }
+      [data-theme="light"] .agd-diagram { background:#0d1117;border-color:#1e2540; }
+      [data-theme="light"] .agd-card { background:#fff;border-color:#d1fae5; }
+      [data-theme="light"] .agd-card-title { color:#0f172a; }
+      [data-theme="light"] .agd-card-body { color:#64748b; }
+      [data-theme="light"] .agd-table { background:#fff; }
+      [data-theme="light"] .agd-table th { color:#374151; background:#f9fafb;border-bottom-color:#e5e7eb; }
+      [data-theme="light"] .agd-table td { color:#374151;border-bottom-color:#f1f5f9; }
+      [data-theme="light"] .agd-callout { background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.25); }
+    </style>
+
+      <div class="agd-hero">
+        <div class="agd-hero-inner">
+          <button class="agd-back" onclick="navigate('docs')">← Back to Docs</button>
+          <div class="agd-badge">Identities</div>
+          <div class="agd-title">Agent Groups</div>
+          <div class="agd-sub">Organize agents into named groups with color tags, ownership, and shared risk scoring. Groups are the unit of policy targeting and Warden Function triggers.</div>
+        </div>
+      </div>
+
+      <div class="agd-wrap">
+
+        <!-- Visual diagram -->
+        <div class="agd-section">
+          <div class="agd-h2">How Agents Belong to Groups</div>
+          <div class="agd-sub2">An agent can be a member of multiple groups. Membership is either manual (operator-added) or automatic (rule-assigned).</div>
+          <div class="agd-diagram">
+            <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:0 auto">
+              <!-- Group A: Finance -->
+              <rect x="20" y="30" width="220" height="260" rx="14" fill="rgba(99,102,241,.08)" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
+              <circle cx="38" cy="52" r="8" fill="#6366f1"/>
+              <text x="52" y="57" fill="#818cf8" font-size="12" font-weight="700" font-family="system-ui">Finance Agents</text>
+              <!-- Agent 1 -->
+              <rect x="38" y="75" width="184" height="52" rx="10" fill="rgba(99,102,241,.12)" stroke="rgba(99,102,241,.25)" stroke-width="1"/>
+              <rect x="52" y="88" width="28" height="28" rx="7" fill="rgba(99,102,241,.3)"/>
+              <text x="66" y="106" fill="#e2e8f0" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui">BA</text>
+              <text x="90" y="100" fill="#c7d2fe" font-size="11" font-weight="600" font-family="system-ui">banking-chatbot-agent</text>
+              <rect x="90" y="107" width="30" height="12" rx="6" fill="rgba(16,185,129,.15)" stroke="rgba(16,185,129,.3)" stroke-width="1"/>
+              <text x="105" y="116" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle" font-family="system-ui">auto</text>
+              <!-- Agent 2 -->
+              <rect x="38" y="137" width="184" height="52" rx="10" fill="rgba(99,102,241,.12)" stroke="rgba(99,102,241,.25)" stroke-width="1"/>
+              <rect x="52" y="150" width="28" height="28" rx="7" fill="rgba(99,102,241,.3)"/>
+              <text x="66" y="168" fill="#e2e8f0" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui">FA</text>
+              <text x="90" y="162" fill="#c7d2fe" font-size="11" font-weight="600" font-family="system-ui">fraud-detection-agent</text>
+              <rect x="90" y="169" width="36" height="12" rx="6" fill="rgba(99,102,241,.15)" stroke="rgba(99,102,241,.3)" stroke-width="1"/>
+              <text x="108" y="178" fill="#818cf8" font-size="8" font-weight="700" text-anchor="middle" font-family="system-ui">manual</text>
+              <!-- Agent 3 (dual member) -->
+              <rect x="38" y="199" width="184" height="52" rx="10" fill="rgba(99,102,241,.12)" stroke="rgba(99,102,241,.25)" stroke-width="1"/>
+              <rect x="52" y="212" width="28" height="28" rx="7" fill="rgba(99,102,241,.3)"/>
+              <text x="66" y="230" fill="#e2e8f0" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui">RA</text>
+              <text x="90" y="224" fill="#c7d2fe" font-size="11" font-weight="600" font-family="system-ui">report-gen-agent</text>
+              <rect x="90" y="231" width="30" height="12" rx="6" fill="rgba(16,185,129,.15)" stroke="rgba(16,185,129,.3)" stroke-width="1"/>
+              <text x="105" y="240" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle" font-family="system-ui">auto</text>
+
+              <!-- Group B: External -->
+              <rect x="520" y="30" width="220" height="260" rx="14" fill="rgba(239,68,68,.06)" stroke="rgba(239,68,68,.3)" stroke-width="1.5"/>
+              <circle cx="538" cy="52" r="8" fill="#ef4444"/>
+              <text x="552" y="57" fill="#f87171" font-size="12" font-weight="700" font-family="system-ui">External Agents</text>
+              <!-- Agent 4 -->
+              <rect x="538" y="75" width="184" height="52" rx="10" fill="rgba(239,68,68,.1)" stroke="rgba(239,68,68,.2)" stroke-width="1"/>
+              <rect x="552" y="88" width="28" height="28" rx="7" fill="rgba(239,68,68,.25)"/>
+              <text x="566" y="106" fill="#e2e8f0" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui">PA</text>
+              <text x="590" y="100" fill="#fca5a5" font-size="11" font-weight="600" font-family="system-ui">partner-api-agent</text>
+              <rect x="590" y="107" width="36" height="12" rx="6" fill="rgba(99,102,241,.15)" stroke="rgba(99,102,241,.3)" stroke-width="1"/>
+              <text x="608" y="116" fill="#818cf8" font-size="8" font-weight="700" text-anchor="middle" font-family="system-ui">manual</text>
+              <!-- Agent 5 -->
+              <rect x="538" y="199" width="184" height="52" rx="10" fill="rgba(239,68,68,.1)" stroke="rgba(239,68,68,.2)" stroke-width="1"/>
+              <rect x="552" y="212" width="28" height="28" rx="7" fill="rgba(239,68,68,.25)"/>
+              <text x="566" y="230" fill="#e2e8f0" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui">WA</text>
+              <text x="590" y="224" fill="#fca5a5" font-size="11" font-weight="600" font-family="system-ui">webhook-agent</text>
+              <rect x="590" y="231" width="30" height="12" rx="6" fill="rgba(16,185,129,.15)" stroke="rgba(16,185,129,.3)" stroke-width="1"/>
+              <text x="605" y="240" fill="#34d399" font-size="8" font-weight="700" text-anchor="middle" font-family="system-ui">auto</text>
+
+              <!-- Dual member: report-gen-agent connector -->
+              <line x1="222" y1="225" x2="280" y2="225" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,3"/>
+              <line x1="280" y1="225" x2="280" y2="160" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,3"/>
+              <line x1="280" y1="160" x2="520" y2="160" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+              <!-- Dual member label -->
+              <rect x="295" y="120" width="170" height="32" rx="8" fill="#0a0e1a" stroke="#334155" stroke-width="1"/>
+              <text x="380" y="138" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="system-ui">Agent can be in multiple groups</text>
+
+              <!-- Agents count badge Group A -->
+              <rect x="168" y="266" width="60" height="18" rx="9" fill="rgba(99,102,241,.2)"/>
+              <text x="198" y="278" fill="#818cf8" font-size="10" font-weight="700" text-anchor="middle" font-family="system-ui">3 agents</text>
+
+              <!-- Agents count badge Group B -->
+              <rect x="668" y="266" width="60" height="18" rx="9" fill="rgba(239,68,68,.15)"/>
+              <text x="698" y="278" fill="#f87171" font-size="10" font-weight="700" text-anchor="middle" font-family="system-ui">2 agents</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Key concepts -->
+        <div class="agd-section">
+          <div class="agd-h2">Key Concepts</div>
+          <div class="agd-sub2">Everything you need to know about how groups work.</div>
+          <div class="agd-cards">
+            <div class="agd-card">
+              <div class="agd-card-icon">🏷️</div>
+              <div class="agd-card-title">Color &amp; Ownership</div>
+              <div class="agd-card-body">Each group has a color tag and an optional owner or team name. These are visual identifiers — they don't affect policy evaluation.</div>
+            </div>
+            <div class="agd-card">
+              <div class="agd-card-icon">🔀</div>
+              <div class="agd-card-title">Many-to-Many Membership</div>
+              <div class="agd-card-body">One agent can belong to multiple groups simultaneously. Each membership is tracked independently with its own source (manual or rule).</div>
+            </div>
+            <div class="agd-card">
+              <div class="agd-card-icon">📊</div>
+              <div class="agd-card-title">Group Risk Rollup</div>
+              <div class="agd-card-body">The group panel shows the average risk score across all members and flags how many are At Risk (score &lt; 500), giving a group-level health view.</div>
+            </div>
+            <div class="agd-card">
+              <div class="agd-card-icon">✋</div>
+              <div class="agd-card-title">Manual Membership</div>
+              <div class="agd-card-body">An operator explicitly adds an agent via the Members panel. This source is never overridden by rule evaluation — it's always preserved.</div>
+            </div>
+            <div class="agd-card">
+              <div class="agd-card-icon">🤖</div>
+              <div class="agd-card-title">Auto Membership</div>
+              <div class="agd-card-body">A group rule evaluated the agent's metadata and matched. The <span class="agd-src auto">auto</span> badge shows which rule is responsible. Re-syncs on every agent update.</div>
+            </div>
+            <div class="agd-card">
+              <div class="agd-card-icon">⚡</div>
+              <div class="agd-card-title">Warden Function Scope</div>
+              <div class="agd-card-body">Agent risk Warden Functions can target an entire group instead of a single agent — firing when any member's score crosses the threshold.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Membership source table -->
+        <div class="agd-section">
+          <div class="agd-h2">Membership Sources</div>
+          <div class="agd-sub2">How each source behaves during rule re-evaluation.</div>
+          <div class="agd-diagram" style="padding:0;overflow:hidden">
+            <table class="agd-table">
+              <thead><tr>
+                <th>Source</th><th>Added by</th><th>Survives rule re-sync?</th><th>Removable by operator?</th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="agd-src manual">manual</span></td>
+                  <td>Operator via Members panel</td>
+                  <td>✅ Always preserved</td>
+                  <td>✅ Yes — remove button</td>
+                </tr>
+                <tr>
+                  <td><span class="agd-src auto">auto</span></td>
+                  <td>Group rule evaluation</td>
+                  <td>Only if still matches a rule</td>
+                  <td>✅ Yes — overrides rule</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Callout -->
+        <div class="agd-callout">
+          <strong>Policy tip:</strong> Use Token Policies with the <strong>Agent Group Name</strong> or <strong>Agent Group ID</strong> condition to allow or deny specific MCP tools for an entire group. Changes apply to all current and future members automatically — you don't need to update the policy when agents join or leave.
+        </div>
+
+      </div>
+    </div><!-- end page-agent-groups-doc -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         AGENT GROUP RULES DOC PAGE
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-agent-group-rules-doc">
+    <style>
+      #page-agent-group-rules-doc { background:#07091a;color:#e2e8f0; }
+      .agrd-back { display:inline-flex;align-items:center;gap:7px;color:#94a3b8;font-size:13px;cursor:pointer;margin-bottom:28px;transition:color .15s; }
+      .agrd-back:hover { color:#e2e8f0; }
+      .agrd-hero { background:linear-gradient(135deg,#0d1326 0%,#12102a 50%,#0d1326 100%);border-bottom:1px solid #1e2540;padding:48px 0 40px;margin:-28px -36px 0; }
+      .agrd-hero-inner { max-width:860px;margin:0 auto;padding:0 36px; }
+      .agrd-badge { display:inline-block;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);color:#818cf8;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:4px 12px;border-radius:100px;margin-bottom:18px; }
+      .agrd-title { font-size:38px;font-weight:800;letter-spacing:-.6px;background:linear-gradient(135deg,#e2e8f0 30%,#818cf8 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;line-height:1.15; }
+      .agrd-sub { color:#94a3b8;font-size:15px;line-height:1.7;max-width:680px;margin-bottom:32px; }
+      .agrd-wrap { max-width:860px;margin:0 auto;padding:44px 0 60px; }
+      .agrd-section { margin-bottom:48px; }
+      .agrd-h2 { font-size:17px;font-weight:700;margin-bottom:5px; }
+      .agrd-sub2 { color:#64748b;font-size:13px;margin-bottom:20px; }
+      .agrd-box { background:#0a0e1a;border:1px solid #1a2035;border-radius:16px;padding:28px 32px; }
+      .agrd-cards { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+      .agrd-card { background:#0e1225;border:1px solid #1a2035;border-radius:12px;padding:20px; }
+      .agrd-card-icon { font-size:22px;margin-bottom:10px; }
+      .agrd-card-title { font-size:13.5px;font-weight:700;margin-bottom:6px; }
+      .agrd-card-body { font-size:12.5px;color:#64748b;line-height:1.6; }
+      .agrd-mode { display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.04em; }
+      .agrd-mode.all { background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3); }
+      .agrd-mode.any { background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.3); }
+      .agrd-table { width:100%;border-collapse:collapse;font-size:13px; }
+      .agrd-table th { text-align:left;padding:9px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569;border-bottom:1px solid #1a2035; }
+      .agrd-table td { padding:10px 14px;border-bottom:1px solid #111827;color:#94a3b8;vertical-align:middle; }
+      .agrd-table tr:last-child td { border-bottom:none; }
+      .agrd-table td code { background:#1e2535;padding:2px 6px;border-radius:4px;font-size:11.5px;color:#c7d2fe; }
+      .agrd-callout { background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:16px 20px;font-size:13px;color:#94a3b8;line-height:1.7;margin-top:20px; }
+      .agrd-callout strong { color:#818cf8; }
+      .agrd-step { display:flex;gap:16px;align-items:flex-start;margin-bottom:20px; }
+      .agrd-step-num { width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.35);color:#818cf8;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px; }
+      .agrd-step-body { flex:1; }
+      .agrd-step-title { font-size:14px;font-weight:700;margin-bottom:4px; }
+      .agrd-step-desc { font-size:13px;color:#64748b;line-height:1.6; }
+
+      [data-theme="light"] #page-agent-group-rules-doc { background:#f8f6ff;color:#0f172a; }
+      [data-theme="light"] .agrd-hero { background:linear-gradient(135deg,#ede9fe,#f0f6ff);border-bottom:1px solid #ddd6fe; }
+      [data-theme="light"] .agrd-title { background:linear-gradient(135deg,#0f172a 30%,#6366f1 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+      [data-theme="light"] .agrd-sub { color:#475569; }
+      [data-theme="light"] .agrd-h2 { color:#0f172a; }
+      [data-theme="light"] .agrd-sub2 { color:#64748b; }
+      [data-theme="light"] .agrd-box { background:#0d1117;border-color:#1e2540; }
+      [data-theme="light"] .agrd-card { background:#fff;border-color:#ddd6fe; }
+      [data-theme="light"] .agrd-card-title { color:#0f172a; }
+      [data-theme="light"] .agrd-card-body { color:#64748b; }
+      [data-theme="light"] .agrd-table { background:#fff; }
+      [data-theme="light"] .agrd-table th { color:#374151;background:#f9fafb;border-bottom-color:#e5e7eb; }
+      [data-theme="light"] .agrd-table td { color:#374151;border-bottom-color:#f1f5f9; }
+      [data-theme="light"] .agrd-step-title { color:#0f172a; }
+      [data-theme="light"] .agrd-step-desc { color:#475569; }
+    </style>
+
+      <div class="agrd-hero">
+        <div class="agrd-hero-inner">
+          <button class="agrd-back" onclick="navigate('docs')">← Back to Docs</button>
+          <div class="agrd-badge">Identities</div>
+          <div class="agrd-title">Agent Group Rules</div>
+          <div class="agrd-sub">Okta-style dynamic membership — write metadata conditions once, and agents are automatically assigned to the right groups as they register or change.</div>
+        </div>
+      </div>
+
+      <div class="agrd-wrap">
+
+        <!-- Evaluation flow diagram -->
+        <div class="agrd-section">
+          <div class="agrd-h2">Rule Evaluation Flow</div>
+          <div class="agrd-sub2">How a single rule moves an agent from registration to group membership.</div>
+          <div class="agrd-box">
+            <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:0 auto">
+              <!-- Step 1: Agent -->
+              <rect x="10" y="70" width="130" height="60" rx="10" fill="rgba(99,102,241,.1)" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
+              <text x="75" y="94" fill="#c7d2fe" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui">Agent registers</text>
+              <text x="75" y="110" fill="#818cf8" font-size="10" text-anchor="middle" font-family="system-ui">or metadata changes</text>
+              <text x="75" y="124" fill="#6366f1" font-size="18" text-anchor="middle" font-family="system-ui">🤖</text>
+
+              <!-- Arrow -->
+              <line x1="140" y1="100" x2="168" y2="100" stroke="#334155" stroke-width="1.5" marker-end="url(#arr1)"/>
+              <defs><marker id="arr1" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#334155"/></marker></defs>
+
+              <!-- Step 2: Conditions -->
+              <rect x="170" y="50" width="150" height="100" rx="10" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.3)" stroke-width="1.5"/>
+              <text x="245" y="78" fill="#fbbf24" font-size="10.5" font-weight="700" text-anchor="middle" font-family="system-ui">Evaluate Conditions</text>
+              <rect x="183" y="86" width="124" height="16" rx="5" fill="rgba(245,158,11,.12)"/>
+              <text x="245" y="97" fill="#94a3b8" font-size="9.5" text-anchor="middle" font-family="system-ui">env = "production"</text>
+              <rect x="183" y="106" width="124" height="16" rx="5" fill="rgba(245,158,11,.12)"/>
+              <text x="245" y="117" fill="#94a3b8" font-size="9.5" text-anchor="middle" font-family="system-ui">team contains "finance"</text>
+              <rect x="183" y="126" width="124" height="16" rx="5" fill="rgba(245,158,11,.12)"/>
+              <text x="245" y="137" fill="#94a3b8" font-size="9.5" text-anchor="middle" font-family="system-ui">version startsWith "v2"</text>
+
+              <!-- Arrow -->
+              <line x1="320" y1="100" x2="348" y2="100" stroke="#334155" stroke-width="1.5" marker-end="url(#arr2)"/>
+              <defs><marker id="arr2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#334155"/></marker></defs>
+
+              <!-- Step 3: Match mode -->
+              <rect x="350" y="60" width="130" height="80" rx="10" fill="rgba(16,185,129,.08)" stroke="rgba(16,185,129,.25)" stroke-width="1.5"/>
+              <text x="415" y="85" fill="#34d399" font-size="10.5" font-weight="700" text-anchor="middle" font-family="system-ui">Match Mode</text>
+              <rect x="365" y="93" width="52" height="18" rx="9" fill="rgba(99,102,241,.2)" stroke="rgba(99,102,241,.4)" stroke-width="1"/>
+              <text x="391" y="105" fill="#818cf8" font-size="9" font-weight="700" text-anchor="middle" font-family="system-ui">ALL (AND)</text>
+              <rect x="423" y="93" width="50" height="18" rx="9" fill="rgba(245,158,11,.15)" stroke="rgba(245,158,11,.3)" stroke-width="1"/>
+              <text x="448" y="105" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle" font-family="system-ui">ANY (OR)</text>
+              <text x="415" y="128" fill="#64748b" font-size="9.5" text-anchor="middle" font-family="system-ui">Rule passes → assign</text>
+
+              <!-- Arrows to outcomes -->
+              <line x1="480" y1="85" x2="515" y2="60" stroke="#34d399" stroke-width="1.5" marker-end="url(#arr3)"/>
+              <line x1="480" y1="115" x2="515" y2="148" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr4)"/>
+              <defs>
+                <marker id="arr3" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#34d399"/></marker>
+                <marker id="arr4" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#ef4444"/></marker>
+              </defs>
+
+              <!-- Match outcome -->
+              <rect x="517" y="28" width="130" height="50" rx="10" fill="rgba(16,185,129,.1)" stroke="rgba(16,185,129,.3)" stroke-width="1.5"/>
+              <text x="582" y="50" fill="#34d399" font-size="10.5" font-weight="700" text-anchor="middle" font-family="system-ui">✅  Matches</text>
+              <text x="582" y="65" fill="#64748b" font-size="9.5" text-anchor="middle" font-family="system-ui">Added with source=auto</text>
+
+              <!-- No match outcome -->
+              <rect x="517" y="128" width="130" height="50" rx="10" fill="rgba(239,68,68,.08)" stroke="rgba(239,68,68,.25)" stroke-width="1.5"/>
+              <text x="582" y="150" fill="#f87171" font-size="10.5" font-weight="700" text-anchor="middle" font-family="system-ui">❌  No match</text>
+              <text x="582" y="165" fill="#64748b" font-size="9.5" text-anchor="middle" font-family="system-ui">Removed if was auto</text>
+
+              <!-- Preserved note -->
+              <rect x="655" y="70" width="100" height="40" rx="8" fill="rgba(99,102,241,.08)" stroke="#1e2540" stroke-width="1"/>
+              <text x="705" y="86" fill="#818cf8" font-size="9" font-weight="700" text-anchor="middle" font-family="system-ui">Manual members</text>
+              <text x="705" y="99" fill="#475569" font-size="9" text-anchor="middle" font-family="system-ui">always preserved</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- How sync works -->
+        <div class="agrd-section">
+          <div class="agrd-h2">When Does Sync Happen?</div>
+          <div class="agrd-sub2">Rules are evaluated automatically — no manual triggers needed.</div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div class="agrd-step">
+              <div class="agrd-step-num">1</div>
+              <div class="agrd-step-body">
+                <div class="agrd-step-title">Agent registered</div>
+                <div class="agrd-step-desc">When a new agent is created via the Agent Hub, all group rules are evaluated against its metadata immediately in the background. Matching groups receive the agent as a member with <code style="background:#1e2535;padding:2px 6px;border-radius:4px;font-size:11.5px;color:#c7d2fe">source=rule</code>.</div>
+              </div>
+            </div>
+            <div class="agrd-step">
+              <div class="agrd-step-num">2</div>
+              <div class="agrd-step-body">
+                <div class="agrd-step-title">Agent metadata updated</div>
+                <div class="agrd-step-desc">Editing an agent's metadata triggers re-evaluation across all groups. Memberships are added or removed based on whether rules still match — manual members are never touched.</div>
+              </div>
+            </div>
+            <div class="agrd-step">
+              <div class="agrd-step-num">3</div>
+              <div class="agrd-step-body">
+                <div class="agrd-step-title">Rule created or changed</div>
+                <div class="agrd-step-desc">Saving a rule (create, update, delete) immediately re-syncs that specific group — evaluating all agents against the new rule set and reconciling membership.</div>
+              </div>
+            </div>
+            <div class="agrd-step">
+              <div class="agrd-step-num">4</div>
+              <div class="agrd-step-body">
+                <div class="agrd-step-title">Manual sync</div>
+                <div class="agrd-step-desc">The "Sync" button on the Group Rules page triggers a full re-evaluation of all agents against all rules for every group at once — useful after bulk agent imports.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operators reference -->
+        <div class="agrd-section">
+          <div class="agrd-h2">Condition Operators</div>
+          <div class="agrd-sub2">Operators are evaluated against string-cast metadata field values.</div>
+          <div class="agrd-box" style="padding:0;overflow:hidden">
+            <table class="agrd-table">
+              <thead><tr><th>Operator</th><th>Passes when…</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td><code>eq</code></td><td>Field value exactly equals the condition value</td><td><code>env eq "production"</code></td></tr>
+                <tr><td><code>ne</code></td><td>Field value does NOT equal the condition value</td><td><code>env ne "sandbox"</code></td></tr>
+                <tr><td><code>contains</code></td><td>Field value string-contains the condition value</td><td><code>team contains "finance"</code></td></tr>
+                <tr><td><code>startsWith</code></td><td>Field value starts with the condition value</td><td><code>version startsWith "v2"</code></td></tr>
+                <tr><td><code>regex</code></td><td>Field value matches the condition value as a JavaScript RegExp</td><td><code>name regex "^banking-.*-agent$"</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Match modes -->
+        <div class="agrd-section">
+          <div class="agrd-h2">Match Modes</div>
+          <div class="agrd-sub2">Each rule has one match mode that controls how multiple conditions combine.</div>
+          <div class="agrd-cards">
+            <div class="agrd-card">
+              <div class="agrd-card-icon"><span class="agrd-mode all">ALL</span></div>
+              <div class="agrd-card-title" style="margin-top:10px">ALL — Logical AND</div>
+              <div class="agrd-card-body">Every condition in the rule must pass for the agent to be assigned. Use ALL when you need agents that simultaneously meet every criterion — tighter, more specific rules.</div>
+            </div>
+            <div class="agrd-card">
+              <div class="agrd-card-icon"><span class="agrd-mode any">ANY</span></div>
+              <div class="agrd-card-title" style="margin-top:10px">ANY — Logical OR</div>
+              <div class="agrd-card-body">At least one condition must pass for the agent to be assigned. Use ANY for broad catch-all rules — agents that match any of several valid profiles.</div>
+            </div>
+          </div>
+          <div class="agrd-callout">
+            <strong>Tip:</strong> Multiple rules on the same group are evaluated independently. An agent is assigned if it matches <em>any</em> active rule — you don't need to put all conditions in one rule. Split complex logic into multiple focused rules so each one is easy to read and audit.
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end page-agent-group-rules-doc -->
 
     <!-- ═══════════════════════════════════════════════════════════
          KEYS PAGE
@@ -7874,7 +8324,7 @@ function navigate(page) {
   window.location.hash = page;
 }
 
-const DOCS_PAGES = new Set(['docs', 'architecture', 'pipeline', 'mcp-architecture', 'mcp-flow', 'identities']);
+const DOCS_PAGES = new Set(['docs', 'architecture', 'pipeline', 'mcp-architecture', 'mcp-flow', 'identities', 'agent-groups-doc', 'agent-group-rules-doc']);
 
 function handleRoute() {
   const page = window.location.hash.slice(1) || 'dashboard';
