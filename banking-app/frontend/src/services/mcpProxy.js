@@ -1,4 +1,5 @@
 import { getToken, getIdToken } from './api.js';
+import { sendA2AMessage, A2AError } from './a2aClient.js';
 
 const VIRTUAL_SERVER_URL = import.meta.env.VITE_VIRTUAL_SERVER_URL
   || 'http://localhost:3003/api/proxy/da2223c8-2b2a-429c-9220-d9e75b36f330';
@@ -13,6 +14,29 @@ const WARDEN_AGENT_TOKEN = import.meta.env.VITE_WARDEN_AGENT_TOKEN || 'wag_0f74d
 const WARDEN_BASE       = import.meta.env.VITE_WARDEN_URL || 'http://localhost:3003';
 const CHAT_VS_ID        = import.meta.env.VITE_WARDEN_CHAT_VS_ID || '35250de9-689d-4284-a197-0aca282c2c4d';
 const CHAT_AGENT_NAME   = import.meta.env.VITE_WARDEN_CHAT_AGENT_NAME || 'banking-chatbot-agent';
+
+// ── A2A: ask the Credit Card Agent through Warden ─────────────────────────────
+// Values are printed by `node credit-card-agent/setup-warden.js` (which also writes .env.local).
+const A2A_VS_ID       = import.meta.env.VITE_WARDEN_A2A_VS_ID || '';
+const A2A_TARGET_ID   = import.meta.env.VITE_WARDEN_A2A_TARGET_ID || '';
+const A2A_AGENT_TOKEN = import.meta.env.VITE_WARDEN_A2A_AGENT_TOKEN || '';
+
+export const a2aConfigured = !!(A2A_VS_ID && A2A_TARGET_ID && A2A_AGENT_TOKEN);
+// Agent name used to attribute chat-scan findings while the A2A agent is selected
+export const A2A_AGENT_NAME = import.meta.env.VITE_WARDEN_A2A_AGENT_NAME || 'securebank-a2a-agent';
+export { A2AError };
+
+let a2aContextId = null; // one A2A conversation per chat session
+
+export async function askCreditCardAgent(question, skillId) {
+  const userToken = await getToken();
+  a2aContextId ??= globalThis.crypto?.randomUUID?.() ?? String(Date.now());
+  const result = await sendA2AMessage({
+    baseUrl: WARDEN_BASE, vsId: A2A_VS_ID, targetId: A2A_TARGET_ID, agentToken: A2A_AGENT_TOKEN,
+    apiKey: WARDEN_API_KEY, userToken, question, skillId, contextId: a2aContextId,
+  });
+  return result;
+}
 
 /**
  * Thrown by callTool when the virtual server returns 202 pending_approval.
@@ -42,9 +66,10 @@ export async function pollApprovalStatus(ticketId) {
 /**
  * Scan a chat message through Warden's interceptor pipeline.
  * Returns { action: 'allow'|'mask'|'block'|'warn', text, reason }.
+ * `agentName` is the agent the findings (and score changes) are attributed to.
  * Fails open (allow) if Warden is unreachable.
  */
-export async function scanMessage(text, direction = 'inbound') {
+export async function scanMessage(text, direction = 'inbound', agentName = CHAT_AGENT_NAME) {
   try {
     const idToken = await getIdToken();
     const res = await fetch(`${WARDEN_BASE}/api/interceptors/${CHAT_VS_ID}/scan`, {
@@ -53,7 +78,7 @@ export async function scanMessage(text, direction = 'inbound') {
         'Content-Type': 'application/json',
         ...(idToken ? { 'x-id-token': `Bearer ${idToken}` } : {}),
       },
-      body: JSON.stringify({ text, direction, agent_name: CHAT_AGENT_NAME }),
+      body: JSON.stringify({ text, direction, agent_name: agentName }),
     });
     if (!res.ok) return { action: 'allow', text };
     return res.json();

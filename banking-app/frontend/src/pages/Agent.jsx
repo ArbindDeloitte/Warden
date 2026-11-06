@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useOktaAuth } from '@okta/okta-react';
 import { banking } from '../services/api.js';
-import { mcpBanking, scanMessage, ApprovalPendingError, pollApprovalStatus } from '../services/mcpProxy.js';
+import { mcpBanking, scanMessage, ApprovalPendingError, pollApprovalStatus, askCreditCardAgent, a2aConfigured, A2AError, A2A_AGENT_NAME } from '../services/mcpProxy.js';
 
 // ── format helpers ────────────────────────────────────────────────────────────
 function fmtCurrency(amount, currency = 'USD') {
@@ -18,6 +18,11 @@ function fmtTime(date) {
 // ── intent detection ──────────────────────────────────────────────────────────
 function detectIntent(text) {
   const t = text.toLowerCase().trim();
+  // Credit card questions are handled by a separate agent over A2A (via Warden)
+  const cardCtx = /\b(cards?|visa|mastercard)\b/.test(t);
+  if (cardCtx && /\b(freeze|lock|block|suspend)\b/.test(t)) return 'card_freeze';
+  if (cardCtx && /\b(transaction[s]?|purchase[s]?|spend|spent|recent|history|statement)\b/.test(t)) return 'card_transactions';
+  if (cardCtx || /\b(rewards?|credit limit)\b/.test(t)) return 'card_details';
   if (/\b(new payment|send money|pay (someone|a person)|make (a )?payment|create (a )?payment|wire)\b/.test(t)) return 'new_payment';
   if (/\b(approve|confirm)\b.*\b(payment|transfer)\b|\b(payment|transfer).*\b(approve|confirm)\b/.test(t)) return 'approve_payments';
   if (/\b(account[s]?|my (bank|wallet|money)|overview|portfolio|show all)\b/.test(t)) return 'list_accounts';
@@ -234,15 +239,143 @@ const s = {
   empty: { opacity: 0.6, marginTop: 8, fontSize: 13 },
 };
 
+// ── A2A: credit card agent result panels ──────────────────────────────────────
+const NETWORK_GRADIENT = {
+  Visa: 'linear-gradient(135deg,#1e3a8a,#4f46e5)',
+  Mastercard: 'linear-gradient(135deg,#9a3412,#be123c)',
+};
+
+function A2AFlow({ trace }) {
+  const denied = trace.outcome === 'denied';
+  const failed = trace.outcome === 'error';
+  const G = '#34d399', R = '#f87171', N = '#94a3b8';
+  const Node = ({ icon, title, sub, color }) => (
+    <div style={{ flex: '1 1 0', minWidth: 96, border: `1px solid ${color}55`, background: `${color}14`, borderRadius: 10, padding: '7px 8px', textAlign: 'center' }}>
+      <div style={{ fontSize: 16 }}>{icon}</div>
+      <div style={{ fontSize: 11, fontWeight: 700 }}>{title}</div>
+      <div style={{ fontSize: 10, color, fontWeight: 600, marginTop: 1 }}>{sub}</div>
+    </div>
+  );
+  const Arrow = ({ color }) => <div style={{ color, fontSize: 14, fontWeight: 700 }}>→</div>;
+  return (
+    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+      <div style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>A2A call trace</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Node icon="🤖" title="SecureBank Assistant" sub="caller" color={G} />
+        <Arrow color={denied || failed ? R : G} />
+        <Node icon="🛡" title="Warden A2A gateway"
+          sub={denied ? '✗ blocked by Warden' : failed ? '✗ call failed' : '✓ policy · ✓ scan'}
+          color={denied || failed ? R : G} />
+        <Arrow color={denied || failed ? N : G} />
+        <Node icon="💳" title="Credit Card Agent"
+          sub={denied ? 'not reached' : failed ? 'no response' : trace.state === 'TASK_STATE_COMPLETED' ? 'completed' : (trace.state || 'done')}
+          color={denied || failed ? N : G} />
+      </div>
+      <div style={{ fontSize: 10, opacity: 0.55, marginTop: 6 }}>
+        {trace.skill && <>skill <b>{trace.skill}</b></>}
+        {trace.taskId && <> · task <code>{String(trace.taskId).slice(0, 8)}…</code></>}
+        {trace.state && !denied && !failed && <> · {trace.state.replace('TASK_STATE_', '')}</>}
+      </div>
+    </div>
+  );
+}
+
+function CreditCardTiles({ cards, redacted }) {
+  if (!cards?.length) return <p style={s.empty}>No cards found.</p>;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+      {cards.map(c => {
+        const limit = Number(c.limit) || 0, bal = Number(c.balance) || 0;
+        const util = limit ? Math.min(100, Math.round((bal / limit) * 100)) : 0;
+        const frozen = c.status === 'FROZEN';
+        return (
+          <div key={c.last4} style={{ background: NETWORK_GRADIENT[c.network] || NETWORK_GRADIENT.Visa, borderRadius: 12, padding: '12px 14px', boxShadow: '0 2px 10px rgba(0,0,0,0.25)', opacity: frozen ? 0.8 : 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>{c.product}</div>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: frozen ? 'rgba(248,113,113,0.25)' : 'rgba(52,211,153,0.25)', color: frozen ? '#fecaca' : '#a7f3d0' }}>
+                {frozen ? '❄ FROZEN' : 'ACTIVE'}
+              </span>
+            </div>
+            <div style={{ fontFamily: 'monospace', fontSize: 15, letterSpacing: 2, margin: '8px 0 10px', opacity: 0.95 }}>
+              •••• •••• •••• {c.last4} <span style={{ fontSize: 11, letterSpacing: 0, opacity: 0.7, marginLeft: 6 }}>{c.network}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 18, fontSize: 11 }}>
+              {[['Limit', limit], ['Balance', bal], ['Available', Number(c.available ?? limit - bal)]].map(([k, v]) => (
+                <div key={k}><div style={{ opacity: 0.65 }}>{k}</div><div style={{ fontWeight: 700, fontSize: 14 }}>{fmtCurrency(v)}</div></div>
+              ))}
+            </div>
+            <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.2)', margin: '9px 0 6px' }}>
+              <div style={{ width: `${util}%`, height: '100%', borderRadius: 3, background: util > 80 ? '#fca5a5' : '#a7f3d0' }} />
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.8, display: 'flex', flexWrap: 'wrap', gap: '2px 12px' }}>
+              <span>Min payment <b>{fmtCurrency(c.minPayment)}</b> due <b>{fmtDate(c.dueDate)}</b></span>
+              <span>APR {c.apr}%</span>
+              <span>⭐ {Number(c.rewardsPoints).toLocaleString('en-US')} pts</span>
+            </div>
+          </div>
+        );
+      })}
+      {redacted && (
+        <div style={{ fontSize: 11, color: '#a7f3d0' }}>🛡 <b>Warden (outbound):</b> the agent's response included full card numbers — they were redacted before reaching the assistant.</div>
+      )}
+    </div>
+  );
+}
+
+function CardTxnTable({ transactions }) {
+  if (!transactions?.length) return <p style={s.empty}>No card transactions found.</p>;
+  return (
+    <div style={{ marginTop: 10, overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <thead><tr>{['Date', 'Merchant', 'Category', 'Amount'].map(h => (
+          <th key={h} style={{ ...s.th, textAlign: h === 'Amount' ? 'right' : 'left' }}>{h}</th>
+        ))}</tr></thead>
+        <tbody>
+          {transactions.map((t, i) => (
+            <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmtDate(t.date)}</td>
+              <td style={s.td}>{t.merchant} <span style={{ opacity: 0.5 }}>••{t.card}</span></td>
+              <td style={{ ...s.td, opacity: 0.75 }}>{t.category}</td>
+              <td style={{ ...s.td, textAlign: 'right', fontWeight: 600, color: '#fca5a5', whiteSpace: 'nowrap' }}>-{fmtCurrency(t.amount)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ── quick action chips ────────────────────────────────────────────────────────
-const QUICK_ACTIONS = [
-  { label: 'My Accounts', icon: '💳', text: 'Show my accounts' },
-  { label: 'Balance', icon: '💰', text: 'Check my balance' },
-  { label: 'Transactions', icon: '📋', text: 'Recent transactions' },
-  { label: 'Payments', icon: '💸', text: 'List my payments' },
-  { label: 'Standing Orders', icon: '🔄', text: 'Standing orders' },
-  { label: 'New Payment', icon: '➕', text: 'New payment' },
-];
+// The assistant is two agents behind one chat. Every message is first screened by the common chat
+// virtual server (scanMessage); the selected agent then makes its own calls through Warden.
+const AGENTS = {
+  mcp: {
+    name: 'Banking Agent', protocol: 'MCP', color: '#1d4ed8',
+    blurb: 'Calls banking tools on the Banking MCP server',
+    flow: ['Chat scan', 'Banking Agent', 'Warden · MCP gateway', 'Banking MCP server'],
+    chips: [
+      { label: 'My Accounts', icon: '💳', text: 'Show my accounts' },
+      { label: 'Balance', icon: '💰', text: 'Check my balance' },
+      { label: 'Transactions', icon: '📋', text: 'Recent transactions' },
+      { label: 'Payments', icon: '💸', text: 'List my payments' },
+      { label: 'Standing Orders', icon: '🔄', text: 'Standing orders' },
+      { label: 'New Payment', icon: '➕', text: 'New payment' },
+    ],
+  },
+  a2a: {
+    name: 'Credit Card Agent', protocol: 'A2A', color: '#0f766e',
+    blurb: 'Asks a separate Credit Card Agent over A2A',
+    flow: ['Chat scan', 'SecureBank Agent', 'Warden · A2A gateway', 'Credit Card Agent'],
+    chips: [
+      { label: 'Credit Cards', icon: '🏦', text: 'Show my credit card details' },
+      { label: 'Card Spending', icon: '🧾', text: 'Show my recent credit card transactions' },
+      // Avoid brand/number words here: the chat's Presidio rule masks "Visa" (ORGANIZATION) and "4242" (DATE_TIME).
+      { label: 'Freeze Card', icon: '❄️', text: 'Freeze my credit card' },
+    ],
+  },
+};
+const A2A_INTENTS = new Set(['card_details', 'card_transactions', 'card_freeze']);
+const SHARED_INTENTS = new Set(['greet', 'help', 'unknown']);
 
 const HELP_TEXT = `Here's what I can help you with:
 
@@ -251,21 +384,37 @@ const HELP_TEXT = `Here's what I can help you with:
 **💸 Payments** — List, create, and approve payments
 **🔄 Standing Orders** — View recurring payment schedules
 **🌐 Transfers** — View external transfers
-
 Just type naturally — for example:
 • "Show my accounts"
 • "Check balance on my savings"
 • "Recent transactions"
-• "New payment"`;
+• "New payment"
+
+For credit cards, switch to the **Credit Card Agent** using the selector at the top.`;
+
+const HELP_TEXT_A2A = `The **Credit Card Agent** is a separate agent. I ask it over A2A, through Warden:
+
+**🏦 Card details** — limits, balances and rewards
+**🧾 Card spending** — recent card transactions
+**❄️ Freeze a card** — blocked by Warden policy in this demo
+
+Try:
+• "Show my credit card details"
+• "Show my recent credit card transactions"
+• "Freeze my credit card"
+
+For accounts and payments, switch to the **Banking Agent** using the selector at the top.`;
 
 // ── initial message ───────────────────────────────────────────────────────────
 function makeMsg(role, type, content, data = null) {
   return { id: `${Date.now()}-${Math.random()}`, role, type, content, data, ts: new Date() };
 }
 
-const WELCOME_MSG = makeMsg('agent', 'text',
-  'Hi! I\'m your **SecureBank AI assistant**.\n\nI can help you check accounts, view transactions, manage payments, and more.\n\nWhat would you like to do today?'
-);
+function welcomeMsg(agentKey) {
+  return agentKey === 'a2a'
+    ? makeMsg('agent', 'text', 'You are talking to the **Credit Card Agent** over **A2A**.\n\nI can show your card details and card spending. Every message is screened by Warden first, then passed to the card agent through the Warden A2A gateway.\n\nWhat would you like to know?')
+    : makeMsg('agent', 'text', 'Hi! I\'m your **SecureBank AI assistant**.\n\nI can help you check accounts, view transactions, manage payments, and more.\n\nWhat would you like to do today?');
+}
 
 // ── main component ────────────────────────────────────────────────────────────
 export default function Agent() {
@@ -273,7 +422,11 @@ export default function Agent() {
   const user = authState?.idToken?.claims || {};
   const userName = user.name || user.given_name || 'there';
 
-  const [messages, setMessages] = useState([WELCOME_MSG]);
+  const [agentKey, setAgentKey] = useState('mcp');
+  const agent = AGENTS[agentKey];
+  // Chat-scan findings are attributed to the selected agent (undefined = the chat's default agent)
+  const scanAgentName = agentKey === 'a2a' ? A2A_AGENT_NAME : undefined;
+  const [messages, setMessages] = useState(() => [welcomeMsg('mcp')]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
@@ -369,6 +522,9 @@ export default function Agent() {
       data.payments.forEach(p => push(p.payeeName, p.to, p.accountNumber, p.sortCode, p.reference, p.description));
     } else if (type === 'standing_orders' && data.orders) {
       data.orders.forEach(o => push(o.payeeName, o.beneficiary, o.accountNumber, o.reference));
+    } else if (type === 'a2a_card') {
+      // Same as MCP replies: scan the answer's data, not the call trace
+      try { parts.push(JSON.stringify({ cards: data.cards, transactions: data.transactions })); } catch {}
     } else {
       try { parts.push(JSON.stringify(data)); } catch {}
     }
@@ -385,7 +541,7 @@ export default function Agent() {
   // if the scan is clean the card still renders normally.
   async function addAgentMsg(type, content, data = null) {
     const textToScan = type === 'text' ? content : flattenForScan(type, content, data);
-    const scan = await scanMessage(textToScan, 'outbound');
+    const scan = await scanMessage(textToScan, 'outbound', scanAgentName);
 
     if (scan.action === 'block') {
       addMsg('agent', 'text',
@@ -480,7 +636,7 @@ export default function Agent() {
 
     try {
       // ── Warden interceptor scan ──────────────────────────────
-      const scan = await scanMessage(trimmed, 'inbound');
+      const scan = await scanMessage(trimmed, 'inbound', scanAgentName);
 
       if (scan.action === 'block') {
         const scannerLabel = {
@@ -674,17 +830,76 @@ export default function Agent() {
     }
   }
 
+  // ── A2A: delegate a credit card question to the Credit Card Agent via Warden ──
+  async function askCardAgent(question, skill) {
+    if (!a2aConfigured) {
+      addMsg('agent', 'text',
+        '🏦 **Credit Card Agent is not connected yet.**\n\nRun `node credit-card-agent/setup-warden.js` (with the card agent and Warden running), then restart the frontend dev server so it picks up `.env.local`.');
+      return;
+    }
+    addMsg('agent', 'text', skill === 'card-freeze'
+      ? 'Asking the **Credit Card Agent** to freeze that card — over A2A, through Warden…'
+      : 'Asking the **Credit Card Agent** — over A2A, through Warden…');
+    try {
+      const r = await askCreditCardAgent(question, skill);
+      const blob = JSON.stringify(r.data);
+      const cards = r.data.find(d => d?.cards)?.cards;
+      const transactions = r.data.find(d => d?.transactions)?.transactions;
+      const trace = { outcome: 'ok', skill, taskId: r.taskId, state: r.state };
+      // Replies go through the same outbound chat scan as MCP replies (addAgentMsg)
+      if (skill === 'card-details') {
+        await addAgentMsg('a2a_card', 'Here are your credit cards, answered by the **Credit Card Agent**:', { cards, redacted: blob.includes('REDACTED'), trace });
+      } else if (skill === 'card-transactions') {
+        await addAgentMsg('a2a_card', 'Recent credit card transactions, from the **Credit Card Agent**:', { transactions, trace });
+      } else {
+        await addAgentMsg('a2a_card', `✅ ${r.text}`, { trace });
+      }
+    } catch (err) {
+      if (err instanceof A2AError) {
+        const denied = err.status === 403 || err.status === 401;
+        addMsg('agent', 'a2a_card',
+          denied ? `🚫 **Warden blocked this A2A call**\n\n• **Reason:** ${err.message}` : `⚠️ **The A2A call failed**\n\n• ${err.message}`,
+          { trace: { outcome: denied ? 'denied' : 'error', skill } });
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // ── Agent selector: each agent only handles its own domain ──
+  function switchAgent(nextKey) {
+    if (nextKey === agentKey || loading) return;
+    const next = AGENTS[nextKey];
+    setAgentKey(nextKey);
+    setPendingAction(null);
+    addMsg('agent', 'text',
+      `🔀 **Switched to the ${next.name}** · ${next.protocol}\n\n${next.blurb}. Your messages are still screened by Warden's chat scan first, whichever agent you choose.`);
+  }
+
   // ── Intent dispatcher ──
   async function handleIntent(text) {
     const intent = detectIntent(text);
 
+    // Route by the selected agent: a message for the other agent gets a pointer, not a call.
+    if (!SHARED_INTENTS.has(intent)) {
+      const isCard = A2A_INTENTS.has(intent);
+      if (isCard && agentKey !== 'a2a') {
+        await addAgentMsg('text', `That's a question for the **Credit Card Agent** (A2A). Switch agents with the selector at the top, then ask again.`);
+        return;
+      }
+      if (!isCard && agentKey === 'a2a') {
+        await addAgentMsg('text', `The **Credit Card Agent** only handles credit-card questions. For accounts, payments and transfers, switch to the **Banking Agent** (MCP) with the selector at the top.`);
+        return;
+      }
+    }
+
     switch (intent) {
       case 'greet':
-        await addAgentMsg('text', `Hello! Great to see you, **${userName}**! How can I help you with your banking today?`);
+        await addAgentMsg('text', `Hello! Great to see you, **${userName}**! ${agentKey === 'a2a' ? 'What would you like to know about your credit cards?' : 'How can I help you with your banking today?'}`);
         return;
 
       case 'help':
-        await addAgentMsg('text', HELP_TEXT);
+        await addAgentMsg('text', agentKey === 'a2a' ? HELP_TEXT_A2A : HELP_TEXT);
         return;
 
       case 'list_accounts': {
@@ -787,8 +1002,20 @@ export default function Agent() {
         return;
       }
 
+      case 'card_details':
+        await askCardAgent(text, 'card-details');
+        return;
+      case 'card_transactions':
+        await askCardAgent(text, 'card-transactions');
+        return;
+      case 'card_freeze':
+        await askCardAgent(text, 'card-freeze');
+        return;
+
       default:
-        await addAgentMsg('text', `I'm not sure how to help with that. Try asking about your **accounts**, **transactions**, **payments**, or **standing orders** — or type **help** for a full list.`);
+        await addAgentMsg('text', agentKey === 'a2a'
+          ? `I'm not sure how to help with that. Try asking about your **credit card details**, **card spending**, or type **help** for a full list.`
+          : `I'm not sure how to help with that. Try asking about your **accounts**, **transactions**, **payments**, or **standing orders** — or type **help** for a full list.`);
     }
   }
 
@@ -857,6 +1084,13 @@ export default function Agent() {
           {msg.type === 'standing_orders' && msg.data?.orders && (
             <StandingOrderList orders={msg.data.orders} />
           )}
+          {msg.type === 'a2a_card' && msg.data && (
+            <>
+              {msg.data.cards && <CreditCardTiles cards={msg.data.cards} redacted={msg.data.redacted} />}
+              {msg.data.transactions && <CardTxnTable transactions={msg.data.transactions} />}
+              {msg.data.trace && <A2AFlow trace={msg.data.trace} />}
+            </>
+          )}
 
           {/* Timestamp */}
           <div style={{ fontSize: 10, opacity: 0.45, marginTop: 6, textAlign: isAgent ? 'left' : 'right' }}>
@@ -896,16 +1130,54 @@ export default function Agent() {
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>SecureBank Assistant</div>
             <div style={{ fontSize: 11, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
-              Online · Powered by MCP Virtual Server
+              Online · Powered by Warden · {agent.protocol}
             </div>
           </div>
         </div>
-        <button
-          onClick={() => { setMessages([WELCOME_MSG]); setPendingAction(null); setCachedAccounts(null); setApprovalPolling(null); }}
-          style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 7, padding: '6px 14px', fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit', fontWeight: 500 }}
-        >
-          New Chat
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
+            Agent
+            <select
+              value={agentKey}
+              onChange={e => switchAgent(e.target.value)}
+              disabled={loading}
+              aria-label="Select agent"
+              style={{
+                border: `1.5px solid ${agent.color}`, borderRadius: 8, padding: '6px 10px',
+                fontSize: 13, fontWeight: 600, fontFamily: 'inherit', color: agent.color,
+                background: 'var(--white)', cursor: loading ? 'not-allowed' : 'pointer', outline: 'none',
+              }}
+            >
+              {Object.entries(AGENTS).map(([key, a]) => (
+                <option key={key} value={key}>{a.name} · {a.protocol}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            onClick={() => { setMessages([welcomeMsg(agentKey)]); setPendingAction(null); setCachedAccounts(null); setApprovalPolling(null); }}
+            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 7, padding: '6px 14px', fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit', fontWeight: 500 }}
+          >
+            New Chat
+          </button>
+        </div>
+      </div>
+
+      {/* ── Call flow for the selected agent ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', padding: '8px 24px', background: 'var(--bg)', borderBottom: '1px solid var(--border)', flexShrink: 0, fontSize: 11.5 }}>
+        <span style={{ color: 'var(--text-secondary)', fontWeight: 600, marginRight: 2 }}>Call flow</span>
+        <span style={{ color: 'var(--text-secondary)' }}>You</span>
+        {agent.flow.map((step, i) => (
+          <React.Fragment key={step}>
+            <span style={{ color: 'var(--text-secondary)' }}>→</span>
+            <span style={{
+              padding: '2px 9px', borderRadius: 12, fontWeight: 600, whiteSpace: 'nowrap',
+              background: i === 0 ? 'rgba(124,58,237,0.10)' : `${agent.color}1a`,
+              color: i === 0 ? '#7c3aed' : agent.color,
+              border: `1px solid ${i === 0 ? 'rgba(124,58,237,0.35)' : `${agent.color}55`}`,
+            }}>{step}</span>
+          </React.Fragment>
+        ))}
+        <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>· the chat scan is shared by both agents</span>
       </div>
 
       {/* ── Messages area ── */}
@@ -934,7 +1206,7 @@ export default function Agent() {
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           {/* Quick action chips */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            {QUICK_ACTIONS.map((qa) => (
+            {agent.chips.map((qa) => (
               <button
                 key={qa.label}
                 onClick={() => send(qa.text)}
@@ -964,7 +1236,7 @@ export default function Agent() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={loading}
-              placeholder={pendingAction ? 'Type your reply…' : 'Ask me anything about your accounts…'}
+              placeholder={pendingAction ? 'Type your reply…' : agentKey === 'a2a' ? 'Ask about your credit cards…' : 'Ask me anything about your accounts…'}
               rows={1}
               style={{
                 flex: 1, resize: 'none', border: '1.5px solid var(--border)',

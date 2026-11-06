@@ -464,4 +464,79 @@ db.exec(`
 try { db.exec(`ALTER TABLE agent_group_members ADD COLUMN source TEXT DEFAULT 'manual'`); } catch {}
 try { db.exec(`ALTER TABLE agent_group_members ADD COLUMN rule_id TEXT`);                 } catch {}
 
+// ── A2A (Agent2Agent) gateway ────────────────────────────────────────────────
+// protocol: 'mcp' | 'a2a' | 'both'
+try { db.exec(`ALTER TABLE virtual_servers ADD COLUMN protocol TEXT DEFAULT 'mcp'`); } catch {}
+
+// Outbound credential Warden presents to a remote agent: none | bearer | header | basic
+// (secret is AES-GCM encrypted by services/secrets.js; header name is only used for type 'header')
+function _addCol(sql) { try { db.exec(sql); } catch {} }
+
+db.exec(`
+  -- Remote A2A agents that Warden proxies TO (gateway-only: Warden never hosts agents)
+  CREATE TABLE IF NOT EXISTS a2a_agents (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL UNIQUE,
+    description     TEXT DEFAULT '',
+    card_url        TEXT,
+    card_json       TEXT NOT NULL,
+    endpoint_url    TEXT NOT NULL,
+    card_fetched_at TEXT,
+    card_error      TEXT,
+    is_active       INTEGER DEFAULT 1,
+    created_at      TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS virtual_server_a2a_agents (
+    id           TEXT PRIMARY KEY,
+    vs_id        TEXT NOT NULL,
+    a2a_agent_id TEXT NOT NULL,
+    created_at   TEXT DEFAULT (datetime('now')),
+    UNIQUE(vs_id, a2a_agent_id),
+    FOREIGN KEY (vs_id)        REFERENCES virtual_servers(id) ON DELETE CASCADE,
+    FOREIGN KEY (a2a_agent_id) REFERENCES a2a_agents(id)      ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_vsa2a_vs ON virtual_server_a2a_agents(vs_id);
+
+  -- Tasks are bound to the calling Warden agent so other callers cannot read/cancel them
+  CREATE TABLE IF NOT EXISTS a2a_tasks (
+    id               TEXT PRIMARY KEY,
+    context_id       TEXT,
+    vs_id            TEXT NOT NULL,
+    caller_agent_id  TEXT NOT NULL,
+    target_agent_id  TEXT NOT NULL,
+    remote_task_id   TEXT,
+    state            TEXT NOT NULL DEFAULT 'TASK_STATE_SUBMITTED',
+    task_json        TEXT,
+    created_at       TEXT DEFAULT (datetime('now')),
+    updated_at       TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_a2at_caller ON a2a_tasks(caller_agent_id);
+  CREATE INDEX IF NOT EXISTS idx_a2at_vs     ON a2a_tasks(vs_id);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_a2at_remote ON a2a_tasks(target_agent_id, remote_task_id);
+
+  -- A2A access rules (deny-by-default). Subjects/targets are agent or group; '*' = any.
+  CREATE TABLE IF NOT EXISTS a2a_policies (
+    id                TEXT PRIMARY KEY,
+    virtual_server_id TEXT NOT NULL,
+    name              TEXT NOT NULL,
+    effect            TEXT NOT NULL DEFAULT 'permit',
+    priority          INTEGER DEFAULT 0,
+    caller_type       TEXT DEFAULT 'any',
+    caller_value      TEXT DEFAULT '*',
+    target_type       TEXT DEFAULT 'any',
+    target_value      TEXT DEFAULT '*',
+    skills            TEXT DEFAULT '["*"]',
+    require_user      INTEGER DEFAULT 0,
+    user_fail_mode    TEXT DEFAULT 'closed',
+    is_active         INTEGER DEFAULT 1,
+    created_at        TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (virtual_server_id) REFERENCES virtual_servers(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_a2ap_vs ON a2a_policies(virtual_server_id);
+`);
+_addCol(`ALTER TABLE a2a_agents ADD COLUMN outbound_auth_type TEXT DEFAULT 'none'`);
+_addCol(`ALTER TABLE a2a_agents ADD COLUMN outbound_auth_header TEXT`);
+_addCol(`ALTER TABLE a2a_agents ADD COLUMN outbound_secret_enc TEXT`);
+
 module.exports = db;

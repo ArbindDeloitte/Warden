@@ -297,39 +297,64 @@
 
     /* ── Policy builder ────────────────────────────────────── */
     .condition-row {
-      display: flex; align-items: flex-start; gap: 10px;
+      display: block;
       background: var(--surface2); border: 1px solid var(--border);
       border-left: 3px solid var(--accent);
-      border-radius: 10px; padding: 10px 12px;
+      border-radius: 10px; padding: 12px 14px;
       margin-bottom: 8px; transition: border-color .15s;
     }
     .condition-row:hover { border-color: var(--border-strong); }
-    .cond-left { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-    .cond-select-row { display: flex; align-items: center; gap: 8px; }
+    /* Line 1: category, operator, value, delete. Wraps (value drops to its own line) in a narrow modal. */
+    .cond-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    /* Line 2: token badge + what the condition checks */
+    .cond-hint-line { display: flex; align-items: flex-start; gap: 8px; margin-top: 9px; }
+    .cond-hint-line .tok-badge { margin-top: 1px; }
     .cond-select {
-      flex: 1; background: var(--surface3); border: 1px solid var(--border);
-      border-radius: 7px; padding: 6px 10px; color: var(--text);
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      background: var(--surface3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238b93a7' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 11px center;
+      border: 1px solid var(--border);
+      border-radius: 7px; padding: 7px 28px 7px 11px; color: var(--text);
       font-size: 12.5px; font-family: var(--font); outline: none; min-width: 0;
-      transition: border-color .15s;
+      cursor: pointer; color-scheme: light dark;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .cond-select:focus { border-color: var(--accent); }
-    .cond-cat-select { flex: 0 0 148px; }
-    .cond-op-select  { flex: 0 0 134px; }
+    .cond-select:hover { border-color: var(--border-strong); }
+    .cond-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .vs-proto-opt { display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-family:var(--font);font-size:13px;text-align:left;transition:all .15s; }
+    .vs-proto-opt span { font-size:11px;color:var(--text-muted); }
+    .vs-proto-opt:hover { border-color:var(--border-strong); }
+    .vs-proto-opt.active { border-color:var(--accent);background:var(--accent-dim); }
+    .a2a-skill { display:inline-block;font-size:11px;padding:2px 8px;border-radius:100px;background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.25);margin:0 4px 4px 0; }
+    .a2a-vs-card { padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;min-width:0; }
+    .a2a-vs-head { display:flex;align-items:center;justify-content:space-between;gap:10px; }
+    .a2a-vs-name { display:flex;align-items:center;gap:8px;min-width:0;font-size:13.5px;font-weight:700; }
+    .a2a-vs-name span.n { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .a2a-chip { display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:rgba(99,102,241,.14);color:#818cf8;border:1px solid rgba(99,102,241,.28);white-space:nowrap; }
+    .a2a-chip.warn { background:rgba(245,158,11,.12);color:#fbbf24;border-color:rgba(245,158,11,.3); }
+    .a2a-chip.off  { background:rgba(107,114,128,.14);color:#9ca3af;border-color:rgba(107,114,128,.3); }
+    .a2a-vs-skills { display:flex;flex-wrap:wrap;gap:5px;margin-top:8px; }
+    .a2a-copy { display:flex;align-items:center;gap:8px;min-width:0;margin-top:7px; }
+    .a2a-copy > label { flex:0 0 74px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted); }
+    .a2a-copy code { flex:1 1 0;min-width:0;background:var(--surface3);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr; }
+    .a2a-copy .btn { flex:0 0 auto; }
+    .cond-cat-select { flex: 0 0 auto; width: 176px; }
+    .cond-op-select  { flex: 0 0 auto; width: 160px; }
     .tok-badge {
       font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
       letter-spacing: .04em; white-space: nowrap; flex-shrink: 0;
     }
     .tok-badge.atb { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
     .tok-badge.ata { background: rgba(168,85,247,.12); color: #c084fc; border: 1px solid rgba(168,85,247,.25); }
+    .tok-badge.wd  { background: rgba(20,184,166,.12); color: #2dd4bf; border: 1px solid rgba(20,184,166,.3); }
     .tok-badge.not { background: rgba(239,68,68,.1);   color: #f87171; border: 1px solid rgba(239,68,68,.25); }
-    .cond-hint-text { font-size: 11px; color: var(--text-3); padding-left: 2px; line-height: 1.4; }
+    .cond-hint-text { font-size: 11.5px; color: var(--text-3); line-height: 1.45; }
     .cond-value {
-      width: 200px; flex-shrink: 0; background: var(--surface3); border: 1px solid var(--border);
-      border-radius: 7px; padding: 6px 10px; color: var(--text);
+      flex: 1 1 150px; min-width: 0; background: var(--surface3); border: 1px solid var(--border);
+      border-radius: 7px; padding: 7px 11px; color: var(--text);
       font-size: 12.5px; font-family: var(--font); outline: none;
-      transition: border-color .15s;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .cond-value:focus { border-color: var(--accent); }
+    .cond-value:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
     .action-row-policy { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
     .action-row-policy { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
 
@@ -438,6 +463,19 @@
       <span class="icon">🔑</span> Keys
     </button>
 
+    <div class="nav-section-label">A2A</div>
+
+    <button class="nav-item" data-page="a2a-agents">
+      <span class="icon">🤝</span> A2A Agents
+    </button>
+
+    <button class="nav-item" data-page="a2a-policies">
+      <span class="icon">🛂</span> A2A Policies
+    </button>
+    <button class="nav-item" data-page="a2a-simulate">
+      <span class="icon">🧪</span> A2A Policy Simulate
+    </button>
+
     <div class="nav-section-label">Policies</div>
 
     <button class="nav-item" data-page="policies">
@@ -543,6 +581,134 @@
         <button class="btn btn-primary" onclick="openVsModal()">＋ New Virtual Server</button>
       </div>
       <div id="vs-list"></div>
+    </div>
+
+    <!-- A2A AGENTS -->
+    <div class="page" id="page-a2a-agents">
+      <style>
+        .a2a-actions { display:grid;grid-template-columns:1fr 1fr;gap:6px;width:212px;margin-left:auto; }
+        .a2a-actions .btn { display:inline-flex;align-items:center;justify-content:center;gap:5px;width:100%;white-space:nowrap;padding-left:8px;padding-right:8px; }
+      </style>
+      <h1>A2A Agents</h1>
+      <p class="subtitle">Remote agents reachable through Warden using the Agent2Agent (A2A) protocol. Register an agent by its Agent Card URL, then assign it to an A2A or Both virtual server.</p>
+      <div class="action-row">
+        <div></div>
+        <button class="btn btn-primary" onclick="a2aOpenRegister()">＋ Register Agent</button>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table id="a2a-table">
+          <thead><tr><th>Agent</th><th>Skills</th><th>Status</th><th>Auth</th><th>Card fetched</th><th>Servers</th><th style="text-align:right">Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="a2a-empty" class="empty-state" style="display:none"><div class="icon">🤝</div><div class="msg">No A2A agents registered yet.<br>Click <b>Register Agent</b> and paste an Agent Card URL.</div></div>
+      </div>
+    </div>
+
+    <!-- A2A POLICIES -->
+    <div class="page" id="page-a2a-policies">
+      <style>
+        .a2ap-chip { display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 9px;border-radius:100px;background:var(--surface2);border:1px solid var(--border-strong);color:var(--text);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+        .a2ap-chip.any { color:var(--text-muted);font-style:italic; }
+        .a2ap-arrow { color:var(--text-muted);margin:0 6px;font-size:13px; }
+        .form-group select.a2ap-select { width:100%; }
+        select.a2ap-select { appearance:none;-webkit-appearance:none;-moz-appearance:none;min-width:240px;padding:8px 36px 8px 12px;background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238b93a7' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center;border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text);font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;outline:none;color-scheme:light dark;transition:border-color .15s,box-shadow .15s; }
+        select.a2ap-select:hover { border-color:var(--accent); }
+        select.a2ap-select:focus { border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim); }
+        select.a2ap-select:disabled { opacity:.55;cursor:not-allowed; }
+        .a2ap-vs-label { font-size:11.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px; }
+        .a2ap-hint { font-size:12.5px;color:var(--text-2);line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-left:3px solid #06b6d4;border-radius:8px;padding:10px 14px;margin-bottom:16px; }
+        .a2ap-test { display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end; }
+        .a2ap-test label { font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px; }
+        .a2ap-result { margin-top:12px;font-size:13px;padding:9px 12px;border-radius:8px;display:none; }
+        .a2ap-result.allow { display:block;background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.25); }
+        .a2ap-result.deny  { display:block;background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.25); }
+        .a2ap-seg { display:flex;gap:6px; }
+        .a2ap-seg button { flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface2);color:var(--text-2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font); }
+        .a2ap-seg button.sel-permit { background:var(--green-dim);color:var(--green);border-color:rgba(34,197,94,.4); }
+        .a2ap-seg button.sel-forbid { background:var(--red-dim);color:var(--red);border-color:rgba(239,68,68,.4); }
+        @media (max-width: 900px) { .a2ap-test { grid-template-columns:1fr; } }
+      </style>
+      <h1>A2A Policies</h1>
+      <p class="subtitle">Control which agents may call which A2A agents through a virtual server. Rules are evaluated by priority (highest first) and the first match decides.</p>
+      <div class="a2ap-hint">
+        <b>Deny by default.</b> If no rule matches, the call is rejected. <b>Forbid</b> rules also match calls that omit a skill, so a caller can't dodge a skill-scoped forbid by leaving the skill out; a skill-scoped <b>permit</b> only matches when the caller names that skill.
+      </div>
+      <div class="action-row">
+        <div style="display:flex;align-items:center;gap:8px">
+          <label class="a2ap-vs-label" for="a2ap-vs-filter">Virtual server</label>
+          <select id="a2ap-vs-filter" class="a2ap-select" onchange="loadA2aPolicies()"></select>
+        </div>
+        <button class="btn btn-primary" onclick="a2apOpenModal()">＋ New Policy</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
+        <table id="a2ap-table">
+          <thead><tr><th style="width:60px">Priority</th><th>Rule</th><th>Caller → Target</th><th>Skills</th><th>User token</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="a2ap-empty" class="empty-state" style="display:none"><div class="icon">🛂</div><div class="msg">No A2A policies for this virtual server.<br><b>With no rules, every A2A call is denied.</b> Click <b>New Policy</b> to permit a caller to reach a target agent.</div></div>
+      </div>
+      <div class="a2ap-hint" style="margin-bottom:0">
+        🧪 Want to check a rule without making a call? Use <a href="#a2a-simulate" style="color:var(--accent);font-weight:600">A2A Policy Simulate</a> to see which policies fire for a caller, target and skill.
+      </div>
+    </div>
+
+    <!-- A2A POLICY SIMULATE -->
+    <div class="page" id="page-a2a-simulate">
+      <style>
+        .a2as-ctx { display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:16px;font-size:12.5px; }
+        .a2as-step { display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:8px;font-size:12.5px; }
+        .a2as-step .a2as-ic { width:20px;text-align:center;flex-shrink:0; }
+        .a2as-trace { padding:10px 12px;border-radius:8px;margin-bottom:8px;border:1px solid var(--border);background:var(--bg); }
+        .a2as-trace.decides-permit { border-color:rgba(34,197,94,.45);background:var(--green-dim); }
+        .a2as-trace.decides-forbid { border-color:rgba(239,68,68,.45);background:var(--red-dim); }
+        .a2as-trace.unreached { opacity:.5; }
+        .a2as-checks { font-size:12px;color:var(--text-muted);line-height:1.7; }
+        .a2as-note { font-size:11.5px;color:var(--text-muted);margin-top:4px;font-style:italic; }
+      </style>
+      <h1>A2A Policy Simulator</h1>
+      <p class="subtitle">Test an A2A access decision without making a real call. Pick a caller, a target agent and a skill to see which policies fire.</p>
+      <div class="form-row">
+        <div class="card">
+          <h2>Request Context</h2>
+          <div class="form-group">
+            <label>Virtual Server</label>
+            <select id="a2as-vs" class="a2ap-select" onchange="a2asLoadTargets()"><option value="">Loading…</option></select>
+          </div>
+          <div class="form-group">
+            <label>Caller Agent</label>
+            <select id="a2as-caller" class="a2ap-select"><option value="">Loading…</option></select>
+          </div>
+          <div class="form-group">
+            <label>Target A2A Agent</label>
+            <select id="a2as-target" class="a2ap-select" onchange="a2asFillSkills()"><option value="">Select a virtual server first</option></select>
+          </div>
+          <div class="form-group">
+            <label>Skill</label>
+            <select id="a2as-skill" class="a2ap-select" onchange="a2asSkillChange()"><option value="">— none (omit skill) —</option></select>
+            <input id="a2as-skill-custom" placeholder="skill id, e.g. card-freeze" style="display:none;margin-top:8px" />
+          </div>
+          <div class="form-group">
+            <label>User Token</label>
+            <select id="a2as-user" class="a2ap-select">
+              <option value="absent">No user token sent</option>
+              <option value="verified">Verified user token</option>
+              <option value="invalid">Token fails verification</option>
+              <option value="idp_down">Identity provider unreachable</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="runA2aSimulation()" style="width:100%">▶ Run Simulation</button>
+        </div>
+        <div class="card" id="a2as-result" style="display:none">
+          <h2>Result</h2>
+          <div id="a2as-decision" style="font-size:22px;font-weight:700;margin-bottom:8px"></div>
+          <div id="a2as-reason" style="color:var(--text-muted);font-size:13.5px;margin-bottom:14px"></div>
+          <div id="a2as-ctx" class="a2as-ctx"></div>
+          <h2>Policy Trace</h2>
+          <div id="a2as-trace"></div>
+          <h2 style="margin-top:18px">User Token Check</h2>
+          <div id="a2as-user-check"></div>
+        </div>
+      </div>
     </div>
 
     <!-- POLICIES -->
@@ -780,6 +946,7 @@
           <select id="audit-type-filter" onchange="loadAudit(true)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none">
             <option value="">All types</option>
             <option value="proxy_call">Proxy Calls</option>
+            <option value="a2a_call">A2A Calls</option>
             <option value="interceptor">Interceptor Scans</option>
           </select>
           <select id="audit-level-filter" onchange="loadAudit(true)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none">
@@ -942,6 +1109,39 @@
           <div style="font-size:15px;font-weight:700;margin-bottom:8px">Agent Group Rules</div>
           <div style="font-size:13px;color:var(--text-2);line-height:1.6">Okta-style dynamic membership rules — how metadata conditions automatically assign agents to the right groups.</div>
           <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#6366f1;font-weight:600">Read →</div>
+        </div>
+
+      </div>
+
+      <!-- A2A section -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin-bottom:14px;margin-top:36px">A2A (Agent-to-Agent)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px">
+
+        <div onclick="navigate('a2a-overview')" style="cursor:pointer;border:1px solid var(--border-strong);border-radius:14px;padding:28px 24px;background:var(--surface);transition:all .18s;position:relative;overflow:hidden"
+          onmouseover="this.style.borderColor='#06b6d4';this.style.background='var(--surface2)'"
+          onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.28);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px">🤝</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px">A2A Overview &amp; Architecture</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.6;padding-bottom:18px">How the gateway works: request lifecycle, trust model, delegation tokens, and what is and isn't supported.</div>
+          <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#06b6d4;font-weight:600">Read →</div>
+        </div>
+
+        <div onclick="navigate('a2a-demo')" style="cursor:pointer;border:1px solid var(--border-strong);border-radius:14px;padding:28px 24px;background:var(--surface);transition:all .18s;position:relative;overflow:hidden"
+          onmouseover="this.style.borderColor='#06b6d4';this.style.background='var(--surface2)'"
+          onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.28);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px">🧪</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px">Setup &amp; Demo Walkthrough</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.6;padding-bottom:18px">The exact steps to run the SecureBank assistant calling the Credit Card Agent through Warden, with expected results.</div>
+          <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#06b6d4;font-weight:600">Explore →</div>
+        </div>
+
+        <div onclick="navigate('a2a-reference')" style="cursor:pointer;border:1px solid var(--border-strong);border-radius:14px;padding:28px 24px;background:var(--surface);transition:all .18s;position:relative;overflow:hidden"
+          onmouseover="this.style.borderColor='#06b6d4';this.style.background='var(--surface2)'"
+          onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.28);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px">📖</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px">A2A Reference</div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.6;padding-bottom:18px">Endpoints, methods, headers, error codes, policy semantics, credentials, data model, and configuration.</div>
+          <div style="position:absolute;bottom:20px;right:20px;font-size:12px;color:#06b6d4;font-weight:600">Read →</div>
         </div>
 
       </div>
@@ -4827,6 +5027,681 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     </div><!-- end page-agent-group-rules-doc -->
 
     <!-- ═══════════════════════════════════════════════════════════
+         A2A DOCS — shared styles (a2d-*) + page 1: Overview & Architecture
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-a2a-overview">
+    <style>
+      #page-a2a-overview, #page-a2a-demo, #page-a2a-reference { background:#07091a; color:#e2e8f0; }
+      .a2d-hero { background:linear-gradient(135deg,#0d1326 0%,#0b2530 50%,#0d1326 100%);border-bottom:1px solid #1e2540;padding:48px 0 40px;margin:-28px -36px 0; }
+      .a2d-hero-inner { max-width:920px;margin:0 auto;padding:0 36px; }
+      .a2d-back { display:inline-flex;align-items:center;gap:7px;color:#94a3b8;font-size:13px;cursor:pointer;margin-bottom:28px;background:none;border:none;font-family:inherit;padding:0; }
+      .a2d-back:hover { color:#e2e8f0; }
+      .a2d-badge { display:inline-block;background:rgba(6,182,212,.14);border:1px solid rgba(6,182,212,.32);color:#22d3ee;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:4px 12px;border-radius:100px;margin-bottom:18px; }
+      .a2d-title { font-size:38px;font-weight:800;letter-spacing:-.6px;background:linear-gradient(135deg,#e2e8f0 30%,#22d3ee 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;line-height:1.15; }
+      .a2d-sub { color:#94a3b8;font-size:15px;line-height:1.7;max-width:720px; }
+      .a2d-wrap { max-width:920px;margin:0 auto;padding:44px 0 70px; }
+      .a2d-section { margin-bottom:52px; }
+      .a2d-h2 { font-size:18px;font-weight:700;margin-bottom:5px; }
+      .a2d-sub2 { color:#64748b;font-size:13px;margin-bottom:18px;line-height:1.6; }
+      .a2d-p { font-size:13.5px;color:#94a3b8;line-height:1.75;margin-bottom:12px; }
+      .a2d-p b, .a2d-card-body b, .a2d-note b, .a2d-table td b { color:#e2e8f0; }
+      .a2d-box { background:#0a0e1a;border:1px solid #1a2035;border-radius:16px;padding:24px; }
+      .a2d-cards { display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px; }
+      .a2d-cards.two { grid-template-columns:1fr 1fr; }
+      .a2d-card { background:#0e1225;border:1px solid #1a2035;border-radius:12px;padding:18px 20px; }
+      .a2d-card-icon { font-size:20px;margin-bottom:8px; }
+      .a2d-card-title { font-size:13.5px;font-weight:700;margin-bottom:6px; }
+      .a2d-card-body { font-size:12.5px;color:#64748b;line-height:1.65; }
+      .a2d-table { width:100%;border-collapse:collapse;font-size:12.5px; }
+      .a2d-table th { text-align:left;padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#475569;border-bottom:1px solid #1a2035;white-space:nowrap; }
+      .a2d-table td { padding:9px 12px;border-bottom:1px solid #111827;color:#94a3b8;vertical-align:top;line-height:1.55; }
+      .a2d-table tr:last-child td { border-bottom:none; }
+      .a2d-table code, .a2d-p code, .a2d-card-body code, .a2d-note code, .a2d-step-desc code { background:#1e2535;padding:1px 6px;border-radius:4px;font-size:11.5px;color:#c7d2fe;font-family:ui-monospace,Menlo,Consolas,monospace; }
+      .a2d-code { background:#05070f;border:1px solid #1a2035;border-radius:10px;padding:12px 16px;font-size:12px;color:#cbd5e1;font-family:ui-monospace,Menlo,Consolas,monospace;overflow-x:auto;line-height:1.7;margin:8px 0 12px;white-space:pre; }
+      .a2d-note { background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.22);border-radius:10px;padding:14px 18px;font-size:13px;color:#94a3b8;line-height:1.7;margin:14px 0; }
+      .a2d-note.warn { background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.28); }
+      .a2d-note.warn b:first-child { color:#fbbf24; }
+      .a2d-note b:first-child { color:#22d3ee; }
+      .a2d-ok { color:#34d399;font-weight:600; } .a2d-bad { color:#f87171;font-weight:600; }
+      .a2d-step { display:flex;gap:16px;align-items:flex-start;margin-bottom:26px; }
+      .a2d-step-num { width:32px;height:32px;border-radius:50%;background:rgba(6,182,212,.16);border:1px solid rgba(6,182,212,.35);color:#22d3ee;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px; }
+      .a2d-step-body { flex:1;min-width:0; }
+      .a2d-step-title { font-size:14.5px;font-weight:700;margin-bottom:5px; }
+      .a2d-step-desc { font-size:13px;color:#94a3b8;line-height:1.7; }
+      .a2d-step-desc ul, .a2d-p ul { margin:6px 0 6px 18px; } .a2d-step-desc li, .a2d-p li { margin-bottom:3px; }
+      .a2d-toc { display:flex;flex-wrap:wrap;gap:8px;margin-top:22px; }
+      .a2d-toc span { font-size:11.5px;color:#94a3b8;border:1px solid #1e2540;border-radius:100px;padding:4px 12px;background:rgba(10,14,26,.6); }
+
+      [data-theme="light"] #page-a2a-overview, [data-theme="light"] #page-a2a-demo, [data-theme="light"] #page-a2a-reference { background:#f0fafc;color:#0f172a; }
+      [data-theme="light"] .a2d-hero { background:linear-gradient(135deg,#ecfeff,#f0f9ff);border-bottom:1px solid #cffafe; }
+      [data-theme="light"] .a2d-title { background:linear-gradient(135deg,#0f172a 30%,#0891b2 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+      [data-theme="light"] .a2d-sub, [data-theme="light"] .a2d-p, [data-theme="light"] .a2d-step-desc { color:#475569; }
+      [data-theme="light"] .a2d-h2, [data-theme="light"] .a2d-card-title, [data-theme="light"] .a2d-step-title { color:#0f172a; }
+      [data-theme="light"] .a2d-p b, [data-theme="light"] .a2d-card-body b, [data-theme="light"] .a2d-note b, [data-theme="light"] .a2d-table td b { color:#0f172a; }
+      [data-theme="light"] .a2d-box { background:#0d1117;border-color:#1e2540; }
+      [data-theme="light"] .a2d-card { background:#fff;border-color:#cffafe; }
+      [data-theme="light"] .a2d-card-body, [data-theme="light"] .a2d-sub2 { color:#64748b; }
+      [data-theme="light"] .a2d-table { background:#fff; }
+      [data-theme="light"] .a2d-table th { color:#374151;background:#f9fafb;border-bottom-color:#e5e7eb; }
+      [data-theme="light"] .a2d-table td { color:#374151;border-bottom-color:#f1f5f9; }
+      [data-theme="light"] .a2d-table code, [data-theme="light"] .a2d-p code, [data-theme="light"] .a2d-card-body code, [data-theme="light"] .a2d-note code, [data-theme="light"] .a2d-step-desc code { background:#e0f2fe;color:#0c4a6e; }
+      [data-theme="light"] .a2d-note { color:#334155; }
+      [data-theme="light"] .a2d-toc span { color:#475569;border-color:#cffafe;background:#fff; }
+    </style>
+
+      <div class="a2d-hero"><div class="a2d-hero-inner">
+        <button class="a2d-back" onclick="navigate('docs')">← Back to Docs</button>
+        <div class="a2d-badge">A2A · Overview</div>
+        <div class="a2d-title">A2A Gateway</div>
+        <div class="a2d-sub">How Warden lets agents call other agents over the Agent2Agent (A2A) protocol — with caller identity, deny-by-default policy, content scanning, and an audit trail on every call.</div>
+        <div class="a2d-toc"><span>What it does</span><span>Architecture</span><span>Request lifecycle</span><span>Building blocks</span><span>Trust model</span><span>Not supported</span></div>
+      </div></div>
+
+      <div class="a2d-wrap">
+
+        <div class="a2d-section">
+          <div class="a2d-h2">What it does</div>
+          <div class="a2d-sub2">A2A is an open protocol (current version 1.0.0) that lets one agent send a task to another over JSON-RPC 2.0 on HTTP(S). Warden acts as the gateway between them, the same way it already does for MCP tool calls.</div>
+          <div class="a2d-cards">
+            <div class="a2d-card"><div class="a2d-card-icon">🛡️</div><div class="a2d-card-title">Gateway, not a host</div>
+              <div class="a2d-card-body">Warden never runs an agent. Remote agents run elsewhere; you register each one by its Agent Card and assign it to a virtual server. Warden sits between the caller and the target.</div></div>
+            <div class="a2d-card"><div class="a2d-card-icon">🔌</div><div class="a2d-card-title">A2A 1.0, JSON-RPC only</div>
+              <div class="a2d-card-body">Implements the A2A 1.0 JSON-RPC binding. A2A 0.3 agents and cards are rejected. The REST and gRPC bindings are not implemented.</div></div>
+            <div class="a2d-card"><div class="a2d-card-icon">🏠</div><div class="a2d-card-title">Self-contained</div>
+              <div class="a2d-card-body">The A2A path needs no external services: no Redis, no OBO token exchange and no message queue. It runs on Warden's own libraries and its SQLite database. Okta is contacted only to verify an <i>optional</i> user token, and enabled interceptors use Warden's local scanners.</div></div>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Architecture</div>
+          <div class="a2d-sub2">Every A2A call goes caller → Warden → target. Warden never trusts the caller's claims about the target, and the target never has to trust the caller directly.</div>
+          <div class="a2d-box">
+            <svg viewBox="0 0 880 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;margin:0 auto" font-family="system-ui,sans-serif">
+              <defs><marker id="a2dA" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><polygon points="0 0,8 4,0 8" fill="#22d3ee"/></marker>
+              <marker id="a2dB" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><polygon points="0 0,8 4,0 8" fill="#64748b"/></marker></defs>
+              <!-- caller -->
+              <rect x="10" y="135" width="170" height="120" rx="12" fill="rgba(99,102,241,.1)" stroke="rgba(99,102,241,.4)" stroke-width="1.5"/>
+              <text x="95" y="162" fill="#c7d2fe" font-size="13" font-weight="700" text-anchor="middle">Caller agent</text>
+              <text x="95" y="184" fill="#94a3b8" font-size="11" text-anchor="middle">SecureBank Assistant</text>
+              <text x="95" y="200" fill="#94a3b8" font-size="11" text-anchor="middle">Python agent.py</text>
+              <text x="95" y="226" fill="#818cf8" font-size="10.5" text-anchor="middle" font-family="monospace">X-Agent-Token</text>
+              <text x="95" y="242" fill="#818cf8" font-size="10.5" text-anchor="middle" font-family="monospace">X-User-Token (opt.)</text>
+              <line x1="180" y1="195" x2="228" y2="195" stroke="#22d3ee" stroke-width="2" marker-end="url(#a2dA)"/>
+              <text x="204" y="186" fill="#22d3ee" font-size="9.5" text-anchor="middle">SendMessage</text>
+              <!-- gateway -->
+              <rect x="230" y="14" width="420" height="372" rx="14" fill="rgba(6,182,212,.06)" stroke="rgba(6,182,212,.4)" stroke-width="1.5"/>
+              <text x="440" y="38" fill="#22d3ee" font-size="13" font-weight="700" text-anchor="middle">Warden A2A gateway</text>
+              <text x="440" y="53" fill="#64748b" font-size="10" text-anchor="middle" font-family="monospace">POST /a2a/{virtualServerId}/{agentId}</text>
+              <g font-size="11.5" fill="#cbd5e1">
+                <rect x="248" y="64"  width="384" height="28" rx="7" fill="rgba(6,182,212,.1)"/><text x="262" y="82"  >1  Route · A2A-Version · API key</text>
+                <rect x="248" y="97"  width="384" height="28" rx="7" fill="rgba(6,182,212,.1)"/><text x="262" y="115" >2  Authenticate caller (X-Agent-Token)</text>
+                <rect x="248" y="130" width="384" height="28" rx="7" fill="rgba(6,182,212,.1)"/><text x="262" y="148" >3  Loop / depth guard</text>
+                <rect x="248" y="163" width="384" height="28" rx="7" fill="rgba(245,158,11,.14)"/><text x="262" y="181" >4  A2A policy — deny by default</text>
+                <rect x="248" y="196" width="384" height="28" rx="7" fill="rgba(6,182,212,.1)"/><text x="262" y="214" >5  User token check (verified whenever X-User-Token is sent)</text>
+                <rect x="248" y="229" width="384" height="28" rx="7" fill="rgba(16,185,129,.14)"/><text x="262" y="247" >6  Interceptors — inbound scan</text>
+                <rect x="248" y="262" width="384" height="28" rx="7" fill="rgba(6,182,212,.1)"/><text x="262" y="280" >7  Forward with delegation JWT (+ credential)</text>
+                <rect x="248" y="295" width="384" height="28" rx="7" fill="rgba(16,185,129,.14)"/><text x="262" y="313" >8  Interceptors — outbound scan · task store · audit</text>
+              </g>
+              <rect x="248" y="338" width="384" height="34" rx="8" fill="#0d1117" stroke="#1e2540"/>
+              <text x="440" y="353" fill="#94a3b8" font-size="10.5" text-anchor="middle">SQLite</text>
+              <text x="440" y="367" fill="#64748b" font-size="10" text-anchor="middle" font-family="monospace">a2a_agents · a2a_policies · a2a_tasks · a2a_keys · event_log</text>
+              <line x1="650" y1="195" x2="698" y2="195" stroke="#22d3ee" stroke-width="2" marker-end="url(#a2dA)"/>
+              <!-- remote -->
+              <rect x="700" y="135" width="170" height="120" rx="12" fill="rgba(245,158,11,.08)" stroke="rgba(245,158,11,.4)" stroke-width="1.5"/>
+              <text x="785" y="162" fill="#fde68a" font-size="13" font-weight="700" text-anchor="middle">Remote A2A agent</text>
+              <text x="785" y="184" fill="#94a3b8" font-size="11" text-anchor="middle">Credit Card Agent</text>
+              <text x="785" y="212" fill="#fbbf24" font-size="10.5" text-anchor="middle">verifies Warden's</text>
+              <text x="785" y="227" fill="#fbbf24" font-size="10.5" text-anchor="middle">delegation JWT offline</text>
+              <!-- optional okta -->
+              <rect x="10" y="318" width="170" height="52" rx="10" fill="none" stroke="#475569" stroke-width="1.2" stroke-dasharray="5,4"/>
+              <text x="95" y="341" fill="#94a3b8" font-size="11" font-weight="700" text-anchor="middle">Okta JWKS (optional)</text>
+              <text x="95" y="357" fill="#64748b" font-size="9.5" text-anchor="middle">only to verify a user token</text>
+              <line x1="180" y1="344" x2="230" y2="344" stroke="#64748b" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#a2dB)"/>
+              <!-- jwks -->
+              <path d="M785 255 L785 362 L652 362" fill="none" stroke="#64748b" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#a2dB)"/>
+              <text x="792" y="320" fill="#64748b" font-size="9.5">GET /.well-known/jwks.json</text>
+              <text x="792" y="334" fill="#64748b" font-size="9.5">(first call, then cached)</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Request lifecycle</div>
+          <div class="a2d-sub2">The exact order checks run in for <code>POST /a2a/{vs}/{agent}</code>. A call stops at the first stage that fails. Stages marked * only apply to some methods.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>#</th><th>Stage</th><th>What Warden checks</th><th>If it fails</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td><b>Parse</b></td><td>Body is a JSON-RPC 2.0 request with a string <code>method</code>.</td><td>HTTP 400, <code>-32600</code></td></tr>
+                <tr><td>2</td><td><b>Route</b></td><td>Virtual server exists, is active, and its protocol is <b>A2A</b> or <b>Both</b>; the target agent is assigned to it and active.</td><td>HTTP 404, <code>-32600</code></td></tr>
+                <tr><td>3</td><td><b>Version</b></td><td>If <code>A2A-Version</code> is sent it must be <code>1.0</code> (major.minor). A missing header is treated as 1.0.</td><td>HTTP 400, <code>-32009</code></td></tr>
+                <tr><td>4</td><td><b>API key</b></td><td><code>X-API-Key</code> is required if any active, unexpired API key applies to this virtual server — a key with no virtual-server restriction applies to all of them.</td><td>HTTP 401</td></tr>
+                <tr><td>5</td><td><b>Caller identity</b></td><td>The agent token (<code>X-Agent-Token</code>, or the standard <code>Authorization: Bearer</code> as a fallback) must belong to a registered Warden agent that is active. <b>Unlike the MCP proxy, A2A never fails open</b> on a missing or unknown token.</td><td>HTTP 401 (missing/unknown), 403 (disabled)</td></tr>
+                <tr><td>6</td><td><b>Loop &amp; depth</b></td><td>If a Warden delegation token is presented (<code>X-Warden-Delegation</code> or <code>Authorization</code>), its <code>chain</code> must not already contain the caller and must be shorter than 5.</td><td>HTTP 400, <code>-32010</code></td></tr>
+                <tr><td>7</td><td><b>Method</b></td><td>One of <code>SendMessage</code>, <code>SendStreamingMessage</code>, <code>GetTask</code>, <code>ListTasks</code>, <code>CancelTask</code>, <code>SubscribeToTask</code>.</td><td>JSON-RPC error: <code>-32003</code> (push config), <code>-32007</code> (extended card), <code>-32601</code> (other)</td></tr>
+                <tr><td>8</td><td><b>Policy</b></td><td>An A2A policy must permit this caller → target (and skill). Always enforced; the virtual server's "Token Policy Evaluation" toggle applies to MCP only.</td><td>HTTP 403, <code>-32010</code></td></tr>
+                <tr><td>9</td><td><b>User token</b></td><td><code>X-User-Token</code> is verified whenever it is sent (waiting up to 8 s). Only a policy with <i>Require verified user token</i> turns a missing or unverifiable token into a denial (see Reference).</td><td>HTTP 401, <code>-32010</code></td></tr>
+                <tr><td>10</td><td><b>ListTasks *</b></td><td>Answered locally from Warden's task store — never forwarded.</td><td>—</td></tr>
+                <tr><td>11</td><td><b>Task ownership *</b></td><td><code>GetTask</code>, <code>CancelTask</code>, <code>SubscribeToTask</code> and <code>SendMessage</code> with a <code>taskId</code> only work on tasks this caller created through this target.</td><td><code>-32001</code> TaskNotFound (HTTP 200)</td></tr>
+                <tr><td>12</td><td><b>Inbound scan *</b></td><td>If the virtual server has <b>Interceptors</b> enabled, text parts and string values inside data parts of the message are scanned; masked text replaces the original. Also validates that <code>params.message.parts</code> exists.</td><td>HTTP 403 <code>-32010</code> (blocked) · <code>-32602</code> (bad params)</td></tr>
+                <tr><td>13</td><td><b>Circuit breaker</b></td><td>After 3 consecutive failures a target is skipped for 30 seconds.</td><td>HTTP 503, <code>-32603</code></td></tr>
+                <tr><td>14</td><td><b>Forward</b></td><td>JSON-RPC call to the target's endpoint with Warden's delegation JWT (and the stored credential, if any). Timeout 60 s to response headers.</td><td>HTTP 502, <code>-32603</code> (<code>GetTask</code> falls back to the cached task)</td></tr>
+                <tr><td>15</td><td><b>Outbound scan</b></td><td>Task status message, artifacts and history in the response are scanned the same way.</td><td>HTTP 403, <code>-32010</code></td></tr>
+                <tr><td>16</td><td><b>Persist &amp; audit</b></td><td>The task is stored under the caller; an <code>a2a_call</code> event is written to the event log.</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Building blocks</div>
+          <div class="a2d-sub2">What you configure in the Warden UI, and what each piece does.</div>
+          <div class="a2d-cards two">
+            <div class="a2d-card"><div class="a2d-card-title">📡 Virtual server protocol</div>
+              <div class="a2d-card-body">Each virtual server is <b>MCP</b> (default), <b>A2A</b> or <b>Both</b>. Only A2A/Both servers expose <code>/a2a/…</code> and accept A2A agent assignments. An MCP-only server rejects them.</div></div>
+            <div class="a2d-card"><div class="a2d-card-title">🤝 A2A Agents registry</div>
+              <div class="a2d-card-body">Remote agents registered by <b>Agent Card URL</b> (fetched by Warden, 8 s timeout) or pasted card JSON. The card is cached; if a refresh fails, the cached card stays in use and the error is recorded.</div></div>
+            <div class="a2d-card"><div class="a2d-card-title">🪪 Gateway Agent Card</div>
+              <div class="a2d-card-body">Warden serves its own copy of each card at <code>/a2a/{vs}/{agent}/.well-known/agent-card.json</code>. Its only interface is Warden's endpoint; <code>signatures</code>, <code>securitySchemes</code> and <code>securityRequirements</code> are removed because the card was modified.</div></div>
+            <div class="a2d-card"><div class="a2d-card-title">🧑‍💻 Caller identity</div>
+              <div class="a2d-card-body">Callers are ordinary Warden <b>Agent Hub</b> agents authenticating with <code>X-Agent-Token</code> (<code>wag_…</code>). Their <b>Agent Groups</b> can be used in policies, so membership rules also drive A2A access.</div></div>
+            <div class="a2d-card"><div class="a2d-card-title">🛂 A2A Policies</div>
+              <div class="a2d-card-body">Deny-by-default rules per virtual server: caller (any / agent / group) → target (any / agent) → skills, with permit or forbid and a priority. Highest priority first; the first match decides.</div></div>
+            <div class="a2d-card"><div class="a2d-card-title">🔐 Outbound credentials</div>
+              <div class="a2d-card-body">Optional per remote agent: bearer token, API-key header or basic auth, encrypted at rest (AES-256-GCM). The API never returns the secret.</div></div>
+            <div class="a2d-card"><div class="a2d-card-title">🧾 Tasks</div>
+              <div class="a2d-card-body">Tasks returned by a target are stored under the calling agent. Another agent asking for the same task ID gets <code>TaskNotFound</code>.</div></div>
+            <div class="a2d-card"><div class="a2d-card-title">📊 Audit &amp; scoring</div>
+              <div class="a2d-card-body">Calls that reach the policy stage, and failed authentications, are logged as <code>a2a_call</code> events (Event Log → <b>A2A Calls</b>). Allow/deny decisions feed the calling agent's risk score, as do outbound interceptor findings.</div></div>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Trust model: the delegation token</div>
+          <div class="a2d-sub2">Warden never forwards the caller's credentials. It signs a short-lived token of its own, and the target verifies it offline.</div>
+          <div class="a2d-p">
+            Warden generates an <b>Ed25519</b> key pair on first use and stores it in SQLite. For each forwarded call it mints a JWT (<code>alg: EdDSA</code>) valid for <b>60 seconds</b>, sent in the <code>X-Warden-Delegation</code> header. The public key is published at <code>GET /.well-known/jwks.json</code>. A target fetches the JWKS once, caches it, and verifies signature, <code>iss</code> and <code>exp</code> without calling Warden again.
+          </div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Claim</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td><code>iss</code></td><td><code>warden</code></td></tr>
+                <tr><td><code>sub</code></td><td>ID of the calling Warden agent (Agent Hub ID)</td></tr>
+                <tr><td><code>agent_name</code></td><td>Name of the calling agent</td></tr>
+                <tr><td><code>aud</code></td><td>ID of the target in Warden's A2A Agents registry (not its URL)</td></tr>
+                <tr><td><code>vs</code></td><td>Virtual server ID</td></tr>
+                <tr><td><code>iat</code>, <code>exp</code>, <code>jti</code></td><td>Issued-at, expiry (60 s later), unique ID</td></tr>
+                <tr><td><code>chain</code>, <code>depth</code></td><td>Caller IDs so far, including this caller, and its length</td></tr>
+                <tr><td><code>user</code></td><td><code>{ sub, groups }</code> — present <b>only</b> when Warden verified an <code>X-User-Token</code> for this call</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="a2d-note"><b>Why it matters:</b> a target that rejects calls without a valid Warden token can't be reached by bypassing the gateway. The demo Credit Card Agent does exactly this — calling it directly returns 401.</div>
+          <div class="a2d-note warn"><b>Loop and depth limits are best effort.</b> They only work when agents pass Warden's token along on their own onward calls (in <code>X-Warden-Delegation</code>). An agent that omits it starts a fresh chain, so this is a safeguard against accidents, not a security boundary.</div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Not supported</div>
+          <div class="a2d-sub2">Be aware of these before planning a rollout.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table"><tbody>
+              <tr><td><b>A2A 0.3</b></td><td>Cards without <code>supportedInterfaces</code> are rejected at registration; calls with another <code>A2A-Version</code> get <code>-32009</code>.</td></tr>
+              <tr><td><b>REST and gRPC bindings</b></td><td>Only the JSON-RPC binding is served.</td></tr>
+              <tr><td><b>Push notifications</b></td><td>The four push-notification config methods return <code>-32003</code>.</td></tr>
+              <tr><td><b>Extended Agent Card</b></td><td><code>GetExtendedAgentCard</code> returns <code>-32007</code>.</td></tr>
+              <tr><td><b>Hosting agents</b></td><td>Warden is gateway-only; it does not run agents.</td></tr>
+              <tr><td><b>OAuth2 to remote agents</b></td><td>Outbound credentials are static (bearer, header, basic). Warden does not fetch OAuth tokens on the agent's behalf.</td></tr>
+              <tr><td><b>Re-signing cards</b></td><td>Card signatures are dropped, not re-created.</td></tr>
+              <tr><td><b>Key rotation</b></td><td>The delegation signing key is created once; there is no rotation UI.</td></tr>
+              <tr><td><b>Signing key at rest</b></td><td>The Ed25519 private key is stored unencrypted in the <code>a2a_keys</code> table (the AES encryption covers outbound credentials only). Anyone with the database file could mint valid delegation tokens, so protect the database.</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end page-a2a-overview -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         A2A DOCS — page 2: Setup & Demo Walkthrough
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-a2a-demo">
+      <div class="a2d-hero"><div class="a2d-hero-inner">
+        <button class="a2d-back" onclick="navigate('docs')">← Back to Docs</button>
+        <div class="a2d-badge">A2A · Walkthrough</div>
+        <div class="a2d-title">Setup &amp; Demo Walkthrough</div>
+        <div class="a2d-sub">The SecureBank assistant answers a credit card question by calling a separate Credit Card Agent over A2A — through Warden, which enforces policy and redacts card numbers on the way back.</div>
+        <div class="a2d-toc"><span>What you'll run</span><span>1 Start Warden</span><span>2 Start the card agent</span><span>3 Configure Warden</span><span>4 Okta (optional)</span><span>5 Chat demo</span><span>6 Python demo</span><span>7 Inspect</span><span>Troubleshooting</span></div>
+      </div></div>
+
+      <div class="a2d-wrap">
+
+        <div class="a2d-section">
+          <div class="a2d-h2">What you'll run</div>
+          <div class="a2d-sub2">Four processes. Ports are the defaults.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Component</th><th>Folder</th><th>Port</th><th>Role</th></tr></thead>
+              <tbody>
+                <tr><td><b>Warden</b></td><td><code>mcp-virtual-server/</code></td><td>3003</td><td>The A2A gateway and admin UI</td></tr>
+                <tr><td><b>Credit Card Agent</b></td><td><code>credit-card-agent/</code></td><td>4010</td><td>A standalone A2A 1.0 agent. Rule-based (no LLM), no npm dependencies. Skills: <code>card-details</code>, <code>card-transactions</code>, <code>card-freeze</code></td></tr>
+                <tr><td><b>SecureBank chat</b></td><td><code>banking-app/frontend/</code></td><td>5173</td><td>The "SecureBank Assistant" page (Vite dev server)</td></tr>
+                <tr><td><b>Python agent</b> (optional)</td><td><code>agent/</code></td><td>—</td><td>CLI agent with an <code>ask_credit_card_agent</code> tool, plus a no-LLM test script</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="a2d-note"><b>Gateway:</b> this demo goes through <b>Warden</b>, the self-hosted gateway. The Python agent's MCP traffic can still use PointGuardAI; only the A2A call is routed through Warden.</div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-step"><div class="a2d-step-num">1</div><div class="a2d-step-body">
+            <div class="a2d-step-title">Start Warden</div>
+            <div class="a2d-step-desc">Needs Node.js 22.5 or later (Warden uses the built-in <code>node:sqlite</code>).
+              <pre class="a2d-code">cd mcp-virtual-server
+npm start</pre>
+              The UI is at <code>http://localhost:3003</code>. The A2A tables are created automatically at startup; the signing key is generated the first time it is needed (the first forwarded call or the first request for the JWKS).</div>
+          </div></div>
+
+          <div class="a2d-step"><div class="a2d-step-num">2</div><div class="a2d-step-body">
+            <div class="a2d-step-title">Start the Credit Card Agent</div>
+            <div class="a2d-step-desc">
+              <pre class="a2d-code">cd credit-card-agent
+node server.js</pre>
+              It serves its Agent Card at <code>http://localhost:4010/.well-known/agent-card.json</code> and JSON-RPC at <code>POST /a2a</code>. Optional environment variables:
+              <ul>
+                <li><code>PORT</code> — default <code>4010</code></li>
+                <li><code>WARDEN_URL</code> — where to fetch Warden's JWKS; default <code>http://localhost:3003</code></li>
+                <li><code>PUBLIC_URL</code> — the URL written into its card; default <code>http://localhost:PORT</code></li>
+                <li><code>REQUIRE_WARDEN_TOKEN</code> — default on. Set to <code>false</code> only for debugging; it disables the check below</li>
+              </ul>
+              <b>It only accepts calls that carry a valid Warden delegation token</b>, verified against Warden's JWKS (cached after the first fetch). A direct call returns HTTP 401. The structured response deliberately includes full card numbers so you can see Warden redact them.</div>
+          </div></div>
+
+          <div class="a2d-step"><div class="a2d-step-num">3</div><div class="a2d-step-body">
+            <div class="a2d-step-title">Configure Warden with the setup script</div>
+            <div class="a2d-step-desc">With Warden and the card agent both running:
+              <pre class="a2d-code">cd credit-card-agent
+node setup-warden.js</pre>
+              It is idempotent and creates the following through Warden's API (environment overrides: <code>WARDEN_URL</code>, <code>CARD_AGENT_URL</code>):
+            </div>
+            <div class="a2d-box" style="padding:0;overflow:hidden;margin-top:10px">
+              <table class="a2d-table">
+                <thead><tr><th>Object</th><th>Name / settings</th></tr></thead>
+                <tbody>
+                  <tr><td>Virtual server</td><td><code>securebank-a2a</code> — protocol <b>A2A</b>, OBO token exchange off</td></tr>
+                  <tr><td>A2A agent</td><td><code>credit-card-agent</code>, registered from <code>http://localhost:4010/.well-known/agent-card.json</code> and assigned to the virtual server</td></tr>
+                  <tr><td>Agent group</td><td><code>banking-agents</code> with the rule <b>team is banking</b> (agent metadata <code>team</code> equals <code>banking</code>)</td></tr>
+                  <tr><td>Caller agent</td><td><code>securebank-a2a-agent</code> with metadata <code>team=banking</code>; it joins <code>banking-agents</code> automatically. The script forces a group sync and checks membership before continuing</td></tr>
+                  <tr><td>Policy — permit</td><td><code>banking-agents may read card info</code>, priority 1: group <code>banking-agents</code> → <code>credit-card-agent</code>, skills <code>card-details</code>, <code>card-transactions</code></td></tr>
+                  <tr><td>Policy — forbid</td><td><code>nobody may freeze cards via A2A</code>, priority 10: any caller → <code>credit-card-agent</code>, skill <code>card-freeze</code></td></tr>
+                  <tr><td>Interceptor rule</td><td><code>mask card numbers &amp; PII</code> — scanner <code>*</code>, category <code>pii</code>, score ≥ 0.5, action <b>mask</b>, priority 5</td></tr>
+                  <tr><td>Interceptor rule</td><td><code>block prompt injection</code> — scanner <code>*</code>, category <code>prompt_injection</code>, score ≥ 0.5, action <b>block</b>, priority 9</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="a2d-step-desc" style="margin-top:10px">It then prints the values the clients need and writes the chat's config file:
+              <pre class="a2d-code">WARDEN_URL=http://localhost:3003
+WARDEN_A2A_VS_ID=&lt;virtual server id&gt;
+WARDEN_A2A_TARGET_ID=&lt;credit-card-agent id&gt;
+WARDEN_A2A_AGENT_TOKEN=wag_…        # shown once</pre>
+              It writes <code>VITE_WARDEN_A2A_VS_ID</code>, <code>VITE_WARDEN_A2A_TARGET_ID</code> and <code>VITE_WARDEN_A2A_AGENT_TOKEN</code> into <code>banking-app/frontend/.env.local</code>, merging with any existing lines. Set <code>SKIP_FRONTEND_ENV=1</code> to skip that.</div>
+            <div class="a2d-note warn"><b>Re-running rotates the token.</b> If <code>securebank-a2a-agent</code> already exists, the script issues a new token and the old one stops working. Update <code>agent/.env</code> (and restart the frontend) after every re-run.</div>
+          </div></div>
+
+          <div class="a2d-step"><div class="a2d-step-num">4</div><div class="a2d-step-body">
+            <div class="a2d-step-title">Optional: let the card agent see the user's identity</div>
+            <div class="a2d-step-desc">The chat and Python agent send the user's Okta access token as <code>X-User-Token</code>. Warden forwards the user's identity to the card agent only if it can verify that token. To enable it:
+              <ul>
+                <li>Open <b>Virtual Server → securebank-a2a → Edit</b>.</li>
+                <li>Set <b>Okta Issuer URL</b> to the issuer of the tokens your chat uses (the <code>iss</code> claim; frontend setting <code>VITE_OKTA_ISSUER</code>). Warden derives the JWKS URL as <code>&lt;issuer&gt;/v1/keys</code>.</li>
+                <li>Leave <b>Client ID</b>, <b>Client Secret</b>, <b>OBO Audience / Scope</b> and <b>JWKS URI</b> blank, and leave <b>OBO Token Exchange</b> and <b>Advanced — Connect with an IDP</b> unchecked (the latter only appears when Interceptors is ticked) — A2A uses none of them.</li>
+              </ul>
+              Confirm it worked: the card agent's console line changes from <code>user=(none)</code> to <code>user=&lt;your Okta sub&gt;</code>.
+            </div>
+            <div class="a2d-note warn"><b>Verification scope:</b> Warden checks the token's signature and expiry against the issuer's keys. It does not check the audience or issuer claim, so any token signed by that Okta authorization server is accepted as a user identity.</div>
+          </div></div>
+
+          <div class="a2d-step"><div class="a2d-step-num">5</div><div class="a2d-step-body">
+            <div class="a2d-step-title">Try it in the SecureBank chat</div>
+            <div class="a2d-step-desc">Restart the frontend so it reads <code>.env.local</code>, then open the SecureBank Assistant page:
+              <pre class="a2d-code">cd banking-app/frontend
+npm run dev</pre>
+              Three chips were added, all labelled <b>A2A</b>:</div>
+            <div class="a2d-box" style="padding:0;overflow:hidden;margin-top:10px">
+              <table class="a2d-table">
+                <thead><tr><th>Chip</th><th>Sends</th><th>Expected result</th></tr></thead>
+                <tbody>
+                  <tr><td>🏦 Credit Cards · A2A</td><td>"Show my credit card details"</td><td>Two card tiles (limit, balance, available, due date, APR, points) and a <b>green</b> trace: Assistant → Warden → Credit Card Agent. A note says full card numbers were redacted by Warden.</td></tr>
+                  <tr><td>🧾 Card Spending · A2A</td><td>"Show my recent credit card transactions"</td><td>A transactions table and a green trace.</td></tr>
+                  <tr><td>❄️ Freeze Card · A2A</td><td>"Freeze my credit card"</td><td><span class="a2d-bad">Blocked by Warden</span>: reason <i>Forbidden by policy "nobody may freeze cards via A2A"</i>. The trace shows Warden in red and the Credit Card Agent as "not reached".</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="a2d-note"><b>Why the chip says "credit card", not "Visa ending 4242":</b> the chat's own virtual server runs a Presidio rule that masks names and numbers. It rewrites "Visa" to an ORGANIZATION placeholder and "4242" to a DATE_TIME placeholder before the assistant sees the message, so the intent is lost. Typing those words by hand triggers the same masking.</div>
+            <div class="a2d-note warn"><b>Demo-only:</b> the chat holds the A2A agent token in browser environment variables, as it already does for the Warden MCP token. For production, put a small server-side proxy in the banking backend so the token never reaches the browser.</div>
+          </div></div>
+
+          <div class="a2d-step"><div class="a2d-step-num">6</div><div class="a2d-step-body">
+            <div class="a2d-step-title">Try it from Python</div>
+            <div class="a2d-step-desc">Add the printed values to <code>agent/.env</code> (<code>WARDEN_URL</code>, <code>WARDEN_A2A_VS_ID</code>, <code>WARDEN_A2A_TARGET_ID</code>, <code>WARDEN_A2A_AGENT_TOKEN</code>). Then either run the scripted check, which needs no LLM:
+              <pre class="a2d-code">cd agent
+python test_a2a.py</pre>
+              or the conversational agent, where the A2A tool is added automatically when those variables are set:
+              <pre class="a2d-code">python agent.py</pre>
+              <code>agent.py</code> builds an <code>ask_credit_card_agent</code> tool from the card agent's Agent Card. If Warden refuses a call, the reason is returned to the model, and the system prompt tells it to report the denial rather than retry.</div>
+            <div class="a2d-box" style="padding:0;overflow:hidden;margin-top:10px">
+              <table class="a2d-table">
+                <thead><tr><th>#</th><th>Scenario in <code>test_a2a.py</code></th><th>Expected</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>Call the card agent directly, bypassing Warden</td><td><span class="a2d-ok">PASS</span> — HTTP 401 from the card agent itself</td></tr>
+                  <tr><td>2</td><td>Ask for limit and balance (<code>card-details</code>)</td><td><span class="a2d-ok">PASS</span> — task completes</td></tr>
+                  <tr><td>3</td><td>Check the structured data for full card numbers</td><td><span class="a2d-ok">PASS</span> — the raw card numbers are gone from the data (in our run <code>cardNumber</code> arrived as <code>[REDACTED: CREDIT_CARD]</code>)</td></tr>
+                  <tr><td>4</td><td>Recent transactions (<code>card-transactions</code>)</td><td><span class="a2d-ok">PASS</span> — permitted</td></tr>
+                  <tr><td>5</td><td>Freeze a card (<code>card-freeze</code>)</td><td><span class="a2d-ok">PASS</span> — HTTP 403, forbidden by policy</td></tr>
+                  <tr><td>6</td><td>Freeze request with no skill named</td><td><span class="a2d-ok">PASS</span> — HTTP 403; a skill-restricted <i>forbid</i> also matches calls that omit the skill</td></tr>
+                  <tr><td>7</td><td>Wrong agent token</td><td><span class="a2d-ok">PASS</span> — HTTP 401 from Warden</td></tr>
+                  <tr><td>8</td><td>Prompt-injection text in the message</td><td><span class="a2d-ok">PASS</span> — HTTP 403, blocked by the interceptor before reaching the card agent</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div></div>
+
+          <div class="a2d-step"><div class="a2d-step-num">7</div><div class="a2d-step-body">
+            <div class="a2d-step-title">Inspect it in Warden</div>
+            <div class="a2d-step-desc">
+              <ul>
+                <li><b>Virtual Server</b> — <code>securebank-a2a</code> shows an A2A badge. In <b>Edit</b>, the <b>A2A Agents</b> section lists the card agent with its skills, gateway endpoint and gateway Agent Card URL (each with a Copy button).</li>
+                <li><b>A2A Agents</b> (sidebar, A2A group) — the registry: status, last card fetch, any card error, and the credential badge. <b>Refresh</b> re-fetches the card; <b>Credential</b> sets an outbound credential.</li>
+                <li><b>A2A Policies</b> — the two rules above.</li>
+                <li><b>A2A Policy Simulate</b> — pick a caller, target and skill (and a user-token state) to see the decision and which policies fired.</li>
+                <li><b>Event Log</b> — filter type <b>A2A Calls</b>. Each row shows method → target, caller and skill; expand it for decision, policy, user-token status, task and reason.</li>
+                <li><b>Agent Groups</b> — <code>banking-agents</code> lists <code>securebank-a2a-agent</code> with an <b>auto</b> badge naming the rule that added it.</li>
+                <li><b>VS / Agent Risk</b> — the caller's score reflects A2A allow/deny decisions and outbound interceptor findings (the virtual server must have Interceptors enabled). A2A calls don't appear on Score History, which lists only MCP calls and scans.</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Troubleshooting</div>
+          <div class="a2d-sub2">Symptom → likely cause → fix.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+              <tbody>
+                <tr><td>Chat says "Credit Card Agent is not connected yet"</td><td><code>.env.local</code> missing or not loaded</td><td>Run the setup script, then restart <code>npm run dev</code></td></tr>
+                <tr><td>401 "Unknown agent token"</td><td>Setup was re-run, which rotated the token</td><td>Copy the new <code>WARDEN_A2A_AGENT_TOKEN</code> into <code>agent/.env</code> and restart the frontend</td></tr>
+                <tr><td>403 "No matching permit policy (deny by default)"</td><td>The caller is not in <code>banking-agents</code>, or the permit policy is missing</td><td>Check the agent's metadata is <code>team=banking</code>; use <b>Agent Group Rules → ↻ Sync All</b>; re-run setup</td></tr>
+                <tr><td>Direct call to the card agent returns 401 "only accepts calls routed through Warden"</td><td>Expected — it only accepts Warden's delegation token</td><td>Call it through Warden</td></tr>
+                <tr><td>Through Warden: an error "Unauthorized: this agent only accepts calls routed through the Warden gateway" (HTTP 200, code <code>-32600</code>)</td><td>The card agent could not fetch or match Warden's JWKS, so it rejected Warden's token. Warden relays the target's error as-is</td><td>Set <code>WARDEN_URL</code> for the card agent to Warden's real address</td></tr>
+                <tr><td>502 "Target agent unreachable"</td><td>Card agent is down or the card's endpoint URL is wrong</td><td>Start it; check <code>PUBLIC_URL</code>; <b>Refresh</b> the card</td></tr>
+                <tr><td>503 "Target agent temporarily unavailable" (<code>error.data.reason</code>: circuit open)</td><td>3 consecutive failures to the target</td><td>Fix the target; Warden retries after 30 seconds</td></tr>
+                <tr><td>Card agent logs <code>user=(none)</code></td><td>No verified user token on the virtual server</td><td>Step 4: set the Okta Issuer URL</td></tr>
+                <tr><td>Chat says "I'm not sure how to help with that"</td><td>Chat Presidio rule masked brand/number words</td><td>Use the chips, or avoid "Visa"/card digits</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end page-a2a-demo -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         A2A DOCS — page 3: Reference
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-a2a-reference">
+      <div class="a2d-hero"><div class="a2d-hero-inner">
+        <button class="a2d-back" onclick="navigate('docs')">← Back to Docs</button>
+        <div class="a2d-badge">A2A · Reference</div>
+        <div class="a2d-title">A2A Reference</div>
+        <div class="a2d-sub">Endpoints, JSON-RPC methods, headers, error codes, policy semantics, credentials, data model and configuration.</div>
+        <div class="a2d-toc"><span>Endpoints</span><span>Methods</span><span>Headers</span><span>Errors</span><span>Policies</span><span>User token modes</span><span>Credentials</span><span>Data model</span><span>Audit &amp; scoring</span><span>Configuration</span></div>
+      </div></div>
+
+      <div class="a2d-wrap">
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Endpoints</div>
+          <div class="a2d-sub2">Runtime endpoints are used by agents; admin endpoints are used by the Warden UI.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Method &amp; path</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td colspan="2"><b>Runtime</b></td></tr>
+                <tr><td><code>POST /a2a/{vsId}/{agentId}</code></td><td>A2A JSON-RPC endpoint for one target agent on one virtual server</td></tr>
+                <tr><td><code>GET /a2a/{vsId}/{agentId}/.well-known/agent-card.json</code></td><td>Gateway Agent Card (public, no authentication)</td></tr>
+                <tr><td><code>GET /.well-known/jwks.json</code></td><td>Public keys for verifying Warden's delegation tokens</td></tr>
+                <tr><td colspan="2"><b>A2A agents registry</b></td></tr>
+                <tr><td><code>GET /api/a2a-agents</code> · <code>GET /api/a2a-agents/{id}</code></td><td>List / detail. Includes <code>auth_type</code>, <code>auth_header</code>, <code>has_secret</code>; never the secret</td></tr>
+                <tr><td><code>POST /api/a2a-agents</code></td><td>Register. Body: <code>card_url</code> or <code>card_json</code>, optional <code>name</code>, optional <code>auth: {type, header?, secret?}</code></td></tr>
+                <tr><td><code>POST /api/a2a-agents/{id}/refresh</code></td><td>Re-fetch the card. On failure the cached card is kept and <code>card_error</code> is set</td></tr>
+                <tr><td><code>PUT /api/a2a-agents/{id}/auth</code></td><td>Set, change or clear (<code>type: "none"</code>) the outbound credential. Omit <code>secret</code> to keep the stored one</td></tr>
+                <tr><td><code>PATCH /api/a2a-agents/{id}/toggle</code> · <code>DELETE /api/a2a-agents/{id}</code></td><td>Enable/disable · remove</td></tr>
+                <tr><td colspan="2"><b>Virtual servers</b></td></tr>
+                <tr><td><code>POST /api/virtual-servers</code> · <code>PUT /api/virtual-servers/{id}</code></td><td>Accept <code>protocol</code>: <code>mcp</code> | <code>a2a</code> | <code>both</code>. On update it is only changed when supplied</td></tr>
+                <tr><td><code>GET|POST /api/virtual-servers/{id}/a2a-agents</code> · <code>DELETE …/a2a-agents/{a2aAgentId}</code></td><td>List / assign (<code>{a2a_agent_id}</code>) / unassign. Assigning to an MCP-only server returns 400</td></tr>
+                <tr><td colspan="2"><b>Policies</b></td></tr>
+                <tr><td><code>GET /api/a2a-policies?virtual_server_id=</code></td><td>List, with resolved caller and target names</td></tr>
+                <tr><td><code>POST /api/a2a-policies</code> · <code>PUT /…/{id}</code> · <code>DELETE /…/{id}</code></td><td>Create / update / delete</td></tr>
+                <tr><td><code>POST /api/a2a-policies/simulate</code></td><td>Dry run: <code>{virtual_server_id, caller_agent_id, target_agent_id, skill?, user_status?}</code> (<code>user_status</code>: <code>absent</code> · <code>verified</code> · <code>invalid</code> · <code>idp_down</code>) → <code>{decision, reason, policy_id, skill, caller, target, user_check, trace}</code>. <code>trace</code> lists every active policy in evaluation order with its caller, target and skill match.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="a2d-note warn"><b>Admin API access:</b> as with the rest of Warden's <code>/api</code>, these admin endpoints have no authentication of their own. Restrict network access to Warden accordingly.</div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">JSON-RPC methods</div>
+          <div class="a2d-sub2">Names are the A2A 1.0 PascalCase methods. Warden forwards the supported ones and answers the rest itself.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Method</th><th>Behavior in Warden</th></tr></thead>
+              <tbody>
+                <tr><td><code>SendMessage</code></td><td>Requires <code>params.message</code> with a <code>parts</code> array (else <code>-32602</code>). The skill is read from <code>params.metadata.skillId</code> or <code>params.message.metadata.skillId</code>. Returns whatever the target returns (a Task or a Message). A returned Task is stored under the caller. If <code>message.taskId</code> is set, the caller must own that task.</td></tr>
+                <tr><td><code>SendStreamingMessage</code></td><td>Same checks as <code>SendMessage</code>; the target's <code>text/event-stream</code> is relayed. Each event is a JSON-RPC response whose <code>id</code> is the caller's request ID; text is scanned per event and task state is updated. Warden adds a <code>: keep-alive</code> comment every 15 s. The 60 s timeout covers connecting and receiving headers only, so long streams are not cut off. Errors after the stream starts are sent as an event.</td></tr>
+                <tr><td><code>GetTask</code></td><td>Requires <code>params.id</code> and ownership. Forwarded to the target. If the target is unreachable, the cached task is returned with <code>metadata["warden.stale"] = true</code>.</td></tr>
+                <tr><td><code>ListTasks</code></td><td>Local only. Returns up to 100 of the caller's tasks for this virtual server and target, most recently updated first, as <code>{tasks, nextPageToken: "", pageSize, totalSize}</code>. Filter and paging parameters are ignored. <i>These response field names follow A2A conventions but were not checked against the proto.</i></td></tr>
+                <tr><td><code>CancelTask</code></td><td>Requires <code>params.id</code> and ownership; forwarded to the target.</td></tr>
+                <tr><td><code>SubscribeToTask</code></td><td>Requires <code>params.id</code> and ownership; the target's event stream is relayed like <code>SendStreamingMessage</code>.</td></tr>
+                <tr><td><code>Create / Get / List / DeleteTaskPushNotificationConfig</code></td><td>Not supported: <code>-32003</code>.</td></tr>
+                <tr><td><code>GetExtendedAgentCard</code></td><td>Not configured: <code>-32007</code>.</td></tr>
+                <tr><td>anything else</td><td><code>-32601</code> Method not found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Headers</div>
+          <div class="a2d-sub2">What a caller sends to Warden, and what Warden sends to the target.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Direction</th><th>Header</th><th>Details</th></tr></thead>
+              <tbody>
+                <tr><td>Caller → Warden</td><td><code>X-Agent-Token</code> (or <code>Authorization: Bearer</code>)</td><td><b>Required.</b> The calling agent's <code>wag_…</code> token. If both headers are sent, <code>X-Agent-Token</code> is used. The gateway Agent Card does not advertise this scheme, so give clients the token out of band.</td></tr>
+                <tr><td>Caller → Warden</td><td><code>X-API-Key</code></td><td>Required only if an active, unexpired API key applies to the virtual server (keys with no server restriction apply to all)</td></tr>
+                <tr><td>Caller → Warden</td><td><code>X-User-Token</code></td><td>Optional user access token (with or without <code>Bearer </code>). Required in effect when a policy has <i>Require verified user token</i></td></tr>
+                <tr><td>Caller → Warden</td><td><code>A2A-Version</code></td><td>Optional; must be <code>1.0</code> if present</td></tr>
+                <tr><td>Caller → Warden</td><td><code>X-Warden-Delegation</code> / <code>Authorization</code></td><td>Optional. A delegation token Warden previously issued to this agent, used only for the loop/depth guard</td></tr>
+                <tr><td>Warden → target</td><td><code>A2A-Version: 1.0</code>, <code>Content-Type</code>, <code>Accept</code></td><td><code>Accept</code> is <code>text/event-stream</code> for streaming methods, otherwise <code>application/json</code></td></tr>
+                <tr><td>Warden → target</td><td><code>X-Warden-Delegation</code></td><td>Always sent: the signed delegation JWT</td></tr>
+                <tr><td>Warden → target</td><td><code>Authorization</code></td><td>Credential <i>none</i>: <code>Bearer &lt;delegation JWT&gt;</code>. <i>bearer</i>: <code>Bearer &lt;secret&gt;</code>. <i>basic</i>: <code>Basic base64(user:pass)</code>. <i>header</i>: not set</td></tr>
+                <tr><td>Warden → target</td><td>custom header</td><td>Only for credential type <i>header</i>: the secret in the header you named</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Using the official A2A SDKs</div>
+          <div class="a2d-sub2">Warden's gateway has been exercised with a client and agents built on the official JavaScript SDK (<code>@a2a-js/sdk</code> 1.3.0) and Python SDK (<code>a2a-sdk</code> 1.3.0), JSON-RPC binding. These are the practical points.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Topic</th><th>What to know</th></tr></thead>
+              <tbody>
+                <tr><td><b>Base URL needs a trailing slash</b></td><td>The SDK clients look for <code>.well-known/agent-card.json</code> <i>relative</i> to the URL you give them. Pass <code>http://warden/a2a/{vs}/{agent}<b>/</b></code> (with the trailing slash), or pass the full card URL with an empty path. Without the slash they request <code>…/a2a/{vs}/.well-known/…</code>, which is not an agent card.</td></tr>
+                <tr><td><b>Authentication</b></td><td>Send the agent token as <code>Authorization: Bearer</code> (what stock clients' auth hooks set) or <code>X-Agent-Token</code>. Warden's gateway card does not advertise a security scheme, so configure the token on the client yourself.</td></tr>
+                <tr><td><b>Declaring a skill</b></td><td>A2A has no standard way to name a skill on a request. Warden reads <code>params.metadata.skillId</code> (the SDK's <code>metadata</code> field on the request). A skill-scoped <b>forbid</b> also matches a call that names no skill, so a generic client that sets none is blocked by such a rule.</td></tr>
+                <tr><td><b>Gateway card capabilities</b></td><td>The gateway card always reports <code>pushNotifications: false</code> and <code>extendedAgentCard: false</code> and omits the target's <code>extensions</code>, because Warden does not serve or forward those, even if the target advertises them.</td></tr>
+                <tr><td><b>Error pass-through</b></td><td>Errors the target itself returns (for example <code>TASK_NOT_CANCELABLE</code>, <code>-32002</code>) are relayed as-is, including their <code>data</code> details.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Error codes</div>
+          <div class="a2d-sub2">Errors are JSON-RPC <code>error</code> objects. A2A errors use their standard codes; <code>-32010</code> is Warden-specific.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>HTTP</th><th>Code</th><th>Meaning / when</th></tr></thead>
+              <tbody>
+                <tr><td>400</td><td><code>-32600</code></td><td>Invalid JSON-RPC request</td></tr>
+                <tr><td>404</td><td><code>-32600</code></td><td>Unknown virtual server or agent (also: protocol is MCP-only, agent not assigned, or inactive)</td></tr>
+                <tr><td>400</td><td><code>-32009</code></td><td>Unsupported <code>A2A-Version</code></td></tr>
+                <tr><td>401</td><td><code>-32010</code></td><td>Missing/invalid API key, missing/unknown agent token, or user-token requirement not met</td></tr>
+                <tr><td>403</td><td><code>-32010</code></td><td>Agent disabled; denied by policy; or blocked by an interceptor (inbound or outbound)</td></tr>
+                <tr><td>400</td><td><code>-32010</code></td><td>Delegation loop or maximum depth (5) exceeded</td></tr>
+                <tr><td>200</td><td><code>-32602</code></td><td>Missing <code>params.message</code>/<code>parts</code> or <code>params.id</code></td></tr>
+                <tr><td>200</td><td><code>-32001</code></td><td>TaskNotFound — unknown task, or owned by another caller</td></tr>
+                <tr><td>200</td><td><code>-32003</code> · <code>-32007</code> · <code>-32601</code></td><td>Push notifications unsupported · extended card not configured · method not found</td></tr>
+                <tr><td>502 / 503</td><td><code>-32603</code></td><td>Target unreachable or returned a non-JSON error · circuit open</td></tr>
+                <tr><td>409</td><td><code>-32603</code></td><td>Task ID conflict: the target returned an ID already owned by a different caller</td></tr>
+                <tr><td>500</td><td><code>-32603</code></td><td>Internal error</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="a2d-note"><b>Malformed JSON:</b> a request body that isn't valid JSON is rejected by Warden's general error handler as HTTP 400 with a plain <code>{"error": "..."}</code> body, not a JSON-RPC response. An error raised by the target itself is passed through with its own code and your request ID.</div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">A2A policies</div>
+          <div class="a2d-sub2">Managed on the <b>A2A Policies</b> page. Scoped to one virtual server.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Field</th><th>Values</th></tr></thead>
+              <tbody>
+                <tr><td><code>effect</code></td><td><code>permit</code> or <code>forbid</code></td></tr>
+                <tr><td><code>priority</code></td><td>Number; higher is evaluated first. Ties keep creation order</td></tr>
+                <tr><td>Caller</td><td><code>any</code>, an <b>agent</b> (Agent Hub agent ID) or an <b>agent group</b> (group ID). A group matches active groups the agent belongs to</td></tr>
+                <tr><td>Target</td><td><code>any</code> or one <b>A2A agent</b> (registry ID)</td></tr>
+                <tr><td><code>skills</code></td><td>List of skill IDs, or <code>*</code> for all</td></tr>
+                <tr><td><code>require_user</code>, <code>user_fail_mode</code></td><td>Require a verified user token; <code>closed</code> (default) or <code>open</code> — see below</td></tr>
+                <tr><td><code>is_active</code></td><td>Inactive policies are ignored</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="a2d-p" style="margin-top:14px"><b>Evaluation rules</b>
+            <ul>
+              <li>Active policies for the virtual server are checked in priority order; <b>the first match decides</b>. A match on a <i>forbid</i> denies; a match on a <i>permit</i> allows.</li>
+              <li>If nothing matches, the call is <b>denied</b> (deny by default). With no policies at all, every A2A call is denied.</li>
+              <li>A skill-restricted <b>permit</b> does not match a request that names no skill.</li>
+              <li>A skill-restricted <b>forbid</b> <i>does</i> match a request that names no skill, so leaving the skill out can't bypass it.</li>
+              <li>Follow-up methods (<code>GetTask</code>, <code>CancelTask</code>, <code>SubscribeToTask</code>, <code>ListTasks</code>) cannot name a skill, so: a skill-restricted <b>permit</b> still applies (the caller may continue work it was allowed to start), while a skill-restricted <b>forbid</b> is skipped (otherwise it would block every follow-up call from everyone). They still need a matching caller/target permit, and task ownership still limits who can touch a task.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">User-token modes</div>
+          <div class="a2d-sub2">Applies when the matched <b>permit</b> policy has <i>Require verified user token</i> checked.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Situation</th><th>Fail closed (default)</th><th>Fail open</th></tr></thead>
+              <tbody>
+                <tr><td>No <code>X-User-Token</code></td><td class="a2d-bad">Denied (401)</td><td class="a2d-bad">Denied (401)</td></tr>
+                <tr><td>Token verified</td><td class="a2d-ok">Allowed; user identity added to the delegation token</td><td class="a2d-ok">Same</td></tr>
+                <tr><td>Token judged invalid (bad signature, expired, malformed…)</td><td class="a2d-bad">Denied (401)</td><td class="a2d-bad">Denied (401)</td></tr>
+                <tr><td>Identity provider unavailable, or no issuer/JWKS configured on the virtual server</td><td class="a2d-bad">Denied (401)</td><td class="a2d-ok">Allowed <b>agent-only</b>; the audit event records <code>user_degraded</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="a2d-note"><b>How "invalid" is decided:</b> Warden classifies the verification error by its message. Text mentioning <code>jwt</code>, <code>signature</code>, <code>malformed</code>, <code>expired</code>, <code>invalid token</code>, <code>audience</code> or <code>issuer</code> counts as an invalid token; anything else (network errors, timeouts, key lookup failures, no JWKS configured) counts as infrastructure. This is a heuristic — a wrong key ID is classed as infrastructure, which is why <i>fail open</i> means "user identity is optional". Verification times out after 8 s.</div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Outbound credentials</div>
+          <div class="a2d-sub2">What Warden presents to a remote agent, set per A2A agent on the registry page (<b>Credential</b>) or at registration.</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Type</th><th>Secret format</th><th>Sent as</th></tr></thead>
+              <tbody>
+                <tr><td><code>none</code></td><td>—</td><td><code>Authorization: Bearer &lt;delegation JWT&gt;</code></td></tr>
+                <tr><td><code>bearer</code></td><td>Token</td><td><code>Authorization: Bearer &lt;secret&gt;</code></td></tr>
+                <tr><td><code>header</code></td><td>Value, plus a header name matching <code>[A-Za-z0-9-]{1,64}</code></td><td><code>&lt;header&gt;: &lt;secret&gt;</code></td></tr>
+                <tr><td><code>basic</code></td><td><code>username:password</code> (a colon is required)</td><td><code>Authorization: Basic base64(secret)</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="a2d-p" style="margin-top:14px">
+            <ul>
+              <li><b>Encrypted at rest</b> with AES-256-GCM. The key is <code>WARDEN_SECRETS_KEY</code> if set; otherwise an auto-generated file <code>.warden-secrets.key</code> in the same folder as the database, so a leaked copy of the database alone does not expose stored credentials. Keep that file out of version control (<code>mcp-virtual-server/.gitignore</code> already lists the default path).</li>
+              <li><b>Never returned</b> by the API — only <code>auth_type</code>, <code>auth_header</code> and <code>has_secret</code>.</li>
+              <li><b>Reserved header names</b> can't be used: <code>host</code>, <code>content-length</code>, <code>content-type</code>, <code>accept</code>, <code>a2a-version</code>, <code>x-warden-delegation</code>, <code>transfer-encoding</code>, <code>connection</code>.</li>
+              <li><b>Redirects are refused</b> on forwarded calls so a credential is never sent to a different host.</li>
+              <li>If a stored secret can't be decrypted (for example, the key was lost), the call fails and does <b>not</b> count toward the circuit breaker. The caller sees HTTP 502 "Target agent unreachable" with the real cause in <code>error.data.reason</code>, and <code>GetTask</code> falls back to its cached task. The secret must be re-entered.</li>
+              <li>There is no key-rotation feature: changing the key makes existing stored secrets unreadable.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Data model</div>
+          <div class="a2d-sub2">SQLite tables added for A2A (created automatically on startup).</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Table</th><th>Holds</th></tr></thead>
+              <tbody>
+                <tr><td><code>virtual_servers.protocol</code></td><td>Column: <code>mcp</code> (default), <code>a2a</code> or <code>both</code></td></tr>
+                <tr><td><code>a2a_agents</code></td><td>Registered remote agents: name, card URL, cached card JSON, endpoint URL, fetch time and error, active flag, outbound credential type, header and encrypted secret</td></tr>
+                <tr><td><code>virtual_server_a2a_agents</code></td><td>Which agents are assigned to which virtual server</td></tr>
+                <tr><td><code>a2a_policies</code></td><td>Access rules (see above)</td></tr>
+                <tr><td><code>a2a_tasks</code></td><td>Tasks bound to the calling agent: remote task ID, context ID, state, last task JSON. Unique per target and remote task ID</td></tr>
+                <tr><td><code>a2a_keys</code></td><td>Ed25519 signing key pair (private key in PEM, public key as JWK)</td></tr>
+                <tr><td><code>event_log</code></td><td>Existing table; A2A events use <code>log_type = 'a2a_call'</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Audit &amp; scoring</div>
+          <div class="a2d-sub2">One <code>a2a_call</code> event per request that gets past request validation (streams add a second event when they complete).</div>
+          <div class="a2d-p">
+            <b>Level</b> is <code>info</code> (allowed), <code>warn</code> (task not found, or an error the target itself returned and Warden passed through), <code>block</code> (denied, blocked, loop, or failed authentication) or <code>error</code> (target failure). <b>Event data</b> includes: caller (<code>agent_id</code>, <code>agent_name</code>), target (<code>target_agent_id</code>, <code>target_name</code>), <code>method</code>, <code>decision</code> (<code>allow</code> / <code>deny</code> / <code>block</code> / <code>error</code> / <code>auth_failed</code>), <code>reason</code>, <code>policy_id</code>, <code>skill</code>, <code>user_status</code>, <code>user_degraded</code>, <code>task_id</code>, <code>task_state</code> and <code>chain_depth</code>. Failed authentications are logged with no caller identity.<br><b>Not logged:</b> invalid JSON-RPC requests, unknown routes, unsupported <code>A2A-Version</code>, unsupported methods, missing-parameter errors (<code>-32602</code>), task-ID conflicts, and non-JSON HTTP errors from the target.
+          </div>
+          <div class="a2d-p">
+            <b>Scoring.</b> Only events whose <code>decision</code> is <code>allow</code> or <code>deny</code> count toward an agent's or virtual server's risk score, so target outages and failed logins never change a score. Interceptor findings on A2A traffic are attributed to the calling agent. By default scoring counts only <i>outbound</i> findings (the "only outbound" setting), so a blocked inbound message is not scored unless that setting is turned off. As with MCP, the virtual server must have <b>Interceptors</b> enabled for its calls to be scored. The <b>Score History</b> page lists only MCP proxy calls and interceptor scans; A2A decisions affect the score but do not appear there.
+          </div>
+        </div>
+
+        <div class="a2d-section">
+          <div class="a2d-h2">Configuration &amp; limits</div>
+          <div class="a2d-box" style="padding:0;overflow:hidden">
+            <table class="a2d-table">
+              <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td><code>A2A_TIMEOUT_MS</code></td><td>Env var, default <code>60000</code>. Time allowed to reach the target and receive response headers</td></tr>
+                <tr><td><code>PUBLIC_URL</code></td><td>Env var. Base URL written into gateway Agent Cards. If unset, taken from the incoming request's protocol and host</td></tr>
+                <tr><td><code>WARDEN_SECRETS_KEY</code></td><td>Env var. Encryption key for stored credentials (otherwise a key file beside the database)</td></tr>
+                <tr><td><code>SQLITE_PATH</code></td><td>Env var. Database location (existing); the default key file lives beside it</td></tr>
+                <tr><td>Delegation token lifetime</td><td>60 seconds</td></tr>
+                <tr><td>Maximum chain depth</td><td>5</td></tr>
+                <tr><td>Circuit breaker</td><td>3 consecutive failures → target skipped for 30 seconds</td></tr>
+                <tr><td>Agent Card fetch timeout</td><td>8 seconds</td></tr>
+                <tr><td>User-token verification timeout</td><td>8 seconds</td></tr>
+                <tr><td>Stream keep-alive</td><td>Comment line every 15 seconds</td></tr>
+                <tr><td><code>ListTasks</code> size</td><td>Up to 100 tasks</td></tr>
+                <tr><td>Registration requirements</td><td>Card has a <code>name</code> and a <code>supportedInterfaces</code> entry with <code>protocolBinding</code> <code>JSONRPC</code> and a <code>url</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end page-a2a-reference -->
+
+    <!-- ═══════════════════════════════════════════════════════════
          KEYS PAGE
     ═══════════════════════════════════════════════════════════ -->
     <div class="page" id="page-keys">
@@ -8105,6 +8980,14 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
     <h2 id="vs-modal-title">New Virtual Server</h2>
     <div class="form-group"><label>Name</label><input id="vs-name" placeholder="my-banking-vs" /></div>
     <div class="form-group"><label>Description</label><input id="vs-desc" placeholder="Optional" /></div>
+    <div class="form-group">
+      <label>Protocol</label>
+      <div id="vs-protocol-picker" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <button type="button" class="vs-proto-opt" data-proto="mcp" onclick="vsSetProtocol('mcp')"><b>MCP</b><span>Tool proxy</span></button>
+        <button type="button" class="vs-proto-opt" data-proto="a2a" onclick="vsSetProtocol('a2a')"><b>A2A</b><span>Agent-to-agent</span></button>
+        <button type="button" class="vs-proto-opt" data-proto="both" onclick="vsSetProtocol('both')"><b>Both</b><span>MCP + A2A</span></button>
+      </div>
+    </div>
     <div class="form-group"><label>Okta Issuer URL</label><input id="vs-issuer" placeholder="https://your-domain.okta.com/oauth2/default" /></div>
     <div class="form-row">
       <div class="form-group"><label>Client ID</label><input id="vs-client-id" placeholder="Okta client ID" /></div>
@@ -8218,9 +9101,119 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
       </div>
     </div>
 
+    <!-- A2A agents section — visible when protocol is A2A or Both -->
+    <div id="vs-a2a-section" style="display:none;margin-top:18px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">🤝 A2A Agents</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Registered A2A agents reachable through this virtual server. Each gets its own gateway endpoint and Agent Card.</p>
+      <div id="vs-a2a-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="vs-a2a-add-sel" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;outline:none">
+          <option value="">Add an A2A agent…</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="vsAddA2aAssignment()">＋ Add</button>
+      </div>
+      <p id="vs-a2a-new-note" style="display:none;font-size:11px;color:var(--text-muted);font-style:italic;margin-top:8px">Save the virtual server first, then re-open Edit to assign A2A agents.</p>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeVsModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveVs()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Register A2A Agent -->
+<div class="modal-overlay" id="a2a-modal">
+  <div class="modal">
+    <h2>Register A2A Agent</h2>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;line-height:1.5">Warden fetches the Agent Card once and caches it, so the agent stays routable even if its card endpoint is briefly down.</p>
+    <div class="form-group"><label>Agent Card URL</label><input id="a2a-card-url" placeholder="https://agent.example.com/.well-known/agent-card.json" /></div>
+    <div class="form-group"><label>Display name (optional — defaults to the card name)</label><input id="a2a-name" placeholder="e.g. report-agent" /></div>
+    <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:12px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:10px">Authentication to this agent</div>
+      <div class="form-group"><label>Type</label>
+        <select id="a2a-auth-type" onchange="a2aAuthFields('a2a-auth')">
+          <option value="none">None</option><option value="bearer">Bearer token</option>
+          <option value="header">API key header</option><option value="basic">Basic auth</option>
+        </select></div>
+      <div class="form-group" id="a2a-auth-header-row" style="display:none"><label>Header name</label><input id="a2a-auth-header" placeholder="X-Api-Key" /></div>
+      <div class="form-group" id="a2a-auth-secret-row" style="display:none"><label>Secret</label><input id="a2a-auth-secret" type="password" autocomplete="new-password" /></div>
+      <div id="a2a-auth-hint" style="font-size:12px;color:var(--text-muted);line-height:1.5"></div>
+    </div>
+    <div id="a2a-reg-error" style="display:none;font-size:12.5px;color:var(--red);margin-top:4px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="a2aCloseRegister()">Cancel</button>
+      <button class="btn btn-primary" id="a2a-reg-btn" onclick="a2aRegister()">Register</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: A2A Agent Credential -->
+<div class="modal-overlay" id="a2a-cred-modal">
+  <div class="modal">
+    <h2>Credential — <span id="a2a-cred-name"></span></h2>
+    <div class="form-group"><label>Type</label>
+      <select id="a2a-cred-type" onchange="a2aAuthFields('a2a-cred')">
+        <option value="none">None</option><option value="bearer">Bearer token</option>
+        <option value="header">API key header</option><option value="basic">Basic auth</option>
+      </select></div>
+    <div class="form-group" id="a2a-cred-header-row" style="display:none"><label>Header name</label><input id="a2a-cred-header" placeholder="X-Api-Key" /></div>
+    <div class="form-group" id="a2a-cred-secret-row" style="display:none"><label>Secret</label><input id="a2a-cred-secret" type="password" autocomplete="new-password" /></div>
+    <div id="a2a-cred-hint" style="font-size:12px;color:var(--text-muted);line-height:1.5"></div>
+    <div id="a2a-cred-error" style="display:none;font-size:12.5px;color:var(--red);margin-top:8px"></div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-danger" id="a2a-cred-remove" onclick="a2aCredRemove()">Remove credential</button>
+      <span style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="a2aCredClose()">Cancel</button>
+        <button class="btn btn-primary" id="a2a-cred-save" onclick="a2aCredSave()">Save</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: A2A Policy -->
+<div class="modal-overlay" id="a2ap-modal">
+  <div class="modal" style="max-width:560px">
+    <h2 id="a2ap-modal-title">New A2A Policy</h2>
+    <div class="form-group"><label>Name</label><input id="a2ap-name" placeholder="e.g. finance agents may call report-agent" /></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+      <div class="form-group"><label>Effect</label>
+        <div class="a2ap-seg" id="a2ap-effect">
+          <button type="button" data-v="permit" onclick="a2apSetEffect('permit')">✓ Permit</button>
+          <button type="button" data-v="forbid" onclick="a2apSetEffect('forbid')">✕ Forbid</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Priority</label><input id="a2ap-priority" type="number" value="0" /></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:12px">
+      <div class="form-group"><label>Caller</label>
+        <select id="a2ap-caller-type" onchange="a2apPopulatePickers()"><option value="any">Any agent</option><option value="agent">Agent</option><option value="group">Agent Group</option></select>
+      </div>
+      <div class="form-group"><label>&nbsp;</label><select id="a2ap-caller-value"></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:12px">
+      <div class="form-group"><label>Target</label>
+        <select id="a2ap-target-type" onchange="a2apPopulatePickers()"><option value="any">Any A2A agent</option><option value="agent">A2A Agent</option></select>
+      </div>
+      <div class="form-group"><label>&nbsp;</label><select id="a2ap-target-value"></select></div>
+    </div>
+    <div class="form-group"><label>Skills (comma-separated; * = any)</label><input id="a2ap-skills" value="*" placeholder="* or summarize, translate" /></div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:13px">
+        <input type="checkbox" id="a2ap-require-user" onchange="a2apToggleFail()" style="width:auto" /> Require verified user token
+      </label>
+      <div id="a2ap-fail-wrap" style="display:none;margin-top:8px">
+        <label>Fail mode</label>
+        <select id="a2ap-fail-mode">
+          <option value="closed">Fail closed — deny if the user token can't be verified (recommended)</option>
+          <option value="open">Fail open — continue agent-only only if the IdP is unavailable</option>
+        </select>
+      </div>
+    </div>
+    <div id="a2ap-error" style="display:none;font-size:12.5px;color:var(--red);margin-top:4px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="a2apCloseModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="a2apSave()">Save Policy</button>
     </div>
   </div>
 </div>
@@ -8324,7 +9317,7 @@ function navigate(page) {
   window.location.hash = page;
 }
 
-const DOCS_PAGES = new Set(['docs', 'architecture', 'pipeline', 'mcp-architecture', 'mcp-flow', 'identities', 'agent-groups-doc', 'agent-group-rules-doc']);
+const DOCS_PAGES = new Set(['docs', 'architecture', 'pipeline', 'mcp-architecture', 'mcp-flow', 'identities', 'agent-groups-doc', 'agent-group-rules-doc', 'a2a-overview', 'a2a-demo', 'a2a-reference']);
 
 function handleRoute() {
   const page = window.location.hash.slice(1) || 'dashboard';
@@ -8352,6 +9345,9 @@ function handleRoute() {
   if (page === 'interceptors')    loadInterceptorsPage();
   if (page === 'keys')            loadKeys();
   if (page === 'agents')          loadAgents();
+  if (page === 'a2a-agents')        loadA2aAgents();
+  if (page === 'a2a-policies')      loadA2aPolicies();
+  if (page === 'a2a-simulate')      loadA2aSimulate();
   if (page === 'agent-groups')      loadAgentGroups();
   if (page === 'agent-group-rules') loadAgentGroupRules();
   if (page === 'approvals')       loadApprovals();
@@ -9983,6 +10979,10 @@ async function loadVirtualServers() {
   for (const vs of servers) {
     const detail = await api('/virtual-servers/' + vs.id);
     const sc = scoreMap[vs.id];
+    const proto = vs.protocol || 'mcp';
+    const hasMcp = proto !== 'a2a', hasA2a = proto !== 'mcp';
+    const a2aAgents = hasA2a ? await api('/virtual-servers/' + vs.id + '/a2a-agents').catch(() => []) : [];
+    const protoBadge = proto === 'mcp' ? '' : ` <span class="badge" style="font-size:10.5px;background:rgba(6,182,212,.15);color:#06b6d4;border:1px solid rgba(6,182,212,.3)">🤝 ${proto === 'a2a' ? 'A2A' : 'MCP + A2A'}</span>`;
     const scoreBadge = (sc && sc.tier) ? `<div onclick="navigate('scoring')" title="Risk Score: ${sc.tier.name}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:54px;background:${sc.tier.bg};border:1px solid ${sc.tier.border};border-radius:8px;padding:5px 10px;gap:2px;cursor:pointer;flex-shrink:0">
         <span style="font-size:17px;font-weight:800;color:${sc.tier.color};line-height:1;letter-spacing:-.5px">${sc.score}</span>
         <span style="font-size:9px;font-weight:700;color:${sc.tier.color};opacity:.75;line-height:1;text-transform:uppercase;letter-spacing:.4px">${sc.tier.name}</span>
@@ -9992,22 +10992,27 @@ async function loadVirtualServers() {
     card.innerHTML = `
       <div class="card-header">
         <div>
-          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span>${(() => { const f = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })(); const tags = []; if (f.includes('interceptors')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">🛡 Intercept</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🛡 Intercept</span>'); if (f.includes('policy')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">🔒 Token Policy</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🔒 Token Policy</span>'); if (vs.require_agent_token) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(251,191,36,0.15);color:#f59e0b;border:1px solid rgba(251,191,36,0.3)">🤖 Agent Required</span>'); return ' ' + tags.join(' '); })()}</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Proxy: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px">POST /api/proxy/${vs.id}</code></div>
+          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span>${protoBadge}${(() => { const f = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })(); const tags = []; if (f.includes('interceptors')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">🛡 Intercept</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🛡 Intercept</span>'); if (f.includes('policy')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">🔒 Token Policy</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🔒 Token Policy</span>'); if (vs.require_agent_token) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(251,191,36,0.15);color:#f59e0b;border:1px solid rgba(251,191,36,0.3)">🤖 Agent Required</span>'); return ' ' + tags.join(' '); })()}</div>
+          ${hasMcp ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">Proxy: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px">POST /api/proxy/${vs.id}</code></div>` : ''}
+          ${hasA2a ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">A2A: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px">POST /a2a/${vs.id}/&lt;agentId&gt;</code></div>` : ''}
         </div>
         <div style="display:flex;gap:10px;align-items:center">
           ${scoreBadge}
-          <button class="btn btn-ghost btn-sm" onclick="openToolModal('${vs.id}')">⚙ Tools</button>
+          ${hasMcp ? `<button class="btn btn-ghost btn-sm" onclick="openToolModal('${vs.id}')">⚙ Tools</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="editVs('${vs.id}')">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteVs('${vs.id}')">Delete</button>
         </div>
       </div>
       ${vs.description ? `<p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">${vs.description}</p>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div>
+        ${hasMcp ? `<div>
           <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Assigned Tools (${detail.tools.length})</div>
           ${detail.tools.length ? `<div class="tag-list">${detail.tools.map(t => `<span class="tag">${t.mcp_server_name}: ${t.tool_name === '*' ? 'All' : t.tool_name}</span>`).join('')}</div>` : '<span style="color:var(--text-muted);font-size:12.5px">No tools assigned</span>'}
-        </div>
+        </div>` : ''}
+        ${hasA2a ? `<div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">A2A Agents (${a2aAgents.length})</div>
+          ${a2aAgents.length ? `<div class="tag-list">${a2aAgents.map(a => `<span class="tag" style="${a.is_active ? '' : 'opacity:.5'}" title="${escHtml(a.id)}">🤝 ${escHtml(a.name)}</span>`).join('')}</div>` : '<span style="color:var(--text-muted);font-size:12.5px">No A2A agents assigned</span>'}
+        </div>` : ''}
         <div>
           <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Token Policies (${detail.policies.length})</div>
           ${detail.policies.length ? `<div class="tag-list">${detail.policies.map(p => {
@@ -10038,6 +11043,7 @@ function openVsModal() {
   document.getElementById('vs-require-agent-token').checked = false;
   document.getElementById('vs-allowed-agents-section').style.display = 'none';
   vsToggleIdpConnectRow();
+  vsSetProtocol('mcp');
   document.getElementById('vs-modal').classList.add('open');
 }
 
@@ -10067,10 +11073,508 @@ async function editVs(id) {
   } else {
     agentSec.style.display = 'none';
   }
+  vsSetProtocol(vs.protocol || 'mcp');
   document.getElementById('vs-modal').classList.add('open');
 }
 
 function closeVsModal() { document.getElementById('vs-modal').classList.remove('open'); }
+
+// ── VS Modal — Protocol selector + A2A agents ───────────────────────────────
+let vsProtocol = 'mcp';
+
+function vsSetProtocol(proto) {
+  vsProtocol = ['mcp', 'a2a', 'both'].includes(proto) ? proto : 'mcp';
+  document.querySelectorAll('#vs-protocol-picker .vs-proto-opt')
+    .forEach(b => b.classList.toggle('active', b.dataset.proto === vsProtocol));
+  const a2aOn = vsProtocol !== 'mcp';
+  document.getElementById('vs-a2a-section').style.display = a2aOn ? 'block' : 'none';
+  document.getElementById('vs-a2a-new-note').style.display = a2aOn && !editingVsId ? 'block' : 'none';
+  if (a2aOn) {
+    if (editingVsId) vsLoadA2a(editingVsId);
+    else vsRenderA2a([], [], null);
+  }
+}
+
+async function vsLoadA2a(vsId) {
+  try {
+    const [assigned, all] = await Promise.all([
+      api('/virtual-servers/' + vsId + '/a2a-agents'),
+      api('/a2a-agents'),
+    ]);
+    vsRenderA2a(assigned, all, vsId);
+  } catch (e) {
+    document.getElementById('vs-a2a-list').innerHTML = `<div style="font-size:12px;color:var(--red)">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function a2aCopy(text, btn) {
+  const done = () => { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1200); };
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, () => {});
+  else { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch {} t.remove(); }
+}
+
+function vsRenderA2a(assigned, all, vsId) {
+  const list = document.getElementById('vs-a2a-list');
+  const sel  = document.getElementById('vs-a2a-add-sel');
+  const origin = window.location.origin;
+  if (!assigned.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:6px 0">No A2A agents assigned yet.</div>';
+  } else {
+    list.innerHTML = assigned.map(a => {
+      const endpoint = `${origin}/a2a/${vsId}/${a.id}`;
+      const card = `${endpoint}/.well-known/agent-card.json`;
+      const skills = (a.skills || []);
+      return `
+      <div class="a2a-vs-card">
+        <div class="a2a-vs-head">
+          <div class="a2a-vs-name">
+            <span style="width:8px;height:8px;border-radius:50%;background:${a.is_active ? '#10b981' : '#6b7280'};flex-shrink:0"></span>
+            <span class="n">💳 ${escHtml(a.name)}</span>
+            ${a.is_active ? '' : '<span class="a2a-chip off">inactive</span>'}
+            ${a.card_error ? `<span class="a2a-chip warn" title="${escHtml(a.card_error)}">card refresh failed</span>` : ''}
+          </div>
+          <button class="btn btn-danger btn-sm" style="flex-shrink:0" onclick="vsRemoveA2aAssignment('${a.id}')">Remove</button>
+        </div>
+        ${a.description ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:5px;line-height:1.45">${escHtml(a.description)}</div>` : ''}
+        ${skills.length ? `<div class="a2a-vs-skills">${skills.map(s => `<span class="a2a-chip" title="${escHtml(s.description || '')}">${escHtml(s.name || s.id)}</span>`).join('')}</div>` : ''}
+        <div class="a2a-copy"><label>Endpoint</label><code title="${escHtml(endpoint)}">${escHtml(endpoint)}</code><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="a2aCopy('${escHtml(endpoint)}', this)">Copy</button></div>
+        <div class="a2a-copy"><label>Agent Card</label><code title="${escHtml(card)}">${escHtml(card)}</code><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="a2aCopy('${escHtml(card)}', this)">Copy</button></div>
+      </div>`;
+    }).join('');
+  }
+  const assignedIds = new Set(assigned.map(a => a.id));
+  const unassigned = (all || []).filter(a => !assignedIds.has(a.id));
+  sel.innerHTML = '<option value="">Add an A2A agent…</option>' +
+    unassigned.map(a => `<option value="${a.id}">${escHtml(a.name)} (${a.is_active ? 'active' : 'inactive'})</option>`).join('');
+}
+
+async function vsAddA2aAssignment() {
+  const id = document.getElementById('vs-a2a-add-sel').value;
+  if (!id || !editingVsId) return;
+  try {
+    await api('/virtual-servers/' + editingVsId + '/a2a-agents', { method: 'POST', body: { a2a_agent_id: id } });
+    await vsLoadA2a(editingVsId);
+  } catch (e) { alert('Failed to add A2A agent: ' + e.message); }
+}
+
+async function vsRemoveA2aAssignment(id) {
+  if (!editingVsId) return;
+  try {
+    await api('/virtual-servers/' + editingVsId + '/a2a-agents/' + id, { method: 'DELETE' });
+    await vsLoadA2a(editingVsId);
+  } catch (e) { alert('Failed to remove A2A agent: ' + e.message); }
+}
+
+// ─── A2A AGENTS REGISTRY PAGE ────────────────────────────────────────────────
+let _a2aAgentsCache = [];
+let _a2aCredId = null;
+
+const A2A_AUTH_HINTS = {
+  none:   "No credential. Warden's identity is always sent separately in X-Warden-Delegation; with None, it is sent as Authorization: Bearer.",
+  bearer: 'Sent as Authorization: Bearer <secret>. Warden\'s identity still goes in X-Warden-Delegation.',
+  header: 'Sent in the custom header you name (e.g. X-Api-Key). Warden\'s identity still goes in X-Warden-Delegation.',
+  basic:  'Sent as Authorization: Basic base64(username:password). Warden\'s identity still goes in X-Warden-Delegation.',
+};
+
+// prefix = 'a2a-auth' (register modal) or 'a2a-cred' (credential modal)
+function a2aAuthFields(prefix, hasSecret) {
+  const type = document.getElementById(prefix + '-type').value;
+  document.getElementById(prefix + '-header-row').style.display = type === 'header' ? '' : 'none';
+  document.getElementById(prefix + '-secret-row').style.display = type === 'none' ? 'none' : '';
+  const secret = document.getElementById(prefix + '-secret');
+  secret.placeholder = hasSecret ? 'Leave blank to keep current secret' : (type === 'basic' ? 'username:password' : '');
+  document.getElementById(prefix + '-hint').textContent = A2A_AUTH_HINTS[type];
+}
+
+function a2aAuthBadge(a) {
+  const t = a.auth_type || 'none';
+  if (t === 'none') return '<span class="badge badge-gray">None</span>';
+  const label = t === 'bearer' ? 'Bearer' : t === 'basic' ? 'Basic' : 'Header: ' + escHtml(a.auth_header || '');
+  return `<span class="badge badge-blue">🔒 ${label}</span>` +
+    (a.has_secret ? '<div style="font-size:11px;color:var(--text-muted);margin-top:3px">secret stored</div>' : '');
+}
+
+function a2aCredOpen(id) {
+  const a = _a2aAgentsCache.find(x => x.id === id);
+  if (!a) return;
+  _a2aCredId = id;
+  document.getElementById('a2a-cred-name').textContent = a.name;
+  document.getElementById('a2a-cred-type').value = a.auth_type || 'none';
+  document.getElementById('a2a-cred-header').value = a.auth_header || '';
+  document.getElementById('a2a-cred-secret').value = '';
+  document.getElementById('a2a-cred-error').style.display = 'none';
+  document.getElementById('a2a-cred-remove').style.display = (a.auth_type && a.auth_type !== 'none') ? '' : 'none';
+  a2aAuthFields('a2a-cred', !!a.has_secret);
+  document.getElementById('a2a-cred-modal').classList.add('open');
+}
+function a2aCredClose() { document.getElementById('a2a-cred-modal').classList.remove('open'); }
+
+async function a2aCredPut(body, btnId) {
+  const errEl = document.getElementById('a2a-cred-error');
+  const btn = document.getElementById(btnId);
+  btn.disabled = true; errEl.style.display = 'none';
+  try {
+    await api('/a2a-agents/' + _a2aCredId + '/auth', { method: 'PUT', body });
+    a2aCredClose(); loadA2aAgents();
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  finally { btn.disabled = false; }
+}
+function a2aCredSave() {
+  const type = document.getElementById('a2a-cred-type').value;
+  const body = { type };
+  if (type === 'header') body.header = document.getElementById('a2a-cred-header').value.trim();
+  const secret = document.getElementById('a2a-cred-secret').value;
+  if (type !== 'none' && secret) body.secret = secret;
+  return a2aCredPut(body, 'a2a-cred-save');
+}
+function a2aCredRemove() {
+  if (!confirm('Remove the stored credential for this agent?')) return;
+  return a2aCredPut({ type: 'none' }, 'a2a-cred-remove');
+}
+
+async function loadA2aAgents() {
+  const tbody = document.querySelector('#a2a-table tbody');
+  const empty = document.getElementById('a2a-empty');
+  let agents = [];
+  try { agents = await api('/a2a-agents'); }
+  catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:20px">${escHtml(e.message)}</td></tr>`;
+    empty.style.display = 'none';
+    return;
+  }
+  _a2aAgentsCache = agents;
+  if (!agents.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = agents.map(a => {
+    const skills = (a.skills || []);
+    const skillChips = skills.length
+      ? skills.slice(0, 4).map(s => `<span class="a2a-skill" title="${escHtml(s.description || '')}">${escHtml(s.name || s.id)}</span>`).join('') +
+        (skills.length > 4 ? `<span class="a2a-skill">+${skills.length - 4}</span>` : '')
+      : '<span style="color:var(--text-muted);font-size:12px">—</span>';
+    const fetched = a.card_fetched_at ? new Date(a.card_fetched_at.includes('T') ? a.card_fetched_at : a.card_fetched_at.replace(' ', 'T') + 'Z').toLocaleString() : 'never';
+    const err = a.card_error ? `<div style="font-size:11px;color:var(--red);margin-top:3px;max-width:260px" title="${escHtml(a.card_error)}">⚠ ${escHtml(a.card_error.length > 70 ? a.card_error.slice(0, 70) + '…' : a.card_error)}</div>` : '';
+    return `<tr>
+      <td>
+        <div style="font-weight:600">${escHtml(a.name)}</div>
+        <div style="font-size:11px;color:var(--text-muted);font-family:monospace;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(a.card_url || '')}">${escHtml(a.card_url || '')}</div>
+        ${a.description ? `<div style="font-size:12px;color:var(--text-2);margin-top:2px;max-width:300px">${escHtml(a.description)}</div>` : ''}
+      </td>
+      <td style="max-width:260px">${skillChips}</td>
+      <td><span class="badge ${a.is_active ? 'badge-green' : 'badge-gray'}">${a.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td>${a2aAuthBadge(a)}</td>
+      <td style="font-size:12px;color:var(--text-2)">${escHtml(fetched)}${err}</td>
+      <td style="font-size:12.5px">${a.vs_count ?? 0}</td>
+      <td>
+        <div class="a2a-actions">
+          <button class="btn btn-ghost btn-sm" onclick="a2aCredOpen('${a.id}')">🔑 Credential</button>
+          <button class="btn btn-ghost btn-sm" onclick="a2aRefresh('${a.id}', this)">↻ Refresh</button>
+          <button class="btn btn-ghost btn-sm" onclick="a2aToggle('${a.id}')">${a.is_active ? '⏸ Disable' : '▶ Enable'}</button>
+          <button class="btn btn-danger btn-sm" onclick="a2aDelete('${a.id}')">🗑 Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function a2aOpenRegister() {
+  document.getElementById('a2a-card-url').value = '';
+  document.getElementById('a2a-name').value = '';
+  document.getElementById('a2a-auth-type').value = 'none';
+  document.getElementById('a2a-auth-header').value = '';
+  document.getElementById('a2a-auth-secret').value = '';
+  a2aAuthFields('a2a-auth');
+  document.getElementById('a2a-reg-error').style.display = 'none';
+  document.getElementById('a2a-modal').classList.add('open');
+}
+function a2aCloseRegister() { document.getElementById('a2a-modal').classList.remove('open'); }
+
+async function a2aRegister() {
+  const card_url = document.getElementById('a2a-card-url').value.trim();
+  const name = document.getElementById('a2a-name').value.trim();
+  const errEl = document.getElementById('a2a-reg-error');
+  const btn = document.getElementById('a2a-reg-btn');
+  if (!card_url) { errEl.textContent = 'Agent Card URL is required.'; errEl.style.display = 'block'; return; }
+  const authType = document.getElementById('a2a-auth-type').value;
+  let auth;
+  if (authType !== 'none') {
+    auth = { type: authType, secret: document.getElementById('a2a-auth-secret').value };
+    if (authType === 'header') auth.header = document.getElementById('a2a-auth-header').value.trim();
+  }
+  btn.disabled = true; btn.textContent = 'Fetching card…'; errEl.style.display = 'none';
+  try {
+    await api('/a2a-agents', { method: 'POST', body: { card_url, ...(name ? { name } : {}), ...(auth ? { auth } : {}) } });
+    a2aCloseRegister(); loadA2aAgents();
+  } catch (e) {
+    errEl.textContent = e.message; errEl.style.display = 'block';
+  } finally { btn.disabled = false; btn.textContent = 'Register'; }
+}
+
+async function a2aRefresh(id, btn) {
+  const o = btn.textContent; btn.disabled = true; btn.textContent = 'Refreshing…';
+  try { await api('/a2a-agents/' + id + '/refresh', { method: 'POST' }); }
+  catch (e) { alert('Refresh failed: ' + e.message); }
+  loadA2aAgents();
+}
+async function a2aToggle(id) {
+  try { await api('/a2a-agents/' + id + '/toggle', { method: 'PATCH' }); } catch (e) { alert(e.message); }
+  loadA2aAgents();
+}
+async function a2aDelete(id) {
+  if (!confirm('Delete this A2A agent? It will be removed from all virtual servers.')) return;
+  try { await api('/a2a-agents/' + id, { method: 'DELETE' }); } catch (e) { alert(e.message); }
+  loadA2aAgents();
+}
+
+// ─── A2A POLICIES PAGE ───────────────────────────────────────────────────────
+let _a2apPolicies = [], _a2apAgents = [], _a2apGroups = [], _a2apTargets = [], _a2apEditId = null, _a2apEffect = 'permit';
+
+async function a2apEnsureVsFilter() {
+  const sel = document.getElementById('a2ap-vs-filter');
+  const prev = sel.value;
+  const all = await api('/virtual-servers').catch(() => []);
+  const vss = all.filter(v => v.protocol === 'a2a' || v.protocol === 'both');
+  sel.innerHTML = vss.length
+    ? vss.map(v => `<option value="${v.id}">${escHtml(v.name)}</option>`).join('')
+    : '<option value="">No A2A virtual servers</option>';
+  if (prev && vss.some(v => v.id === prev)) sel.value = prev;
+  return vss;
+}
+
+async function loadA2aPolicies() {
+  const tbody = document.querySelector('#a2ap-table tbody');
+  const empty = document.getElementById('a2ap-empty');
+  const vss = await a2apEnsureVsFilter();
+  const vsId = document.getElementById('a2ap-vs-filter').value;
+  const [agents, groups] = await Promise.all([api('/agents').catch(() => []), api('/agent-groups').catch(() => [])]);
+  _a2apAgents = agents; _a2apGroups = groups;
+  await a2apLoadTargets(vsId);
+  if (!vss.length || !vsId) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    empty.querySelector('.msg').innerHTML = 'No virtual server uses the A2A protocol yet.<br>Set a virtual server\'s protocol to <b>A2A</b> or <b>Both</b> first.';
+    return;
+  }
+  try { _a2apPolicies = await api('/a2a-policies?virtual_server_id=' + encodeURIComponent(vsId)); }
+  catch (e) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:20px">${escHtml(e.message)}</td></tr>`; empty.style.display = 'none'; return; }
+  if (!_a2apPolicies.length) {
+    tbody.innerHTML = '';
+    empty.querySelector('.msg').innerHTML = 'No A2A policies for this virtual server.<br><b>With no rules, every A2A call is denied.</b> Click <b>New Policy</b> to permit a caller to reach a target agent.';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = _a2apPolicies.map(p => {
+    const caller = p.caller_type === 'any' ? '<span class="a2ap-chip any">any agent</span>'
+      : `<span class="a2ap-chip" title="${escHtml(p.caller_value)}">${p.caller_type === 'group' ? '🫂' : '🤖'} ${escHtml(p.caller_name || p.caller_value)}</span>`;
+    const target = p.target_type === 'any' ? '<span class="a2ap-chip any">any A2A agent</span>'
+      : `<span class="a2ap-chip" title="${escHtml(p.target_value)}">🤝 ${escHtml(p.target_name || p.target_value)}</span>`;
+    const skills = (p.skills || ['*']).map(s => s === '*' ? '<span class="a2ap-chip any">any skill</span>' : `<span class="a2a-skill">${escHtml(s)}</span>`).join('');
+    const user = p.require_user
+      ? `<span class="badge badge-yellow">user required</span><div style="font-size:11px;color:var(--text-muted);margin-top:3px">fail ${p.user_fail_mode === 'open' ? 'open' : 'closed'}</div>`
+      : '<span style="color:var(--text-muted);font-size:12px">optional</span>';
+    return `<tr style="${p.is_active ? '' : 'opacity:.55'}">
+      <td style="font-weight:700">${p.priority}</td>
+      <td><div style="font-weight:600">${escHtml(p.name)}</div>
+        <span class="badge ${p.effect === 'forbid' ? 'badge-red' : 'badge-green'}" style="margin-top:4px">${p.effect === 'forbid' ? '✕ Forbid' : '✓ Permit'}</span></td>
+      <td style="white-space:nowrap">${caller}<span class="a2ap-arrow">→</span>${target}</td>
+      <td style="max-width:220px">${skills}</td>
+      <td>${user}</td>
+      <td><span class="badge ${p.is_active ? 'badge-green' : 'badge-gray'}">${p.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="a2apToggle('${p.id}', ${p.is_active ? 0 : 1})">${p.is_active ? 'Disable' : 'Enable'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="a2apOpenModal('${p.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="a2apDelete('${p.id}')">Delete</button>
+      </td></tr>`;
+  }).join('');
+}
+
+async function a2apLoadTargets(vsId) {
+  _a2apTargets = vsId ? await api('/virtual-servers/' + vsId + '/a2a-agents').catch(() => []) : [];
+}
+
+// ─── A2A POLICY SIMULATE ─────────────────────────────────────────────────────
+let _a2asTargets = [];
+
+async function loadA2aSimulate() {
+  const vsSel = document.getElementById('a2as-vs');
+  const prevVs = vsSel.value, prevCaller = document.getElementById('a2as-caller').value;
+  const [all, agents] = await Promise.all([api('/virtual-servers').catch(() => []), api('/agents').catch(() => [])]);
+  const vss = all.filter(v => v.protocol === 'a2a' || v.protocol === 'both');
+  vsSel.innerHTML = vss.length
+    ? vss.map(v => `<option value="${v.id}">${escHtml(v.name)}</option>`).join('')
+    : '<option value="">No A2A virtual servers</option>';
+  if (prevVs && vss.some(v => v.id === prevVs)) vsSel.value = prevVs;
+  const callerSel = document.getElementById('a2as-caller');
+  callerSel.innerHTML = agents.length
+    ? agents.map(a => `<option value="${a.id}">${escHtml(a.name)}</option>`).join('')
+    : '<option value="">No agents</option>';
+  if (prevCaller && agents.some(a => a.id === prevCaller)) callerSel.value = prevCaller;
+  await a2asLoadTargets();
+}
+
+async function a2asLoadTargets() {
+  const vsId = document.getElementById('a2as-vs').value;
+  _a2asTargets = vsId ? await api('/virtual-servers/' + vsId + '/a2a-agents').catch(() => []) : [];
+  const sel = document.getElementById('a2as-target');
+  sel.innerHTML = _a2asTargets.length
+    ? _a2asTargets.map(a => `<option value="${a.id}">${escHtml(a.name)}</option>`).join('')
+    : `<option value="">${vsId ? 'No A2A agents assigned' : 'Select a virtual server first'}</option>`;
+  a2asFillSkills();
+}
+
+// Skills come from the target's Agent Card; "Custom" lets you probe a skill the card doesn't list.
+function a2asFillSkills() {
+  const t = _a2asTargets.find(x => x.id === document.getElementById('a2as-target').value);
+  document.getElementById('a2as-skill').innerHTML =
+    '<option value="">— none (omit skill) —</option>'
+    + (t?.skills || []).map(s => `<option value="${escHtml(s.id)}">${escHtml(s.name && s.name !== s.id ? `${s.name} (${s.id})` : s.id)}</option>`).join('')
+    + '<option value="__custom__">Custom skill id…</option>';
+  a2asSkillChange();
+}
+
+function a2asSkillChange() {
+  const custom = document.getElementById('a2as-skill').value === '__custom__';
+  document.getElementById('a2as-skill-custom').style.display = custom ? '' : 'none';
+}
+
+async function runA2aSimulation() {
+  const vsId = document.getElementById('a2as-vs').value;
+  const callerId = document.getElementById('a2as-caller').value;
+  const targetId = document.getElementById('a2as-target').value;
+  if (!vsId || !callerId || !targetId) return alert('Select a virtual server, caller agent and target agent');
+  const skillSel = document.getElementById('a2as-skill').value;
+  const skill = (skillSel === '__custom__' ? document.getElementById('a2as-skill-custom').value : skillSel).trim();
+  let r;
+  try {
+    r = await api('/a2a-policies/simulate', { method: 'POST', body: {
+      virtual_server_id: vsId, caller_agent_id: callerId, target_agent_id: targetId,
+      skill: skill || undefined, user_status: document.getElementById('a2as-user').value,
+    } });
+  } catch (e) { return alert(e.message); }
+
+  document.getElementById('a2as-result').style.display = '';
+  document.getElementById('a2as-decision').innerHTML = r.decision === 'allow'
+    ? '<span style="color:var(--green)">✅ ALLOW</span>'
+    : '<span style="color:var(--red)">🚫 DENY</span>';
+  document.getElementById('a2as-reason').textContent = r.reason;
+
+  const groups = (r.caller?.groups || []).map(g => `<span class="a2ap-chip">🫂 ${escHtml(g)}</span>`).join('');
+  document.getElementById('a2as-ctx').innerHTML =
+    `<span class="a2ap-chip">🤖 ${escHtml(r.caller?.name || '?')}</span>`
+    + (groups ? `<span style="color:var(--text-muted)">member of</span>${groups}` : '<span style="color:var(--text-muted)">no group memberships</span>')
+    + '<span class="a2ap-arrow">→</span>'
+    + `<span class="a2ap-chip">🤝 ${escHtml(r.target?.name || '?')}</span>`
+    + `<span class="a2a-skill">${r.skill ? escHtml(r.skill) : 'no skill'}</span>`;
+
+  const tick = ok => ok ? '✅' : '✗';
+  const traceEl = document.getElementById('a2as-trace');
+  traceEl.innerHTML = (r.trace || []).length ? r.trace.map(t => {
+    const forbid = t.effect === 'forbid';
+    const cls = t.decides ? (forbid ? 'decides-forbid' : 'decides-permit') : (t.reached ? '' : 'unreached');
+    const badge = t.decides
+      ? (forbid ? '<span class="badge badge-red">🚫 Forbid matched — decided</span>' : '<span class="badge badge-green">✅ Permit matched — decided</span>')
+      : (t.reached ? '<span class="badge badge-gray">No match</span>' : '<span class="badge badge-gray">Not reached</span>');
+    const skills = (t.skills || ['*']).map(s => s === '*' ? 'any skill' : s).join(', ');
+    const omitted = forbid && !r.skill && !(t.skills || []).includes('*') && t.callerMatched && t.targetMatched
+      ? '<div class="a2as-note">A skill-restricted forbid also matches when no skill is named, so leaving the skill out does not get around it.</div>' : '';
+    return `<div class="a2as-trace ${cls}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+        <strong style="font-size:13px">${escHtml(t.policyName)} <span style="color:var(--text-muted);font-weight:500;font-size:11.5px">· priority ${t.priority} · ${forbid ? 'forbid' : 'permit'}</span></strong>${badge}
+      </div>
+      <div class="a2as-checks">Caller: ${tick(t.callerMatched)} &nbsp;|&nbsp; Target: ${tick(t.targetMatched)} &nbsp;|&nbsp; Skill: ${tick(t.skillMatched)} <span style="opacity:.8">(${escHtml(skills)})</span></div>${omitted}
+    </div>`;
+  }).join('') : '<div class="a2as-step"><span class="a2as-ic">∅</span>No active policies on this virtual server — deny by default.</div>';
+
+  const u = r.user_check || {};
+  const STATUS = { absent: 'no user token sent', verified: 'a verified user token', invalid: 'a token that fails verification', idp_down: 'the identity provider unreachable' };
+  const rows = {
+    not_required: ['➖', 'The matched policy does not require a user token.'],
+    skipped: ['⏭', 'Not reached — the call was already denied by policy.'],
+    passed: ['✅', `The policy requires a user token and one was verified.`],
+    degraded: ['⚠️', 'The policy requires a user token, but it fails open: the call proceeds as the agent only because the identity provider is unreachable.'],
+    denied: ['🚫', `The policy requires a verified user token (fail ${u.fail_mode === 'open' ? 'open' : 'closed'}); with ${STATUS[u.status] || u.status} the call is denied.`],
+  };
+  const [ic, msg] = rows[u.outcome] || rows.not_required;
+  document.getElementById('a2as-user-check').innerHTML = `<div class="a2as-step"><span class="a2as-ic">${ic}</span><span>${msg}</span></div>`;
+}
+
+function a2apSetEffect(v) {
+  _a2apEffect = v;
+  document.querySelectorAll('#a2ap-effect button').forEach(b => {
+    b.className = b.dataset.v === v ? 'sel-' + v : '';
+  });
+}
+function a2apToggleFail() {
+  document.getElementById('a2ap-fail-wrap').style.display = document.getElementById('a2ap-require-user').checked ? 'block' : 'none';
+}
+
+function a2apPopulatePickers(cv, tv) {
+  const ct = document.getElementById('a2ap-caller-type').value;
+  const cs = document.getElementById('a2ap-caller-value');
+  cs.style.display = ct === 'any' ? 'none' : '';
+  const list = ct === 'agent' ? _a2apAgents : ct === 'group' ? _a2apGroups : [];
+  cs.innerHTML = list.length ? list.map(x => `<option value="${x.id}">${escHtml(x.name)}</option>`).join('') : '<option value="">None available</option>';
+  if (cv) cs.value = cv;
+  const tt = document.getElementById('a2ap-target-type').value;
+  const ts = document.getElementById('a2ap-target-value');
+  ts.style.display = tt === 'any' ? 'none' : '';
+  ts.innerHTML = _a2apTargets.length ? _a2apTargets.map(x => `<option value="${x.id}">${escHtml(x.name)}</option>`).join('') : '<option value="">No A2A agents on this server</option>';
+  if (tv) ts.value = tv;
+}
+
+function a2apOpenModal(id) {
+  const vsId = document.getElementById('a2ap-vs-filter').value;
+  if (!vsId) return alert('Create an A2A or Both virtual server first.');
+  const p = id ? _a2apPolicies.find(x => x.id === id) : null;
+  _a2apEditId = id || null;
+  document.getElementById('a2ap-modal-title').textContent = p ? 'Edit A2A Policy' : 'New A2A Policy';
+  document.getElementById('a2ap-name').value = p?.name || '';
+  document.getElementById('a2ap-priority').value = p?.priority ?? 0;
+  a2apSetEffect(p?.effect || 'permit');
+  document.getElementById('a2ap-caller-type').value = p?.caller_type || 'any';
+  document.getElementById('a2ap-target-type').value = p?.target_type || 'any';
+  a2apPopulatePickers(p?.caller_value, p?.target_value);
+  document.getElementById('a2ap-skills').value = (p?.skills || ['*']).join(', ');
+  document.getElementById('a2ap-require-user').checked = !!p?.require_user;
+  document.getElementById('a2ap-fail-mode').value = p?.user_fail_mode || 'closed';
+  a2apToggleFail();
+  document.getElementById('a2ap-error').style.display = 'none';
+  document.getElementById('a2ap-modal').classList.add('open');
+}
+function a2apCloseModal() { document.getElementById('a2ap-modal').classList.remove('open'); }
+
+async function a2apSave() {
+  const errEl = document.getElementById('a2ap-error');
+  const ct = document.getElementById('a2ap-caller-type').value;
+  const tt = document.getElementById('a2ap-target-type').value;
+  const body = {
+    virtual_server_id: document.getElementById('a2ap-vs-filter').value,
+    name: document.getElementById('a2ap-name').value.trim(),
+    effect: _a2apEffect,
+    priority: parseInt(document.getElementById('a2ap-priority').value) || 0,
+    caller_type: ct, caller_value: ct === 'any' ? '*' : document.getElementById('a2ap-caller-value').value,
+    target_type: tt, target_value: tt === 'any' ? '*' : document.getElementById('a2ap-target-value').value,
+    skills: document.getElementById('a2ap-skills').value.split(',').map(s => s.trim()).filter(Boolean),
+    require_user: document.getElementById('a2ap-require-user').checked,
+    user_fail_mode: document.getElementById('a2ap-fail-mode').value,
+  };
+  if (!body.skills.length) body.skills = ['*'];
+  try {
+    if (_a2apEditId) await api('/a2a-policies/' + _a2apEditId, { method: 'PUT', body });
+    else await api('/a2a-policies', { method: 'POST', body });
+    a2apCloseModal(); loadA2aPolicies();
+  } catch (e) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+}
+
+async function a2apToggle(id, active) {
+  try { await api('/a2a-policies/' + id, { method: 'PUT', body: { is_active: active } }); } catch (e) { alert(e.message); }
+  loadA2aPolicies();
+}
+async function a2apDelete(id) {
+  if (!confirm('Delete this A2A policy?')) return;
+  try { await api('/a2a-policies/' + id, { method: 'DELETE' }); } catch (e) { alert(e.message); }
+  loadA2aPolicies();
+}
 
 // ── VS Modal — Allowed Agents section ────────────────────────────────────────
 function vsToggleAgentSection() {
@@ -10239,6 +11743,7 @@ async function saveVs() {
     jwks_uri: document.getElementById('vs-jwks').value,
     require_obo: document.getElementById('vs-require-obo').checked ? 1 : 0,
     require_agent_token: document.getElementById('vs-require-agent-token').checked ? 1 : 0,
+    protocol: vsProtocol,
     features_enabled: [
       document.getElementById('vs-feat-interceptors').checked ? 'interceptors' : null,
       document.getElementById('vs-feat-interceptors').checked && document.getElementById('vs-feat-idp-connect').checked ? 'idp_connect' : null,
@@ -10521,7 +12026,7 @@ const CONDITION_SCHEMA = [
   },
   {
     category: 'agent_name', label: 'Agent Name',
-    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b',
+    badge: 'WR', badgeCls: 'wd', color: '#f59e0b',
     operators: [
       { value: 'agent_is',     label: 'equals',  hint: 'Pass only when the calling agent\'s registered name matches exactly', placeholder: 'e.g. banking-chatbot-app' },
       { value: 'agent_in',     label: 'in list', hint: 'Pass if the calling agent is any of the listed registered names (comma-separated)', placeholder: 'e.g. banking-chatbot-app, python-agent' },
@@ -10530,7 +12035,7 @@ const CONDITION_SCHEMA = [
   },
   {
     category: 'agent_id', label: 'Agent ID',
-    badge: 'AGT', badgeCls: 'atb', color: '#f59e0b',
+    badge: 'WR', badgeCls: 'wd', color: '#f59e0b',
     operators: [
       { value: 'agent_id_equals', label: 'equals',  hint: 'Match by the calling agent\'s unique ID (UUID) — more stable than name if agents are renamed', placeholder: 'e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6' },
       { value: 'agent_id_in',     label: 'in list', hint: 'Pass if the calling agent\'s ID matches any entry in a comma-separated list of UUIDs', placeholder: 'e.g. uuid-1, uuid-2' },
@@ -10539,7 +12044,7 @@ const CONDITION_SCHEMA = [
   },
   {
     category: 'agent_group', label: 'Agent Group Name',
-    badge: 'AGT', badgeCls: 'atb', color: '#10b981',
+    badge: 'WR', badgeCls: 'wd', color: '#10b981',
     operators: [
       { value: 'agent_group_contains',     label: 'contains',         hint: 'Pass when the calling agent belongs to this agent group (matched by name)', placeholder: 'e.g. finance-agents' },
       { value: 'agent_group_not_contains', label: 'does NOT contain', hint: 'Deny when the calling agent belongs to this group (matched by name)', placeholder: 'e.g. external-agents', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
@@ -10547,7 +12052,7 @@ const CONDITION_SCHEMA = [
   },
   {
     category: 'agent_group_id', label: 'Agent Group ID',
-    badge: 'AGT', badgeCls: 'atb', color: '#06b6d4',
+    badge: 'WR', badgeCls: 'wd', color: '#06b6d4',
     operators: [
       { value: 'agent_group_id_contains',     label: 'contains',         hint: 'Pass when the calling agent belongs to the group with this UUID — stable across group renames', placeholder: 'e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6' },
       { value: 'agent_group_id_not_contains', label: 'does NOT contain', hint: 'Deny when the calling agent belongs to the group with this UUID', placeholder: 'e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6', badge: 'NOT', badgeCls: 'not', color: '#ef4444' },
@@ -10584,19 +12089,19 @@ function addConditionRow(existing = null) {
 
   row.style.borderLeftColor = color;
   row.innerHTML = `
-    <div class="cond-left">
-      <div class="cond-select-row">
-        <select class="cond-select cond-cat-select" onchange="updateConditionCategory(this)">${catOptions}</select>
-        <select class="cond-select cond-op-select" onchange="updateConditionOperator(this)">${opOptions}</select>
-        <span class="tok-badge ${badgeCls}">${badge}</span>
-      </div>
+    <div class="cond-line">
+      <select class="cond-select cond-cat-select" onchange="updateConditionCategory(this)">${catOptions}</select>
+      <select class="cond-select cond-op-select" onchange="updateConditionOperator(this)">${opOptions}</select>
+      <input class="cond-value"
+        placeholder="${initOp.placeholder}"
+        value="${existing?.value || existing?.values?.join(', ') || ''}" />
+      <button onclick="this.closest('.condition-row').remove()"
+        class="btn btn-danger btn-sm btn-icon" style="flex-shrink:0" title="Remove condition">✕</button>
+    </div>
+    <div class="cond-hint-line">
+      <span class="tok-badge ${badgeCls}">${badge}</span>
       <span class="cond-hint-text">${initOp.hint}</span>
     </div>
-    <input class="cond-value"
-      placeholder="${initOp.placeholder}"
-      value="${existing?.value || existing?.values?.join(', ') || ''}" />
-    <button onclick="this.closest('.condition-row').remove()"
-      class="btn btn-danger btn-sm btn-icon" style="align-self:center;flex-shrink:0">✕</button>
   `;
   document.getElementById('pol-conditions').appendChild(row);
 }
@@ -10891,7 +12396,7 @@ const LEVEL_BADGE = {
   block: { cls:'deny',   icon:'✕', label:'Block' },
   error: { cls:'deny',   icon:'!', label:'Error' },
 };
-const TYPE_LABEL = { proxy_call:'Proxy', interceptor:'Scan' };
+const TYPE_LABEL = { proxy_call:'Proxy', interceptor:'Scan', a2a_call:'A2A' };
 
 function renderAuditList(entries) {
   auditEntriesMap = {};
@@ -10920,12 +12425,16 @@ function renderAuditList(entries) {
     // Primary label differs per type
     const primaryLabel = e.log_type === 'proxy_call'
       ? auditEscHtml(e.tool_name || '—')
-      : `${auditEscHtml(e.scanner || '—')} · ${auditEscHtml(e.action_taken || '—')}`;
+      : e.log_type === 'a2a_call'
+        ? `${auditEscHtml(e.method || '—')} → ${auditEscHtml(e.target_name || '—')}`
+        : `${auditEscHtml(e.scanner || '—')} · ${auditEscHtml(e.action_taken || '—')}`;
 
     // Secondary label
     const userDisplay = e.user_email || (e.user_sub ? auditFmtSub(e.user_sub) : null);
     const secondaryLabel = e.log_type === 'proxy_call'
       ? auditEscHtml(auditFmtSub(e.user_sub))
+      : e.log_type === 'a2a_call'
+        ? `${auditEscHtml(e.agent_name || '—')}${e.skill ? `<span style="color:var(--text-3);margin:0 4px">·</span><span style="font-size:11px;color:var(--text-3)">${auditEscHtml(e.skill)}</span>` : ''}`
       : (userDisplay
           ? `${auditEscHtml(userDisplay)}${e.categories && e.categories.length ? `<span style="color:var(--text-3);margin:0 4px">·</span><span style="font-size:11px;color:var(--text-3)">${auditEscHtml(e.categories.join(', '))}</span>` : ''}`
           : (e.categories && e.categories.length ? auditEscHtml(e.categories.join(', ')) : '—'));
@@ -10998,6 +12507,33 @@ function buildAuditDetail(e) {
       </div>
       ${cats ? `<div class="al-detail-section"><div class="al-detail-section-label">Categories</div><div class="tag-list">${cats}</div></div>` : ''}
       ${piis ? `<div class="al-detail-section"><div class="al-detail-section-label">PII Types</div><div class="tag-list">${piis}</div></div>` : ''}
+    </div>`;
+  }
+
+  if (e.log_type === 'a2a_call') {
+    return `<div class="al-detail-inner">
+      <div class="al-detail-grid">
+        <div class="al-detail-cell">
+          <div class="al-detail-cell-label">Level</div>
+          <div class="al-detail-cell-value"><span class="al-decision-badge ${lv.cls}" style="font-size:12px"${lvStyle}>${lv.icon} ${lv.label}</span></div>
+        </div>
+        ${cell('Decision', e.decision, true)}
+        ${cell('A2A Method', e.method, true)}
+        ${cell('Caller Agent', e.agent_name || e.agent_id)}
+        ${cell('Target Agent', e.target_name || e.target_agent_id)}
+        ${cell('Skill', e.skill, true)}
+        ${cell('Virtual Server', e.virtual_server_name || e.vs_id)}
+        ${cell('Matched Policy', e.policy_id, true)}
+        ${cell('User Token', e.user_status ? e.user_status + (e.user_degraded ? ' (degraded: agent-only)' : '') : null)}
+        ${cell('Task', e.task_id, true)}
+        ${cell('Task State', e.task_state, true)}
+        ${cell('Chain Depth', e.chain_depth != null ? String(e.chain_depth) : null)}
+        ${cell('Timestamp', e.created_at)}
+      </div>
+      ${e.reason ? `<div class="al-detail-section">
+        <div class="al-detail-section-label">Reason</div>
+        <div style="font-size:13px;color:var(--text-2);line-height:1.6;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">${auditEscHtml(e.reason)}</div>
+      </div>` : ''}
     </div>`;
   }
 

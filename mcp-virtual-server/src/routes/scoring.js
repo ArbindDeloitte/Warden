@@ -151,7 +151,8 @@ function computeScore(entityType, entityId, config) {
     proxyCalls = db.prepare(
       `SELECT level, data FROM event_log el
        JOIN virtual_servers vs ON vs.id = el.vs_id
-       WHERE el.log_type='proxy_call' AND el.vs_id=? AND el.created_at>=?
+       WHERE (el.log_type='proxy_call' OR (el.log_type='a2a_call' AND json_extract(el.data,'$.decision') IN ('allow','deny')))
+         AND el.vs_id=? AND el.created_at>=?
          AND vs.features_enabled LIKE '%"interceptors"%'`
     ).all(entityId, since);
   } else {
@@ -159,7 +160,8 @@ function computeScore(entityType, entityId, config) {
     proxyCalls = db.prepare(
       `SELECT el.level, el.data FROM event_log el
        LEFT JOIN virtual_servers vs ON vs.id = el.vs_id
-       WHERE el.log_type='proxy_call' AND el.created_at>=? AND json_extract(el.data,'$.agent_id')=?
+       WHERE (el.log_type='proxy_call' OR (el.log_type='a2a_call' AND json_extract(el.data,'$.decision') IN ('allow','deny')))
+         AND el.created_at>=? AND json_extract(el.data,'$.agent_id')=?
          AND (el.vs_id IS NULL OR vs.features_enabled LIKE '%"interceptors"%' OR vs.features_enabled IS NULL)`
     ).all(since, entityId);
   }

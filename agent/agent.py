@@ -133,6 +133,48 @@ def _mcp_tools_to_anthropic(mcp_tools: list[dict]) -> list[dict]:
 
 # ── Agentic loop ──────────────────────────────────────────────────────────────
 
+# ── A2A: calling other agents through Warden ──────────────────────────────────
+
+A2A_TOOL_NAME = "ask_credit_card_agent"
+
+
+def _a2a_tool_from_card(card: dict) -> dict:
+    """Build an Anthropic tool definition from the remote agent's (gateway) Agent Card."""
+    skills = card.get("skills", [])
+    skill_lines = "\n".join(f"- {s['id']}: {s.get('description', s.get('name', ''))}" for s in skills)
+    return {
+        "name": A2A_TOOL_NAME,
+        "description": (
+            f"Ask the '{card.get('name', 'remote')}' agent (a separate agent, reached over the A2A protocol "
+            f"through the Warden gateway). {card.get('description', '')}\n"
+            f"Use this for anything about the user's CREDIT CARDS (limits, balances, due dates, rewards, "
+            f"card transactions, freezing a card). Bank accounts and transfers use the other tools.\n"
+            f"Skills:\n{skill_lines}"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {"type": "string", "description": "Natural-language request for the credit card agent."},
+                "skill_id": {"type": "string", "enum": [s["id"] for s in skills],
+                             "description": "Optional: the specific skill to invoke."},
+            },
+            "required": ["question"],
+        },
+    }
+
+
+def _call_a2a(a2a_client, tool_input: dict) -> str:
+    from a2a_client import A2AError
+    print(_grey("  >>  A2A call to credit-card-agent (via Warden gateway)"))
+    try:
+        res = a2a_client.send_message(tool_input.get("question", ""), tool_input.get("skill_id"))
+    except A2AError as exc:
+        print(_yellow(f"  !!  A2A call refused/failed: {exc}"))
+        return f"Error: the A2A call did not succeed — {exc}"
+    print(_grey(f"  OK  A2A task {res['task_id']} -> {res['state']}"))
+    return json.dumps({"summary": res["text"], "details": res["data"]}, ensure_ascii=False)
+
+
 def _run_turn(
     anthropic_client: anthropic.Anthropic,
     model: str,
@@ -140,6 +182,7 @@ def _run_turn(
     messages: list[dict],
     tools: list[dict],
     mcp_client,
+    a2a_client=None,
 ) -> str:
     """
     Run a single user turn: call Claude, execute any tool calls, loop until
@@ -170,6 +213,16 @@ def _run_turn(
                     continue
 
                 print(_grey(f"\n  ⚙  {block.name}({json.dumps(block.input, separators=(',', ':'))})"))
+
+                if a2a_client is not None and block.name == A2A_TOOL_NAME:
+                    out = _call_a2a(a2a_client, block.input)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": out,
+                        **({"is_error": True} if out.startswith("Error:") else {}),
+                    })
+                    continue
 
                 try:
                     result = mcp_client.call_tool(block.name, block.input)
@@ -284,6 +337,28 @@ def main():
         print(f"\nFailed to fetch tools: {exc}")
         sys.exit(1)
 
+    # ── 5b. Optional A2A: expose the credit card agent as a tool ──────────────
+    a2a = None
+    a2a_vs     = os.environ.get("WARDEN_A2A_VS_ID", "").strip()
+    a2a_target = os.environ.get("WARDEN_A2A_TARGET_ID", "").strip()
+    a2a_token  = os.environ.get("WARDEN_A2A_AGENT_TOKEN", "").strip()
+    system_prompt = SYSTEM_PROMPT
+    if a2a_vs and a2a_target and a2a_token:
+        from a2a_client import A2AClient, A2AError
+        try:
+            a2a = A2AClient(warden_url, a2a_vs, a2a_target, a2a_token, user_token)
+            anth_tools.append(_a2a_tool_from_card(a2a.get_card()))
+            system_prompt += (
+                "\nCredit card questions are handled by a separate specialist agent. Use the "
+                f"{A2A_TOOL_NAME} tool for them (it runs over the A2A protocol via the Warden gateway). "
+                "If it reports that access was denied by policy, tell the user plainly that this action "
+                "is not permitted for you — do not retry or look for a workaround.\n"
+            )
+            print(_green(f"A2A enabled: credit-card-agent via Warden (+1 tool)"))
+        except A2AError as exc:
+            a2a = None
+            print(_yellow(f"A2A disabled — {exc}"))
+
     # ── 6. Start chat ─────────────────────────────────────────────────────────
     print(_banner(user_label, model))
 
@@ -319,7 +394,7 @@ def main():
         messages.append({"role": "user", "content": safe_input})
 
         try:
-            reply = _run_turn(llm, model, SYSTEM_PROMPT, messages, anth_tools, mcp)
+            reply = _run_turn(llm, model, system_prompt, messages, anth_tools, mcp, a2a)
         except anthropic.APIStatusError as exc:
             print(_yellow(f"\n  API error {exc.status_code}: {exc.message}\n"))
             messages.pop()   # remove the user turn that failed

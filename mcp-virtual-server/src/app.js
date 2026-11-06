@@ -19,6 +19,9 @@ const scoringRouter = require('./routes/scoring');
 const idpConfigs = require('./routes/idpConfigs');
 const wardenFunctions = require('./routes/wardenFunctions');
 const agentGroups = require('./routes/agentGroups');
+const a2aAgents = require('./routes/a2aAgents');
+const a2aPolicies = require('./routes/a2aPolicies');
+const a2a = require('./routes/a2a');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -48,6 +51,12 @@ app.use('/api/scoring', scoringRouter);
 app.use('/api/virtual-servers/:id/idp-configs', idpConfigs);
 app.use('/api/warden-functions', wardenFunctions);
 app.use('/api/agent-groups', agentGroups);
+app.use('/api/a2a-agents', a2aAgents);
+app.use('/api/a2a-policies', a2aPolicies);
+
+// A2A gateway + discovery (must precede the SPA fallback)
+app.use('/a2a', a2a);
+app.use('/.well-known', a2a.wellKnown);
 
 // Health check
 app.get('/api/health', (req, res) => {
