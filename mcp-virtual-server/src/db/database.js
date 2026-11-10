@@ -539,4 +539,105 @@ _addCol(`ALTER TABLE a2a_agents ADD COLUMN outbound_auth_type TEXT DEFAULT 'none
 _addCol(`ALTER TABLE a2a_agents ADD COLUMN outbound_auth_header TEXT`);
 _addCol(`ALTER TABLE a2a_agents ADD COLUMN outbound_secret_enc TEXT`);
 
+// ── Credential Vault ─────────────────────────────────────────────────────────
+// Secrets are global; access is granted per agent / agent group by vault_policies
+// (deny-by-default), optionally scoped to one virtual server. Values are AES-256-GCM
+// encrypted (services/secrets.js) and never returned by the admin API.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS vault_secrets (
+    id               TEXT PRIMARY KEY,
+    name             TEXT NOT NULL UNIQUE,
+    type             TEXT NOT NULL DEFAULT 'generic',
+    description      TEXT DEFAULT '',
+    value_enc        TEXT NOT NULL,
+    metadata         TEXT DEFAULT '{}',
+    version          INTEGER NOT NULL DEFAULT 1,
+    expires_at       TEXT,
+    rotated_at       TEXT,
+    last_accessed_at TEXT,
+    access_count     INTEGER DEFAULT 0,
+    is_active        INTEGER DEFAULT 1,
+    created_at       TEXT DEFAULT (datetime('now')),
+    updated_at       TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS vault_policies (
+    id                TEXT PRIMARY KEY,
+    name              TEXT NOT NULL,
+    effect            TEXT NOT NULL DEFAULT 'permit',
+    priority          INTEGER DEFAULT 0,
+    caller_type       TEXT DEFAULT 'any',
+    caller_value      TEXT DEFAULT '*',
+    secret_id         TEXT DEFAULT '*',
+    virtual_server_id TEXT,
+    operations        TEXT DEFAULT '["*"]',
+    max_ttl_seconds   INTEGER DEFAULT 300,
+    is_active         INTEGER DEFAULT 1,
+    created_at        TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (virtual_server_id) REFERENCES virtual_servers(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_vpol_secret ON vault_policies(secret_id);
+
+  CREATE TABLE IF NOT EXISTS vault_leases (
+    id             TEXT PRIMARY KEY,
+    secret_id      TEXT NOT NULL,
+    secret_version INTEGER NOT NULL,
+    agent_id       TEXT NOT NULL,
+    vs_id          TEXT,
+    operation      TEXT NOT NULL,
+    policy_id      TEXT,
+    issued_at      TEXT NOT NULL,
+    expires_at     TEXT NOT NULL,
+    revoked_at     TEXT,
+    FOREIGN KEY (secret_id) REFERENCES vault_secrets(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_vlease_secret ON vault_leases(secret_id);
+  CREATE INDEX IF NOT EXISTS idx_vlease_agent  ON vault_leases(agent_id);
+`);
+
+// Approval tickets must remember the calling agent so vault references in the
+// stored arguments can be resolved (and policy-checked) when the ticket executes.
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN agent_id TEXT`);
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN agent_name TEXT`);
+
+// What a USER token must say to be accepted by this virtual server (checked on top of its signature and expiry).
+// Blank = not checked. okta_audience is a different thing: the audience Warden asks for when it EXCHANGES the token.
+_addCol(`ALTER TABLE virtual_servers ADD COLUMN user_token_audience TEXT`);
+_addCol(`ALTER TABLE virtual_servers ADD COLUMN user_token_issuer TEXT`);
+
+// A2A approval policies: an `approval` effect holds an initiating call as a ticket until an admin decides
+// (same Approvals page and tickets as MCP). `kind` tells the two apart; the a2a_* columns carry what is needed
+// to forward the call once approved. For A2A tickets mcp_server_id holds the target agent id and tool_name the
+// skill (or method), so the existing NOT NULL columns and list views keep working.
+_addCol(`ALTER TABLE a2a_policies ADD COLUMN approval_ttl_minutes INTEGER NOT NULL DEFAULT 30`);
+_addCol(`ALTER TABLE a2a_policies ADD COLUMN approval_timeout_action TEXT NOT NULL DEFAULT 'deny'`);
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN kind TEXT NOT NULL DEFAULT 'mcp'`);
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN a2a_agent_id TEXT`);
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN a2a_method TEXT`);
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN a2a_params TEXT`);
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN a2a_chain TEXT`);
+_addCol(`ALTER TABLE approval_tickets ADD COLUMN a2a_user TEXT`);
+
+// A2A protocol version each registered remote agent speaks: '1.0' or '0.3'. Warden's gateway for that agent
+// speaks the same version on both sides. DEFAULT '1.0' keeps every existing agent unchanged.
+_addCol(`ALTER TABLE a2a_agents ADD COLUMN protocol_version TEXT NOT NULL DEFAULT '1.0'`);
+
+// Per-virtual-server switch for the Credential Vault. When 0, `vault://` references are never resolved for
+// calls on that virtual server and the vault is never consulted. DEFAULT 1 keeps every existing virtual
+// server behaving exactly as it did before the switch existed.
+_addCol(`ALTER TABLE virtual_servers ADD COLUMN vault_enabled INTEGER NOT NULL DEFAULT 1`);
+
+// Acknowledgement that a tool-proxying virtual server may be called without any caller identity (require_obo = 0
+// AND require_agent_token = 0: no user token, no agent token). Saving that combination is refused unless this is
+// set. The one-time migration below grandfathers every existing virtual server already in that state (behaviour
+// unchanged), and only runs when the column is first created, so it can never re-approve one later.
+{
+  const hadAllowAnonymous = db.prepare('PRAGMA table_info(virtual_servers)').all().some(c => c.name === 'allow_anonymous');
+  _addCol(`ALTER TABLE virtual_servers ADD COLUMN allow_anonymous INTEGER NOT NULL DEFAULT 0`);
+  if (!hadAllowAnonymous) {
+    db.exec(`UPDATE virtual_servers SET allow_anonymous = 1
+             WHERE COALESCE(require_obo, 1) = 0 AND COALESCE(require_agent_token, 0) = 0 AND COALESCE(protocol, 'mcp') != 'a2a'`);
+  }
+}
+
 module.exports = db;

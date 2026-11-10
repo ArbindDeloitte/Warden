@@ -1,9 +1,12 @@
 'use strict';
 
 /**
- * A2A 1.0 gateway (JSON-RPC binding). Warden never hosts agents: it authenticates the caller,
- * applies policy + interceptors, then forwards to the registered remote agent.
- * Self-contained: no Redis/Okta dependency except the OPTIONAL user-token verification.
+ * A2A gateway (JSON-RPC binding) for protocol versions 1.0 and 0.3. Warden never hosts agents: it
+ * authenticates the caller, applies policy + interceptors, then forwards to the registered remote agent.
+ * Each registered agent speaks ONE version (a2a_agents.protocol_version) and its gateway endpoint speaks that
+ * same version to both the caller and the remote agent: no translation, so policy, scanning and task
+ * ownership behave identically across versions. Self-contained: no Redis/Okta dependency except the
+ * OPTIONAL user-token verification.
  */
 
 const express = require('express');
@@ -28,10 +31,37 @@ const ERR = {
   TASK_NOT_FOUND: -32001, NOT_CANCELABLE: -32002, PUSH_UNSUPPORTED: -32003, UNSUPPORTED: -32004,
   EXT_CARD: -32007, VERSION: -32009,
   DENIED: -32010, // Warden-specific: auth/policy/interceptor denial
+  APPROVAL: -32011, // Warden-specific: held for human approval; data carries the ticket
 };
 
 const rpcError = (id, code, message, data) =>
   ({ jsonrpc: '2.0', id: id ?? null, error: { code, message, ...(data ? { data } : {}) } });
+
+// Everything that differs between the two protocol versions lives here; the handler below is version-neutral.
+//   1.0: PascalCase methods; results are wrapped ({task} | {message} | {statusUpdate} | {artifactUpdate}).
+//   0.3: `message/send` style methods, no ListTasks; results are bare objects discriminated by `kind`
+//        (task | message | status-update | artifact-update); task states are lowercase ('submitted', 'working', ...).
+const PROTOCOLS = {
+  '1.0': {
+    send: 'SendMessage', stream: 'SendStreamingMessage', get: 'GetTask', cancel: 'CancelTask',
+    subscribe: 'SubscribeToTask', list: 'ListTasks', extCard: 'GetExtendedAgentCard',
+    pushRe: /PushNotificationConfigs?$/, sendsVersionHeader: true, submitted: 'TASK_STATE_SUBMITTED',
+    taskOfResult: (r) => r?.task || (r?.status && r?.id ? r : null),
+    taskOfEvent: (r) => r?.task || null,
+    statusOfEvent: (r) => r?.statusUpdate || null,
+  },
+  '0.3': {
+    send: 'message/send', stream: 'message/stream', get: 'tasks/get', cancel: 'tasks/cancel',
+    subscribe: 'tasks/resubscribe', list: null, extCard: 'agent/getAuthenticatedExtendedCard',
+    pushRe: /^tasks\/pushNotificationConfig\//, sendsVersionHeader: false, submitted: 'submitted',
+    taskOfResult: (r) => (r?.kind === 'task' || (r?.status && r?.id && !r?.kind) ? r : null),
+    taskOfEvent: (r) => (r?.kind === 'task' ? r : null),
+    statusOfEvent: (r) => (r?.kind === 'status-update' ? r : null),
+  },
+};
+const methodsOf = (p) => [p.send, p.stream, p.get, p.cancel, p.subscribe, p.list].filter(Boolean);
+const versionOf = (target) => (target?.protocol_version === '0.3' ? '0.3' : '1.0');
+const protoOf = (target) => PROTOCOLS[versionOf(target)];
 
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
@@ -59,6 +89,13 @@ function loadContext(vsId, agentId) {
   `).get(vs.id, agentId);
   return target ? { vs, target } : null;
 }
+
+// A2A 0.2.x/early-0.3 clients look for agent.json; 0.3 agents serve the same card there too.
+router.get('/:vsId/:agentId/.well-known/agent.json', (req, res) => {
+  const ctx = loadContext(req.params.vsId, req.params.agentId);
+  if (!ctx || versionOf(ctx.target) !== '0.3') return res.status(404).json({ error: 'Unknown virtual server or agent' });
+  res.json(buildGatewayCard(ctx.target, ctx.vs.id, publicBase(req)));
+});
 
 router.get('/:vsId/:agentId/.well-known/agent-card.json', (req, res) => {
   const ctx = loadContext(req.params.vsId, req.params.agentId);
@@ -149,18 +186,33 @@ async function scanMessage(m, run) {
   return m && Array.isArray(m.parts) ? { ...m, parts: await scanParts(m.parts, run) } : m;
 }
 
-async function scanResult(r, run) {
+async function scanTask(t, run) {
+  if (!t) return t;
+  const c = { ...t };
+  if (c.status?.message) c.status = { ...c.status, message: await scanMessage(c.status.message, run) };
+  if (Array.isArray(c.artifacts)) c.artifacts = await Promise.all(c.artifacts.map(async a => ({ ...a, parts: await scanParts(a.parts, run) })));
+  if (Array.isArray(c.history)) c.history = await Promise.all(c.history.map(m => scanMessage(m, run)));
+  return c;
+}
+
+// 0.3 results are bare objects discriminated by `kind`; a bare Task (tasks/get, tasks/cancel) falls through to scanTask.
+async function scanResult03(r, run) {
+  switch (r.kind) {
+    case 'message': return scanMessage(r, run);
+    case 'status-update':
+      return r.status?.message ? { ...r, status: { ...r.status, message: await scanMessage(r.status.message, run) } } : r;
+    case 'artifact-update':
+      return r.artifact ? { ...r, artifact: { ...r.artifact, parts: await scanParts(r.artifact.parts, run) } } : r;
+    default: return scanTask(r, run);
+  }
+}
+
+async function scanResult(r, run, version = '1.0') {
   if (!r || typeof r !== 'object') return r;
+  if (version === '0.3') return scanResult03(r, run);
   const out = { ...r };
-  const scanTask = async (t) => {
-    if (!t) return t;
-    const c = { ...t };
-    if (c.status?.message) c.status = { ...c.status, message: await scanMessage(c.status.message, run) };
-    if (Array.isArray(c.artifacts)) c.artifacts = await Promise.all(c.artifacts.map(async a => ({ ...a, parts: await scanParts(a.parts, run) })));
-    if (Array.isArray(c.history)) c.history = await Promise.all(c.history.map(m => scanMessage(m, run)));
-    return c;
-  };
-  if (out.task) out.task = await scanTask(out.task);
+  const scanTaskInner = (t) => scanTask(t, run);
+  if (out.task) out.task = await scanTaskInner(out.task);
   if (out.message) out.message = await scanMessage(out.message, run);
   if (out.statusUpdate?.status?.message) {
     out.statusUpdate = { ...out.statusUpdate, status: { ...out.statusUpdate.status, message: await scanMessage(out.statusUpdate.status.message, run) } };
@@ -170,7 +222,7 @@ async function scanResult(r, run) {
   }
   // GetTask / CancelTask return a bare Task
   if (!out.task && !out.message && !out.statusUpdate && !out.artifactUpdate && (out.status || out.artifacts || out.history)) {
-    return scanTask(out);
+    return scanTaskInner(out);
   }
   return out;
 }
@@ -181,10 +233,10 @@ const ownedTask = (vsId, targetId, callerId, remoteId) => db.prepare(
   'SELECT * FROM a2a_tasks WHERE vs_id=? AND target_agent_id=? AND caller_agent_id=? AND remote_task_id=?'
 ).get(vsId, targetId, callerId, String(remoteId));
 
-function saveTask(vsId, targetId, callerId, task) {
+function saveTask(vsId, targetId, callerId, task, fallbackState = 'TASK_STATE_SUBMITTED') {
   if (!task?.id) return true;
   const existing = db.prepare('SELECT * FROM a2a_tasks WHERE target_agent_id=? AND remote_task_id=?').get(targetId, String(task.id));
-  const state = task.status?.state || 'TASK_STATE_SUBMITTED';
+  const state = task.status?.state || fallbackState;
   if (existing) {
     if (existing.caller_agent_id !== callerId) return false;
     db.prepare(`UPDATE a2a_tasks SET state=?, task_json=?, context_id=?, updated_at=datetime('now') WHERE id=?`)
@@ -210,7 +262,7 @@ function audit(c, level, summary, extra = {}) {
       .run(uuidv4(), c.vs.id, 'a2a_call', level, summary, JSON.stringify({
         agent_id: c.caller.id, agent_name: c.caller.name,
         target_agent_id: c.target.id, target_name: c.target.name,
-        method: c.method, user_status: c.user?.status, chain_depth: c.chain.length + 1, ...extra,
+        a2a_version: versionOf(c.target), method: c.method, user_status: c.user?.status, chain_depth: c.chain.length + 1, ...extra,
       }));
   } catch (e) { console.error('[A2A] audit failed:', e.message); }
 }
@@ -240,7 +292,8 @@ function callRemote(c, method, params, { stream = false, signal } = {}) {
     chain: c.chain, user: c.user?.status === 'verified' ? c.user.user : null,
   });
   const headers = {
-    'Content-Type': 'application/json', 'A2A-Version': A2A_VERSION,
+    'Content-Type': 'application/json',
+    ...(protoOf(c.target).sendsVersionHeader ? { 'A2A-Version': A2A_VERSION } : {}), // 0.3 has no such header
     Accept: stream ? 'text/event-stream' : 'application/json',
     ...outboundHeaders(c.target, token),
   };
@@ -300,11 +353,14 @@ async function handleStream(req, res, rpc, c, method, params, outRun) {
     for await (const data of sseEvents(r.body)) {
       let msg; try { msg = JSON.parse(data); } catch { continue; }
       if (msg.error) { send({ ...msg, id: rpc.id }); break; }
-      const result = await scanResult(msg.result, outRun);
-      if (result?.task && !saveTask(c.vs.id, c.target.id, c.caller.id, result.task)) {
+      const proto = protoOf(c.target);
+      const result = await scanResult(msg.result, outRun, versionOf(c.target));
+      const evTask = proto.taskOfEvent(result);
+      if (evTask && !saveTask(c.vs.id, c.target.id, c.caller.id, evTask, proto.submitted)) {
         send(rpcError(rpc.id, ERR.INTERNAL, 'Task id conflict')); break;
       }
-      if (result?.statusUpdate?.taskId) updateTaskState(c.target.id, c.caller.id, result.statusUpdate.taskId, result.statusUpdate.status?.state);
+      const evStatus = proto.statusOfEvent(result);
+      if (evStatus?.taskId) updateTaskState(c.target.id, c.caller.id, evStatus.taskId, evStatus.status?.state);
       send({ jsonrpc: '2.0', id: rpc.id, result });
       events++;
     }
@@ -335,10 +391,12 @@ router.post('/:vsId/:agentId', async (req, res) => {
   const base = loadContext(req.params.vsId, req.params.agentId);
   if (!base) return res.status(404).json(rpcError(rpc.id, ERR.INVALID, 'Unknown virtual server or agent'));
 
-  // A2A-Version: absent is treated as 1.0; anything else is rejected.
+  // This agent speaks one version. A2A-Version is optional (0.3 has no such header); when sent it must match.
+  const version = versionOf(base.target);
+  const proto = PROTOCOLS[version];
   const ver = req.headers['a2a-version'];
-  if (ver && String(ver).split('.').slice(0, 2).join('.') !== A2A_VERSION) {
-    return res.status(400).json(rpcError(rpc.id, ERR.VERSION, `Unsupported A2A version "${ver}"; supported: ${A2A_VERSION}`));
+  if (ver && String(ver).split('.').slice(0, 2).join('.') !== version) {
+    return res.status(400).json(rpcError(rpc.id, ERR.VERSION, `Unsupported A2A version "${ver}"; this agent speaks A2A ${version}`));
   }
 
   const auth = authenticateCaller(req, base.vs.id);
@@ -360,12 +418,16 @@ router.post('/:vsId/:agentId', async (req, res) => {
   }
 
   const params = rpc.params || {};
-  const INITIATING = ['SendMessage', 'SendStreamingMessage'];
-  const KNOWN = [...INITIATING, 'GetTask', 'ListTasks', 'CancelTask', 'SubscribeToTask'];
+  const INITIATING = [proto.send, proto.stream];
+  const STREAMING = [proto.stream, proto.subscribe];
+  const KNOWN = methodsOf(proto);
   if (!KNOWN.includes(rpc.method)) {
-    if (/PushNotificationConfigs?$/.test(rpc.method)) return res.json(rpcError(rpc.id, ERR.PUSH_UNSUPPORTED, 'Push notifications are not supported by this gateway'));
-    if (rpc.method === 'GetExtendedAgentCard') return res.json(rpcError(rpc.id, ERR.EXT_CARD, 'Extended agent card is not configured'));
-    return res.json(rpcError(rpc.id, ERR.NO_METHOD, `Method not found: ${rpc.method}`));
+    if (proto.pushRe.test(rpc.method)) return res.json(rpcError(rpc.id, ERR.PUSH_UNSUPPORTED, 'Push notifications are not supported by this gateway'));
+    if (rpc.method === proto.extCard) return res.json(rpcError(rpc.id, ERR.EXT_CARD, 'Extended agent card is not configured'));
+    // A caller using the other version's method names is told which version this agent speaks.
+    const other = Object.keys(PROTOCOLS).find(v => v !== version && methodsOf(PROTOCOLS[v]).includes(rpc.method));
+    return res.json(rpcError(rpc.id, ERR.NO_METHOD, `Method not found: ${rpc.method}`,
+      other ? { reason: `This agent is registered as A2A ${version}, but "${rpc.method}" is an A2A ${other} method. Use "${proto.send}" to send a message.` } : undefined));
   }
 
   // Policy
@@ -373,7 +435,7 @@ router.post('/:vsId/:agentId', async (req, res) => {
   const verdict = evaluateA2aPolicy({
     vsId: c.vs.id, callerId: c.caller.id, targetId: c.target.id, skill, anySkill: !INITIATING.includes(rpc.method),
   });
-  if (verdict.decision !== 'allow') {
+  if (verdict.decision === 'deny') {
     audit(c, 'block', `A2A ${rpc.method} denied: ${verdict.reason}`, { decision: 'deny', reason: verdict.reason, policy_id: verdict.policy?.id, skill });
     return res.status(403).json(rpcError(rpc.id, ERR.DENIED, verdict.reason));
   }
@@ -405,7 +467,7 @@ router.post('/:vsId/:agentId', async (req, res) => {
 
   try {
     // Local-only method
-    if (rpc.method === 'ListTasks') {
+    if (proto.list && rpc.method === proto.list) {
       const rows = db.prepare(`SELECT task_json FROM a2a_tasks WHERE vs_id=? AND target_agent_id=? AND caller_agent_id=? ORDER BY updated_at DESC LIMIT 100`)
         .all(c.vs.id, c.target.id, c.caller.id);
       const tasks = rows.map(r => JSON.parse(r.task_json));
@@ -414,7 +476,7 @@ router.post('/:vsId/:agentId', async (req, res) => {
     }
 
     // Ownership for task-addressed methods
-    const taskId = rpc.method === 'SendMessage' || rpc.method === 'SendStreamingMessage' ? params.message?.taskId : params.id;
+    const taskId = INITIATING.includes(rpc.method) ? params.message?.taskId : params.id;
     if (taskId && !ownedTask(c.vs.id, c.target.id, c.caller.id, taskId)) {
       audit(c, 'warn', `A2A ${rpc.method}: task not found for caller`, { decision: 'deny', reason: 'task not owned', task_id: taskId });
       return res.json(rpcError(rpc.id, ERR.TASK_NOT_FOUND, 'Task not found'));
@@ -427,12 +489,37 @@ router.post('/:vsId/:agentId', async (req, res) => {
       fwd = { ...params, message: await scanMessage(params.message, inRun) };
     }
 
+    // Approval policy: hold the (already scanned) call as a ticket instead of forwarding it. Only initiating
+    // calls get here; follow-ups on an owned task are allowed by the same policy.
+    if (verdict.decision === 'approval') {
+      const ttl = Number(p.approval_ttl_minutes) > 0 ? Number(p.approval_ttl_minutes) : 30;
+      const timeoutAction = p.approval_timeout_action === 'approve' ? 'approve' : 'deny';
+      const ticketId = uuidv4();
+      const expiresAt = new Date(Date.now() + ttl * 60 * 1000).toISOString();
+      const userOk = c.user.status === 'verified';
+      db.prepare(`INSERT INTO approval_tickets
+          (id, virtual_server_id, mcp_server_id, tool_name, tool_arguments, user_sub, user_groups, matched_policy_id,
+           ttl_minutes, timeout_action, expires_at, agent_id, agent_name, kind, a2a_agent_id, a2a_method, a2a_params, a2a_chain, a2a_user)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'a2a',?,?,?,?,?)`).run(
+        ticketId, c.vs.id, c.target.id, skill || rpc.method,
+        JSON.stringify({ method: rpc.method, skill: skill || null, message: fwd.message }),
+        userOk ? (c.user.user.sub || null) : null, JSON.stringify(userOk ? (c.user.user.groups || []) : []),
+        p.id, ttl, timeoutAction, expiresAt, c.caller.id, c.caller.name,
+        c.target.id, rpc.method, JSON.stringify(fwd), JSON.stringify(c.chain), userOk ? JSON.stringify(c.user.user) : null);
+      audit(c, 'info', `A2A ${rpc.method} pending approval`, { decision: 'approval', reason: verdict.reason, ticket_id: ticketId, ...done });
+      return res.status(202).json(rpcError(rpc.id, ERR.APPROVAL, 'Approval required', {
+        reason: verdict.reason, ticket_id: ticketId, poll_url: `/api/approvals/${ticketId}/status`,
+        expires_at: expiresAt, timeout_action: timeoutAction,
+        ...(STREAMING.includes(rpc.method) ? { note: 'Streaming is not available for approval-gated calls: once approved, the call runs as a normal request and the ticket returns its result.' } : {}),
+      }));
+    }
+
     if (circuitOpen(c.target.id)) {
       audit(c, 'error', `A2A ${rpc.method}: circuit open`, { decision: 'error', reason: 'circuit open', ...done });
       return res.status(503).json(rpcError(rpc.id, ERR.INTERNAL, 'Target agent temporarily unavailable', { reason: 'circuit open' }));
     }
 
-    if (rpc.method === 'SendStreamingMessage' || rpc.method === 'SubscribeToTask') {
+    if (STREAMING.includes(rpc.method)) {
       audit(c, 'info', `A2A ${rpc.method} started`, { decision: 'allow', ...done });
       return handleStream(req, res, rpc, c, rpc.method, fwd, outRun);
     }
@@ -443,7 +530,7 @@ router.post('/:vsId/:agentId', async (req, res) => {
     catch (e) {
       if (!e.config) recordFail(c.target.id);
       audit(c, 'error', `A2A ${rpc.method} target unreachable`, { decision: 'error', reason: e.message, ...done });
-      if (rpc.method === 'GetTask') {
+      if (rpc.method === proto.get) {
         const row = ownedTask(c.vs.id, c.target.id, c.caller.id, params.id);
         if (row) return res.json({ jsonrpc: '2.0', id: rpc.id, result: { ...JSON.parse(row.task_json), metadata: { ...(JSON.parse(row.task_json).metadata || {}), 'warden.stale': true } } });
       }
@@ -460,9 +547,9 @@ router.post('/:vsId/:agentId', async (req, res) => {
       return res.json({ ...j, id: rpc.id });
     }
 
-    const result = await scanResult(j.result, outRun);
-    const task = result?.task || (result?.status && result?.id ? result : null);
-    if (task && !saveTask(c.vs.id, c.target.id, c.caller.id, task)) {
+    const result = await scanResult(j.result, outRun, version);
+    const task = proto.taskOfResult(result);
+    if (task && !saveTask(c.vs.id, c.target.id, c.caller.id, task, proto.submitted)) {
       return res.status(409).json(rpcError(rpc.id, ERR.INTERNAL, 'Task id conflict'));
     }
     audit(c, 'info', `A2A ${rpc.method} ok`, { decision: 'allow', task_id: task?.id, task_state: task?.status?.state, ...done });
@@ -478,5 +565,84 @@ router.post('/:vsId/:agentId', async (req, res) => {
   }
 });
 
+// ── Approved tickets ─────────────────────────────────────────────────────────
+
+// Lifecycle events for a ticket (denied / expired / failed), without a live request to take context from.
+function auditTicket(ticket, level, summary, extra = {}) {
+  try {
+    const target = db.prepare('SELECT id, name, protocol_version FROM a2a_agents WHERE id = ?').get(ticket.a2a_agent_id) || {};
+    db.prepare('INSERT INTO event_log (id, vs_id, log_type, level, summary, data) VALUES (?,?,?,?,?,?)')
+      .run(uuidv4(), ticket.virtual_server_id, 'a2a_call', level, summary, JSON.stringify({
+        agent_id: ticket.agent_id, agent_name: ticket.agent_name, target_agent_id: ticket.a2a_agent_id, target_name: target.name,
+        a2a_version: versionOf(target), method: ticket.a2a_method, ticket_id: ticket.id, ...extra,
+      }));
+  } catch (e) { console.error('[A2A] ticket audit failed:', e.message); }
+}
+
+/**
+ * Forwards an approved ticket to the remote agent and returns the (scanned) JSON-RPC result.
+ * Runs later, with no caller connection, so a streaming request is sent as the version's plain send.
+ * Everything that could have changed since the request is re-checked, and any failure throws (the caller of
+ * this function records it on the ticket): the agent still exists and is active, it is still assigned to the
+ * virtual server, the calling agent is still active, and no forbid has been added in the meantime.
+ */
+async function executeApprovedTicket(ticket) {
+  const target = db.prepare('SELECT * FROM a2a_agents WHERE id = ?').get(ticket.a2a_agent_id);
+  if (!target || !target.is_active) throw new Error('The A2A agent is no longer available');
+  const vs = db.prepare('SELECT * FROM virtual_servers WHERE id = ? AND is_active = 1').get(ticket.virtual_server_id);
+  if (!vs || !['a2a', 'both'].includes(vs.protocol)) throw new Error('The virtual server is no longer available for A2A');
+  if (!db.prepare('SELECT 1 FROM virtual_server_a2a_agents WHERE vs_id = ? AND a2a_agent_id = ?').get(vs.id, target.id)) {
+    throw new Error('The A2A agent is no longer assigned to this virtual server');
+  }
+  const caller = db.prepare('SELECT id, name, is_active FROM agents WHERE id = ?').get(ticket.agent_id);
+  if (!caller || !caller.is_active) throw new Error('The calling agent is disabled or no longer exists');
+
+  const params = JSON.parse(ticket.a2a_params || '{}');
+  const skill = params.metadata?.skillId || params.message?.metadata?.skillId;
+  const verdict = evaluateA2aPolicy({ vsId: vs.id, callerId: caller.id, targetId: target.id, skill });
+  if (verdict.decision === 'deny') throw new Error(`No longer permitted: ${verdict.reason}`);
+
+  const version = versionOf(target);
+  const proto = PROTOCOLS[version];
+  const user = ticket.a2a_user ? JSON.parse(ticket.a2a_user) : null;
+  const c = { vs, target, caller: { id: caller.id, name: caller.name }, chain: JSON.parse(ticket.a2a_chain || '[]'),
+    user: user ? { status: 'verified', user } : { status: 'absent' }, method: proto.send };
+  if (circuitOpen(target.id)) throw new Error('The A2A agent is temporarily unavailable (circuit open)');
+
+  const interceptorsOn = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]').includes('interceptors'); } catch { return true; } })();
+  const callId = uuidv4();
+  const outRun = interceptorsOn
+    ? async (text) => {
+      const r = await pipeline.run(text, 'outbound', vs.id, caller.id, callId, null);
+      if (r.action === 'block') throw Object.assign(new Error(r.reason || 'Blocked by interceptor'), { blocked: true });
+      return r.action === 'mask' ? r.text : text;
+    }
+    : async (t) => t;
+
+  let r;
+  try { r = await callRemote(c, proto.send, params); }
+  catch (e) { if (!e.config) recordFail(target.id); throw new Error(`Target agent unreachable: ${e.message}`); }
+  const j = await r.json().catch(() => null);
+  if (!r.ok && !j?.error) { recordFail(target.id); throw new Error(`Target returned HTTP ${r.status}`); }
+  recordOk(target.id);
+  if (j?.error) throw new Error(`The A2A agent returned an error (${j.error.code}): ${j.error.message}`);
+
+  let result;
+  try { result = await scanResult(j.result, outRun, version); }
+  catch (e) {
+    if (e.blocked) {
+      audit(c, 'block', `A2A ${proto.send} response blocked by interceptor (after approval)`, { decision: 'block', reason: e.message, ticket_id: ticket.id });
+      throw new Error(`Response blocked by interceptor: ${e.message}`);
+    }
+    throw e;
+  }
+  const task = proto.taskOfResult(result);
+  if (task && !saveTask(vs.id, target.id, caller.id, task, proto.submitted)) throw new Error('Task id conflict');
+  audit(c, 'info', `A2A ${proto.send} executed after approval`, { decision: 'allow', ticket_id: ticket.id, skill, task_id: task?.id, task_state: task?.status?.state });
+  return result;
+}
+
 module.exports = router;
 module.exports.wellKnown = wellKnown;
+module.exports.executeApprovedTicket = executeApprovedTicket;
+module.exports.auditTicket = auditTicket;

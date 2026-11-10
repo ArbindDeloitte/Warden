@@ -5,6 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { run } = require('../interceptors/InterceptorPipeline');
 const { evaluateUserTriggers } = require('../services/triggerEvaluator');
+const admin = require('../middleware/adminAuth');
+const { authenticateAgent, checkVsApiKey } = require('../services/dataPlaneAuth');
 
 // Decode a JWT payload (base64, no verification) to extract user identity
 function extractUserFromToken(tokenHeader) {
@@ -211,8 +213,23 @@ router.post('/:vsId/scan', async (req, res) => {
   const { text, direction, agent_name, agent_id } = req.body;
   if (!text) return res.status(400).json({ error: 'text is required' });
 
-  // Resolve agent_id: prefer explicit UUID, otherwise look up by name
-  let resolvedAgentId = agent_id || null;
+  // Secure mode (WARDEN_ADMIN_TOKEN set): an admin may scan freely (the UI's test tool); anyone else must be a
+  // registered agent, with the virtual server's API key if it has one. The agent's identity then comes from its
+  // token, never from the body, so findings and scores cannot be attributed to an agent the caller is not.
+  let tokenAgent = null;
+  if (admin.enabled() && !admin.isAdmin(req)) {
+    const a = authenticateAgent(req);
+    if (a.error) return res.status(a.error.status).json({ error: a.error.message });
+    const k = checkVsApiKey(req, req.params.vsId);
+    if (k) return res.status(k.status).json({ error: k.message });
+    tokenAgent = a.agent;
+  } else if (req.headers['x-agent-token']) {
+    // Open mode, or an admin who also sent an agent token: a valid token still identifies the caller (an invalid one is ignored)
+    tokenAgent = authenticateAgent(req).agent || null;
+  }
+
+  // Resolve agent_id: the authenticated agent, else an explicit UUID, else a lookup by name
+  let resolvedAgentId = tokenAgent ? tokenAgent.id : (agent_id || null);
   if (!resolvedAgentId && agent_name) {
     const row = db.prepare('SELECT id FROM agents WHERE name = ?').get(agent_name);
     if (row) resolvedAgentId = row.id;

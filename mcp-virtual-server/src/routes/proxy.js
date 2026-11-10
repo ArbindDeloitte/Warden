@@ -5,6 +5,7 @@ const db = require('../db/database');
 const { verifyToken } = require('../middleware/auth');
 const { exchangeForOboToken } = require('../services/oboService');
 const { callMcpTool } = require('../services/mcpClient');
+const { prepareToolCall, redact, VaultError } = require('../services/vault');
 const { evaluatePolicies } = require('../services/policyEngine');
 const pipeline = require('../interceptors/InterceptorPipeline');
 const { evaluateUserTriggers } = require('../services/triggerEvaluator');
@@ -292,6 +293,28 @@ router.post('/:virtualServerId', async (req, res) => {
   // If res was already sent (auth failed mid-verify), stop here
   if (res.headersSent) return;
 
+  // verifyToken reads the claims without checking the signature when the virtual server has no way to verify tokens
+  // (no jwks_uri, no issuer, no JWKS_URI). Whoever calls could then put any sub / groups / scopes in a token they made
+  // up, and those would feed the policy engine and the audit log. Unverified claims are therefore never used as an
+  // identity: they are dropped here, and a virtual server that wants OBO but cannot verify the user is refused.
+  const claimsVerified = req.tokenVerified !== false;
+  if (!claimsVerified) {
+    req.tokenClaims = {};
+    if (virtualServer.require_obo !== 0) {
+      done();
+      writeAudit({
+        virtualServerId, mcpServerId: mcp_server_id, toolName: tool_name,
+        sub: null, jti: null, scopes: [], groups: [], decision: 'deny',
+        reason: 'No identity provider configured: cannot verify the user token', payload: toolArgs, agentId, agentName,
+      });
+      return res.status(401).json({
+        error: 'This virtual server cannot verify user tokens',
+        code: 'no_idp_configured',
+        hint: 'Set the issuer or jwks_uri on the virtual server (Edit Virtual Server), or turn off require_obo for an agent-only virtual server.',
+      });
+    }
+  }
+
   // sub/groups come from AT_A (user identity — stable, doesn't change with OBO).
   // scopes intentionally NOT used for policy here; we re-evaluate after OBO so
   // Cedar sees the actual scopes on the token that will hit the MCP server (AT_B).
@@ -398,7 +421,8 @@ router.post('/:virtualServerId', async (req, res) => {
   // Decode AT_B to extract the scopes that will actually reach the MCP server.
   const { extractTokenClaims } = require('../services/oboService');
   const oboClaims = extractTokenClaims(oboToken);
-  const oboScopes = oboClaims.scopes || [];
+  // With OBO off the forwarded token is the caller's own, so its scopes are only as good as its verification.
+  const oboScopes = (virtualServer.require_obo !== 0 || claimsVerified) ? (oboClaims.scopes || []) : [];
 
   // Evaluate Cedar policies using AT_B scopes (accurate) + sub/groups from AT_A (identity).
   // When policy evaluation is disabled for this VS, auto-allow and skip Cedar entirely.
@@ -435,13 +459,14 @@ router.post('/:virtualServerId', async (req, res) => {
         INSERT INTO approval_tickets
           (id, virtual_server_id, mcp_server_id, tool_name, tool_arguments,
            user_sub, user_jti, user_groups, user_token, matched_policy_id,
-           ttl_minutes, timeout_action, expires_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+           ttl_minutes, timeout_action, expires_at, agent_id, agent_name)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       `).run(
         ticketId, virtualServerId, mcp_server_id, tool_name,
         JSON.stringify(toolArgs || {}), sub || null, jti || null,
         JSON.stringify(groups || []), req.accessToken,
-        policyResult.policyId, ttl_minutes, timeout_action, expiresAt
+        policyResult.policyId, ttl_minutes, timeout_action, expiresAt,
+        agentId, agentName
       );
     } catch (err) {
       console.error('[Proxy] Failed to create approval ticket:', err.message);
@@ -466,21 +491,41 @@ router.post('/:virtualServerId', async (req, res) => {
     });
   }
 
+  // Resolve vault:// references (tool arguments + upstream auth) now that policy has allowed the call.
+  // This runs after the inbound scan on purpose: interceptors only ever see the placeholder, never the secret.
+  const mcpServer = {
+    url: toolAssignment.mcp_url,
+    auth_type: toolAssignment.auth_type,
+    auth_config: toolAssignment.auth_config,
+  };
+  let prepared;
+  try {
+    prepared = prepareToolCall({
+      args: toolArgs || {}, mcpServer,
+      ctx: { agentId, agentName, vsId: virtualServerId },
+      hasObo: virtualServer.require_obo !== 0,
+      vaultEnabled: virtualServer.vault_enabled !== 0,
+    });
+  } catch (err) {
+    done();
+    if (err instanceof VaultError) {
+      return res.status(err.status).json({ error: 'Vault credential unavailable', reason: err.message, code: err.code });
+    }
+    throw err;
+  }
+
   // Forward to MCP
   let result;
   try {
-    const mcpServer = {
-      url: toolAssignment.mcp_url,
-      auth_type: toolAssignment.auth_type,
-      auth_config: toolAssignment.auth_config,
-    };
-    result = await withDeadline(callMcpTool(mcpServer, tool_name, toolArgs || {}, oboToken));
+    result = await withDeadline(callMcpTool(mcpServer, tool_name, prepared.args, oboToken, prepared.extraHeaders));
     lap(`MCP call done (${tool_name})`);
   } catch (err) {
     done();
     if (err.silent) return; // deadline already sent the 504
-    return res.status(502).json({ error: 'MCP call failed', detail: err.message });
+    return res.status(502).json({ error: 'MCP call failed', detail: redact(err.message, prepared.injected) });
   }
+  // Never let a brokered secret flow back to the agent, even if the upstream echoes it.
+  result = redact(result, prepared.injected);
 
   // Outbound interceptor scan (before returning to caller)
   // Scan only the human-readable text content, not the raw JSON envelope.

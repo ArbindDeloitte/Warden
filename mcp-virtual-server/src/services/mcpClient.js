@@ -1,5 +1,6 @@
 const axios = require('axios');
 const crypto = require('crypto');
+const { resolveSystemConfig } = require('./vault');
 
 // Session cache: cacheKey → { sessionId, expiresAt }
 // Key is `url` for static-auth calls (fetchMcpTools) or `url:tokenHash` for user sessions.
@@ -112,7 +113,8 @@ function parseRpcResponse(data) {
  */
 async function fetchMcpTools(mcpServer) {
   const { url, auth_type, auth_config } = mcpServer;
-  const config = auth_config ? JSON.parse(auth_config) : {};
+  // Discovery is an admin action, so vault:// references resolve as Warden itself (audited, no agent policy).
+  const config = resolveSystemConfig(auth_config ? JSON.parse(auth_config) : {}, 'discovery');
   const baseUrl = url.replace(/\/$/, '');
 
   const headers = buildHeaders(auth_type, config);
@@ -155,12 +157,14 @@ async function fetchMcpTools(mcpServer) {
  * On HTTP 400 (typically a stale session after MCP server restart), clears
  * the session cache and retries once with a fresh initialize.
  */
-async function callMcpTool(mcpServer, toolName, toolArguments, oboToken, _isRetry = false) {
+async function callMcpTool(mcpServer, toolName, toolArguments, oboToken, extraHeaders = {}, _isRetry = false) {
   const baseUrl = mcpServer.url.replace(/\/$/, '');
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json, text/event-stream',
     'Authorization': `Bearer ${oboToken}`,
+    // Vault-brokered upstream credentials (see vault.prepareToolCall); empty unless the server uses vault:// refs.
+    ...extraHeaders,
   };
 
   // Key sessions per user (OBO token) so different users never share a session.
@@ -202,7 +206,7 @@ async function callMcpTool(mcpServer, toolName, toolArguments, oboToken, _isRetr
     // Retry once with a fresh session before giving up.
     if (!_isRetry && err.response?.status === 400) {
       console.warn('[MCP] 400 on tools/call — session likely stale, retrying with fresh session');
-      return callMcpTool(mcpServer, toolName, toolArguments, oboToken, true);
+      return callMcpTool(mcpServer, toolName, toolArguments, oboToken, extraHeaders, true);
     }
 
     // Enrich the error message with the response body so callers can diagnose

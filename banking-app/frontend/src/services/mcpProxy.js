@@ -1,41 +1,46 @@
-import { getToken, getIdToken } from './api.js';
-import { sendA2AMessage, A2AError } from './a2aClient.js';
+import { getToken, getIdToken, API_BASE_URL } from './api.js';
+import { sendA2AMessage, A2AError, A2AApprovalPendingError, interpretApprovalStatus } from './a2aClient.js';
 
-const VIRTUAL_SERVER_URL = import.meta.env.VITE_VIRTUAL_SERVER_URL
-  || 'http://localhost:3003/api/proxy/da2223c8-2b2a-429c-9220-d9e75b36f330';
+// Nothing in this file is a credential. MCP tool calls and A2A messages go to the banking backend
+// (/api/warden/*), which verifies the user's Okta token and adds the Warden agent token and API key
+// server-side, read from the Warden Credential Vault. Do not add VITE_* secrets here: Vite inlines
+// them into the public JavaScript bundle.
 
-const MCP_SERVER_ID = import.meta.env.VITE_MCP_SERVER_ID
-  || 'b49d5d6e-f465-4d3d-8963-c74dd1bb1101';
-
-const WARDEN_API_KEY    = import.meta.env.VITE_WARDEN_API_KEY    || '';
-const WARDEN_AGENT_TOKEN = import.meta.env.VITE_WARDEN_AGENT_TOKEN || 'wag_0f74dd0b9e87f63040e7988ac2b551f4';
-
-// Warden interceptor for chat messages — uses the banking-chatbot virtual server
-const WARDEN_BASE       = import.meta.env.VITE_WARDEN_URL || 'http://localhost:3003';
-const CHAT_VS_ID        = import.meta.env.VITE_WARDEN_CHAT_VS_ID || '35250de9-689d-4284-a197-0aca282c2c4d';
-const CHAT_AGENT_NAME   = import.meta.env.VITE_WARDEN_CHAT_AGENT_NAME || 'banking-chatbot-agent';
+// The browser never talks to Warden at all (not even for message scanning or approval status): everything goes to
+// the banking backend, which checks the Okta token and acts as the right Warden agent.
 
 // ── A2A: ask the Credit Card Agent through Warden ─────────────────────────────
-// Values are printed by `node credit-card-agent/setup-warden.js` (which also writes .env.local).
-const A2A_VS_ID       = import.meta.env.VITE_WARDEN_A2A_VS_ID || '';
-const A2A_TARGET_ID   = import.meta.env.VITE_WARDEN_A2A_TARGET_ID || '';
-const A2A_AGENT_TOKEN = import.meta.env.VITE_WARDEN_A2A_AGENT_TOKEN || '';
-
-export const a2aConfigured = !!(A2A_VS_ID && A2A_TARGET_ID && A2A_AGENT_TOKEN);
 // Agent name used to attribute chat-scan findings while the A2A agent is selected
 export const A2A_AGENT_NAME = import.meta.env.VITE_WARDEN_A2A_AGENT_NAME || 'securebank-a2a-agent';
-export { A2AError };
+export { A2AError, A2AApprovalPendingError };
+// What the chat should do with the status payload of an approval-gated A2A call (pending / done / denied / ...).
+export const interpretA2aApproval = interpretApprovalStatus;
+
+// Whether the backend relay has the Credit Card Agent configured (asked once, then cached).
+let a2aConfiguredPromise = null;
+export function isA2AConfigured() {
+  a2aConfiguredPromise ??= (async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/warden/config`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return !!(await res.json()).a2aConfigured;
+    } catch {
+      a2aConfiguredPromise = null; // transient failure: ask again next time
+      return false;
+    }
+  })();
+  return a2aConfiguredPromise;
+}
 
 let a2aContextId = null; // one A2A conversation per chat session
 
 export async function askCreditCardAgent(question, skillId) {
-  const userToken = await getToken();
+  const authToken = await getToken();
   a2aContextId ??= globalThis.crypto?.randomUUID?.() ?? String(Date.now());
-  const result = await sendA2AMessage({
-    baseUrl: WARDEN_BASE, vsId: A2A_VS_ID, targetId: A2A_TARGET_ID, agentToken: A2A_AGENT_TOKEN,
-    apiKey: WARDEN_API_KEY, userToken, question, skillId, contextId: a2aContextId,
+  return sendA2AMessage({
+    relayUrl: `${API_BASE_URL}/warden/a2a`, authToken, question, skillId, contextId: a2aContextId,
   });
-  return result;
 }
 
 /**
@@ -55,11 +60,15 @@ export class ApprovalPendingError extends Error {
 }
 
 /**
- * Poll the Warden approval status endpoint for a given ticket.
- * Returns the raw JSON from GET /api/approvals/:id/status.
+ * Poll the status of an approval ticket, through the banking backend (which asks Warden as the agent that made the
+ * call; Warden only shows a ticket to its own agent). `kind` is 'mcp' (banking tools) or 'a2a' (Credit Card Agent).
+ * Returns the raw JSON of Warden's GET /api/approvals/:id/status.
  */
-export async function pollApprovalStatus(ticketId) {
-  const res = await fetch(`${WARDEN_BASE}/api/approvals/${ticketId}/status`);
+export async function pollApprovalStatus(ticketId, kind = 'mcp') {
+  const token = await getToken();
+  const res = await fetch(`${API_BASE_URL}/warden/approvals/${encodeURIComponent(ticketId)}/status?kind=${kind === 'a2a' ? 'a2a' : 'mcp'}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
   return res.json();
 }
 
@@ -69,30 +78,36 @@ export async function pollApprovalStatus(ticketId) {
  * `agentName` is the agent the findings (and score changes) are attributed to.
  * Fails open (allow) if Warden is unreachable.
  */
-export async function scanMessage(text, direction = 'inbound', agentName = CHAT_AGENT_NAME) {
+export async function scanMessage(text, direction = 'inbound', agentName) {
   try {
-    const idToken = await getIdToken();
-    const res = await fetch(`${WARDEN_BASE}/api/interceptors/${CHAT_VS_ID}/scan`, {
+    const [token, idToken] = await Promise.all([getToken(), getIdToken()]);
+    const res = await fetch(`${API_BASE_URL}/warden/scan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(idToken ? { 'x-id-token': `Bearer ${idToken}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(idToken ? { 'X-Id-Token': idToken } : {}),
       },
-      body: JSON.stringify({ text, direction, agent_name: agentName }),
+      // The backend scans as the right Warden agent; the browser only says which one is selected.
+      body: JSON.stringify({ text, direction, agent: agentName === A2A_AGENT_NAME ? 'a2a' : 'mcp' }),
     });
-    if (!res.ok) return { action: 'allow', text };
+    if (!res.ok) {
+      console.warn(`[chat scan] the backend could not scan this message (HTTP ${res.status}); continuing unscanned`);
+      return { action: 'allow', text };
+    }
     return res.json();
   } catch {
-    // Warden unavailable — fail open so the chatbot still works
+    // Backend/Warden unavailable — fail open so the chatbot still works
     return { action: 'allow', text };
   }
 }
 
 /**
- * Call a banking MCP tool through the virtual server proxy.
- * The user's Okta access token is forwarded — the virtual server
- * verifies it, evaluates Cedar policies, performs OBO exchange with
- * Okta, then forwards the call to the MCP server with the OBO token.
+ * Call a banking MCP tool through the Warden virtual server proxy, relayed by the banking backend.
+ * The user's Okta access token is the only credential sent from the browser. The backend verifies it
+ * and adds the agent token and API key (from the vault); Warden then verifies the user token,
+ * evaluates Cedar policies, performs the OBO exchange with Okta, and forwards the call to the MCP
+ * server with the OBO token.
  *
  * @param {string} toolName  - MCP tool name (e.g. 'get_accounts')
  * @param {object} args      - Tool arguments
@@ -101,21 +116,14 @@ export async function scanMessage(text, direction = 'inbound', agentName = CHAT_
 export async function callTool(toolName, args = {}) {
   const [token, idToken] = await Promise.all([getToken(), getIdToken()]);
 
-  const response = await fetch(VIRTUAL_SERVER_URL, {
+  const response = await fetch(`${API_BASE_URL}/warden/tool`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token    ? { Authorization:  `Bearer ${token}` }   : {}),
-      ...(token    ? { 'x-user-token': `Bearer ${token}` }   : {}),
-      ...(idToken  ? { 'x-id-token':   `Bearer ${idToken}` } : {}),
-      ...(WARDEN_API_KEY    ? { 'X-API-Key':     WARDEN_API_KEY }    : {}),
-      ...(WARDEN_AGENT_TOKEN ? { 'X-Agent-Token': WARDEN_AGENT_TOKEN } : {}),
+      ...(token   ? { Authorization: `Bearer ${token}` } : {}),
+      ...(idToken ? { 'X-Id-Token': idToken }            : {}),
     },
-    body: JSON.stringify({
-      mcp_server_id: MCP_SERVER_ID,
-      tool_name: toolName,
-      arguments: args,
-    }),
+    body: JSON.stringify({ tool_name: toolName, arguments: args }),
   });
 
   const data = await response.json();

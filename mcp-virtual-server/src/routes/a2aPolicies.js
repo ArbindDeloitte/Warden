@@ -17,13 +17,15 @@ function normalise(b, cur = {}) {
   if (!Array.isArray(skills) || !skills.length) skills = ['*'];
   return {
     name: String(b.name ?? cur.name ?? '').trim(),
-    effect: pick(b.effect ?? cur.effect, ['permit', 'forbid'], 'permit'),
+    effect: pick(b.effect ?? cur.effect, ['permit', 'forbid', 'approval'], 'permit'),
     priority: Number.isFinite(Number(b.priority ?? cur.priority)) ? Number(b.priority ?? cur.priority) : 0,
     caller_type: callerType,
     caller_value: callerType === 'any' ? '*' : String(b.caller_value ?? cur.caller_value ?? ''),
     target_type: targetType,
     target_value: targetType === 'any' ? '*' : String(b.target_value ?? cur.target_value ?? ''),
     skills: JSON.stringify(skills),
+    approval_ttl_minutes: Math.floor(Number(b.approval_ttl_minutes ?? cur.approval_ttl_minutes ?? 30)),
+    approval_timeout_action: pick(b.approval_timeout_action ?? cur.approval_timeout_action, ['deny', 'approve'], 'deny'),
     require_user: (b.require_user ?? cur.require_user) ? 1 : 0,
     user_fail_mode: pick(b.user_fail_mode ?? cur.user_fail_mode, ['closed', 'open'], 'closed'),
     is_active: (b.is_active ?? cur.is_active ?? 1) ? 1 : 0,
@@ -34,6 +36,7 @@ function validate(p) {
   if (!p.name) return 'name is required';
   if (p.caller_type !== 'any' && !p.caller_value) return 'caller_value is required for agent/group callers';
   if (p.target_type !== 'any' && !p.target_value) return 'target_value is required for agent targets';
+  if (p.effect === 'approval' && !(p.approval_ttl_minutes >= 1 && p.approval_ttl_minutes <= 10080)) return 'approval_ttl_minutes must be between 1 and 10080 (one week)';
   return null;
 }
 
@@ -62,9 +65,9 @@ router.post('/', (req, res) => {
   const bad = validate(p);
   if (bad) return res.status(400).json({ error: bad });
   const id = uuidv4();
-  db.prepare(`INSERT INTO a2a_policies (id,virtual_server_id,name,effect,priority,caller_type,caller_value,target_type,target_value,skills,require_user,user_fail_mode,is_active)
-              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(id, vsId, p.name, p.effect, p.priority, p.caller_type, p.caller_value, p.target_type, p.target_value, p.skills, p.require_user, p.user_fail_mode, p.is_active);
+  db.prepare(`INSERT INTO a2a_policies (id,virtual_server_id,name,effect,priority,caller_type,caller_value,target_type,target_value,skills,require_user,user_fail_mode,is_active,approval_ttl_minutes,approval_timeout_action)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(id, vsId, p.name, p.effect, p.priority, p.caller_type, p.caller_value, p.target_type, p.target_value, p.skills, p.require_user, p.user_fail_mode, p.is_active, p.approval_ttl_minutes, p.approval_timeout_action);
   res.status(201).json({ id });
 });
 
@@ -74,8 +77,8 @@ router.put('/:id', (req, res) => {
   const p = normalise(req.body, cur);
   const bad = validate(p);
   if (bad) return res.status(400).json({ error: bad });
-  db.prepare(`UPDATE a2a_policies SET name=?,effect=?,priority=?,caller_type=?,caller_value=?,target_type=?,target_value=?,skills=?,require_user=?,user_fail_mode=?,is_active=? WHERE id=?`)
-    .run(p.name, p.effect, p.priority, p.caller_type, p.caller_value, p.target_type, p.target_value, p.skills, p.require_user, p.user_fail_mode, p.is_active, cur.id);
+  db.prepare(`UPDATE a2a_policies SET name=?,effect=?,priority=?,caller_type=?,caller_value=?,target_type=?,target_value=?,skills=?,require_user=?,user_fail_mode=?,is_active=?,approval_ttl_minutes=?,approval_timeout_action=? WHERE id=?`)
+    .run(p.name, p.effect, p.priority, p.caller_type, p.caller_value, p.target_type, p.target_value, p.skills, p.require_user, p.user_fail_mode, p.is_active, p.approval_ttl_minutes, p.approval_timeout_action, cur.id);
   res.json({ ok: true });
 });
 
@@ -102,7 +105,7 @@ router.post('/simulate', (req, res) => {
   // Mirrors the gateway: a matched permit that requires a user token still needs one that verifies,
   // unless the policy fails open and the only problem is an unreachable identity provider.
   const userCheck = { required: !!(p && p.require_user), status: userStatus, outcome: 'not_required', fail_mode: p?.user_fail_mode || null };
-  if (v.decision === 'allow' && p?.require_user) {
+  if (['allow', 'approval'].includes(v.decision) && p?.require_user) {
     if (userStatus === 'verified') userCheck.outcome = 'passed';
     else if (p.user_fail_mode === 'open' && userStatus === 'idp_down') userCheck.outcome = 'degraded';
     else {
@@ -110,7 +113,7 @@ router.post('/simulate', (req, res) => {
       decision = 'deny';
       reason = userStatus === 'absent' ? 'User token required by policy' : 'User token could not be verified';
     }
-  } else if (v.decision !== 'allow') userCheck.outcome = 'skipped';
+  } else if (!['allow', 'approval'].includes(v.decision)) userCheck.outcome = 'skipped';
 
   const caller = db.prepare('SELECT id, name FROM agents WHERE id = ?').get(caller_agent_id);
   const target = db.prepare('SELECT id, name FROM a2a_agents WHERE id = ?').get(target_agent_id);
@@ -121,6 +124,7 @@ router.post('/simulate', (req, res) => {
 
   res.json({
     decision, reason, policy_id: p?.id || null,
+    approval: decision === 'approval' ? { ttl_minutes: p.approval_ttl_minutes, timeout_action: p.approval_timeout_action } : null,
     skill: skill || null, caller: { ...caller, groups }, target,
     user_check: userCheck, trace: v.trace,
   });

@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { fetchMcpTools } = require('../services/mcpClient');
+const { isRef } = require('../services/vault');
 
 const router = express.Router();
 
@@ -44,9 +45,10 @@ router.get('/', (req, res) => {
   servers.forEach((s) => {
     s.auth_config = JSON.parse(s.auth_config || '{}');
     // Never return secrets in list
-    if (s.auth_config.token) s.auth_config.token = '***';
-    if (s.auth_config.password) s.auth_config.password = '***';
-    if (s.auth_config.key) s.auth_config.key = '***';
+    // vault:// references are pointers, not secrets, so they stay visible.
+    for (const f of ['token', 'password', 'key']) {
+      if (s.auth_config[f] && !isRef(s.auth_config[f])) s.auth_config[f] = '***';
+    }
   });
   res.json(servers);
 });

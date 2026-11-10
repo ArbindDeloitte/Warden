@@ -62,12 +62,17 @@ async function verifyToken(req, res, next) {
     const client = getJwksClient(jwksUri);
 
     const decoded = await new Promise((resolve, reject) => {
+      // Signature and expiry are always checked. When the virtual server names an expected audience / issuer, a token
+      // issued for a different application (same Okta server, other audience) is refused too.
+      const verifyOptions = { algorithms: ['RS256'] };
+      if (virtualServer?.user_token_audience) verifyOptions.audience = virtualServer.user_token_audience;
+      if (virtualServer?.user_token_issuer) verifyOptions.issuer = virtualServer.user_token_issuer;
       jwt.verify(token, (header, callback) => {
         client.getSigningKey(header.kid, (err, key) => {
           if (err) return callback(err);
           callback(null, key.getPublicKey());
         });
-      }, { algorithms: ['RS256'] }, (err, decoded) => {
+      }, verifyOptions, (err, decoded) => {
         if (err) reject(err);
         else resolve(decoded);
       });

@@ -274,6 +274,57 @@
       box-shadow: 0 20px 60px rgba(0,0,0,.5);
     }
     .modal h2 { margin-bottom: 20px; }
+
+    /* ── Admin sign-in ─────────────────────────────────────── */
+    body.auth-locked .sidebar, body.auth-locked .main { visibility: hidden; }
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px;
+      background:
+        radial-gradient(900px 480px at 50% -10%, rgba(99,102,241,.16), transparent 70%),
+        radial-gradient(700px 400px at 100% 110%, rgba(99,102,241,.08), transparent 70%),
+        var(--bg);
+    }
+    .auth-card {
+      width: 420px; max-width: 100%; background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: 18px; padding: 36px 36px 28px; box-shadow: 0 24px 70px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.12);
+      display: flex; flex-direction: column; gap: 0; text-align: left;
+    }
+    .auth-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 26px; }
+    .auth-brand .auth-mark {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(99,102,241,.2) 0%, rgba(99,102,241,.08) 100%);
+      border: 1px solid rgba(99,102,241,.32); box-shadow: 0 0 0 4px rgba(99,102,241,.07);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .auth-brand .auth-name { font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: var(--text); line-height: 1.15; }
+    .auth-brand .auth-tag { display: block; font-size: 11.5px; font-weight: 400; color: var(--text-3); margin-top: 2px; letter-spacing: 0; }
+    .auth-card h2 { margin: 0 0 6px; font-size: 21px; font-weight: 650; letter-spacing: -.3px; color: var(--text); }
+    .auth-card .auth-sub { color: var(--text-muted); font-size: 13.5px; line-height: 1.5; margin: 0 0 22px; }
+    .auth-card label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); margin-bottom: 7px; }
+    .auth-card input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border-strong); border-radius: var(--radius);
+      padding: 11px 13px; color: var(--text); font-size: 14px; font-family: var(--font); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .auth-card input::placeholder { color: var(--text-3); }
+    .auth-card input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .auth-card .auth-error { color: var(--red); background: var(--red-dim); border: 1px solid rgba(239,68,68,.25); border-radius: 8px; padding: 9px 12px; font-size: 12.5px; line-height: 1.45; margin-top: 12px; }
+    .auth-card .auth-submit { width: 100%; justify-content: center; margin-top: 18px; padding: 11px 16px; font-size: 14px; font-weight: 600; border-radius: var(--radius); }
+    .auth-card .auth-hint { color: var(--text-3); font-size: 12px; line-height: 1.55; margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--border); }
+    .auth-card .auth-hint code { font-size: 11.5px; background: var(--surface2); padding: 1px 5px; border-radius: 4px; }
+    .signout-btn {
+      background: none; border: 1px solid var(--border-strong); color: var(--text-2); border-radius: 6px;
+      font-size: 11px; padding: 3px 8px; cursor: pointer; font-family: inherit;
+    }
+    .signout-btn:hover { border-color: var(--accent); color: var(--text); }
+    .open-banner {
+      display: none; align-items: flex-start; gap: 10px; margin: -8px 0 18px; padding: 8px 12px; border-radius: 8px;
+      background: var(--yellow-dim); border: 1px solid rgba(245,158,11,.35); color: var(--text); font-size: 12.5px; line-height: 1.45;
+    }
+    .open-banner span { flex: 1; }
+    .open-banner code { font-size: 11.5px; }
+    .open-banner button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
+    .open-banner button:hover { color: var(--text); }
     .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border); }
 
     /* ── Form ──────────────────────────────────────────────── */
@@ -406,6 +457,30 @@
 <body>
 <div class="shell">
   <!-- Sidebar -->
+  <div id="auth-overlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <form class="auth-card" autocomplete="off" onsubmit="submitLogin(); return false;">
+      <div class="auth-brand">
+        <div class="auth-mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs><linearGradient id="auth-grad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#a5b4fc"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>
+            <path d="M12 2L4 6V12C4 16.4 7.4 20.5 12 22C16.6 20.5 20 16.4 20 12V6L12 2Z" fill="url(#auth-grad)"/>
+            <rect x="9" y="11.8" width="6" height="5.2" rx="1.2" fill="white" opacity="0.92"/>
+            <path d="M10.2 11.8V10.4a1.8 1.8 0 0 1 3.6 0v1.4" stroke="white" stroke-width="1.35" fill="none" stroke-linecap="round"/>
+            <circle cx="12" cy="14.4" r="0.75" fill="#6366f1"/>
+          </svg>
+        </div>
+        <div class="auth-name">Warden<span class="auth-tag">AI Gateway</span></div>
+      </div>
+      <h2 id="auth-title">Sign in to Warden</h2>
+      <p class="auth-sub">Enter the admin token to manage this gateway.</p>
+      <label for="auth-token">Admin token</label>
+      <input id="auth-token" type="password" autocomplete="off" spellcheck="false" placeholder="Paste the admin token" />
+      <div id="auth-error" class="auth-error" role="alert" style="display:none"></div>
+      <button class="btn btn-primary auth-submit" id="auth-submit" type="submit">Sign in</button>
+      <p class="auth-hint">The token is the <code>WARDEN_ADMIN_TOKEN</code> value in <code>mcp-virtual-server/.env</code>.</p>
+    </form>
+  </div>
+
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon">
@@ -461,6 +536,12 @@
     </button>
     <button class="nav-item" data-page="keys">
       <span class="icon">🔑</span> Keys
+    </button>
+
+    <div class="nav-section-label">Vault</div>
+
+    <button class="nav-item" data-page="vault">
+      <span class="icon">🔐</span> Credential Vault
     </button>
 
     <div class="nav-section-label">A2A</div>
@@ -520,6 +601,7 @@
     <div style="flex:1"></div>
     <div class="sidebar-footer-row">
       <span class="sidebar-footer-label">v1.0 · Warden</span>
+      <button class="signout-btn" id="signout-btn" style="display:none" onclick="adminSignOut()" title="Sign out of the admin API">Sign out</button>
       <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark theme">
         <span id="theme-icon">☀️</span>
       </button>
@@ -528,6 +610,10 @@
 
   <!-- Main -->
   <main class="main">
+    <div id="open-banner" class="open-banner" role="status">
+      <span>⚠️ <b>Admin API is unauthenticated</b> — anyone who can reach this port can read and change everything. Set <code>WARDEN_ADMIN_TOKEN</code> in <code>mcp-virtual-server/.env</code> and restart Warden.</span>
+      <button type="button" aria-label="Dismiss warning" title="Dismiss" onclick="dismissOpenBanner()">×</button>
+    </div>
     <!-- DASHBOARD -->
     <div class="page" id="page-dashboard">
       <h1>Dashboard</h1>
@@ -626,12 +712,19 @@
         .a2ap-seg button { flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface2);color:var(--text-2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font); }
         .a2ap-seg button.sel-permit { background:var(--green-dim);color:var(--green);border-color:rgba(34,197,94,.4); }
         .a2ap-seg button.sel-forbid { background:var(--red-dim);color:var(--red);border-color:rgba(239,68,68,.4); }
+        .a2ap-seg button.sel-approval { background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.45); }
+        .a2ap-appr-box { margin-bottom:14px;padding:12px 14px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.07); }
+        .a2ap-appr-warn { display:none;margin-top:8px;font-size:12px;line-height:1.5;color:#f59e0b; }
+        .a2ap-appr-more { margin-top:8px;font-size:12px;color:var(--text-muted); }
+        .a2ap-appr-more summary { cursor:pointer;font-weight:600;user-select:none; }
+        .a2ap-appr-more ul { margin:6px 0 0;padding-left:18px;line-height:1.55; }
         @media (max-width: 900px) { .a2ap-test { grid-template-columns:1fr; } }
       </style>
       <h1>A2A Policies</h1>
       <p class="subtitle">Control which agents may call which A2A agents through a virtual server. Rules are evaluated by priority (highest first) and the first match decides.</p>
       <div class="a2ap-hint">
         <b>Deny by default.</b> If no rule matches, the call is rejected. <b>Forbid</b> rules also match calls that omit a skill, so a caller can't dodge a skill-scoped forbid by leaving the skill out; a skill-scoped <b>permit</b> only matches when the caller names that skill.
+        An <b>Approval</b> rule holds a matching message until an admin decides on the <b>Approvals</b> page; like a forbid, it also matches calls that omit the skill.
       </div>
       <div class="action-row">
         <div style="display:flex;align-items:center;gap:8px">
@@ -661,6 +754,7 @@
         .a2as-trace { padding:10px 12px;border-radius:8px;margin-bottom:8px;border:1px solid var(--border);background:var(--bg); }
         .a2as-trace.decides-permit { border-color:rgba(34,197,94,.45);background:var(--green-dim); }
         .a2as-trace.decides-forbid { border-color:rgba(239,68,68,.45);background:var(--red-dim); }
+        .a2as-trace.decides-approval { border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.1); }
         .a2as-trace.unreached { opacity:.5; }
         .a2as-checks { font-size:12px;color:var(--text-muted);line-height:1.7; }
         .a2as-note { font-size:11.5px;color:var(--text-muted);margin-top:4px;font-style:italic; }
@@ -707,6 +801,174 @@
           <div id="a2as-trace"></div>
           <h2 style="margin-top:18px">User Token Check</h2>
           <div id="a2as-user-check"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREDENTIAL VAULT -->
+    <div class="page" id="page-vault">
+      <style>
+        .vl-hint { font-size:12.5px;color:var(--text-2);line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-left:3px solid #06b6d4;border-radius:8px;padding:10px 14px;margin-bottom:16px; }
+        .vl-chip { display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 9px;border-radius:100px;background:var(--surface2);border:1px solid var(--border-strong);color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle; }
+        .vl-chip.any { color:var(--text-muted);font-style:italic; }
+        .vl-arrow { color:var(--text-muted);margin:0 6px;font-size:13px; }
+        .vl-code { font-family:'JetBrains Mono','Courier New',monospace;font-size:12px;background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:1px 6px; }
+        .vl-tabs { margin-bottom:16px; }
+        .vl-card { padding:0;overflow-x:auto;margin-bottom:20px; }
+        .vl-card table { min-width:720px; }
+        .vl-sub { font-size:11px;color:var(--text-muted);margin-top:3px; }
+        .vl-help { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:16px; }
+        .vl-help > summary { cursor:pointer;font-size:13px;font-weight:600;color:var(--text);outline:none; }
+        .vl-help h3 { font-size:12.5px;font-weight:700;margin:16px 0 4px;color:var(--text); }
+        .vl-help p { font-size:12.5px;color:var(--text-2);line-height:1.6;margin:0 0 6px; }
+        .vl-snip { position:relative; }
+        .vl-snip pre { background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11.5px;line-height:1.55;overflow-x:auto;color:var(--text);font-family:'JetBrains Mono','Courier New',monospace;margin:0 0 6px; }
+        .vl-snip .btn { position:absolute;top:6px;right:6px; }
+        .vl-seg { display:flex;gap:6px; }
+        .vl-seg button { flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface2);color:var(--text-2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font); }
+        .vl-seg button.sel-permit { background:var(--green-dim);color:var(--green);border-color:rgba(34,197,94,.4); }
+        .vl-seg button.sel-forbid { background:var(--red-dim);color:var(--red);border-color:rgba(239,68,68,.4); }
+        .vl-note { font-size:11.5px;color:var(--text-muted);line-height:1.5;margin-top:5px; }
+        .vl-note.warn { color:var(--yellow); }
+        .vl-err { display:none;font-size:12.5px;color:var(--red);margin-top:4px; }
+        .vl-checks { display:flex;flex-wrap:wrap;gap:14px; }
+        .vl-checks label { display:flex;align-items:center;gap:6px;cursor:pointer;text-transform:none !important;font-size:13px !important;font-weight:500 !important;color:var(--text) !important;letter-spacing:0 !important;margin:0 !important; }
+        .vl-checks input { width:auto !important; }
+        .vl-sim { display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:end; }
+        .vl-sim label { font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px; }
+        .vl-sim select { width:100%;background:var(--surface2);border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px 10px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;color-scheme:light dark; }
+        .vl-trace { padding:10px 12px;border-radius:8px;margin-bottom:8px;border:1px solid var(--border);background:var(--bg); }
+        .vl-trace.decides-permit { border-color:rgba(34,197,94,.45);background:var(--green-dim); }
+        .vl-trace.decides-forbid { border-color:rgba(239,68,68,.45);background:var(--red-dim); }
+        .vl-trace.unreached { opacity:.5; }
+        .vl-checks-line { font-size:12px;color:var(--text-muted);line-height:1.7; }
+        .vl-filters { display:flex;flex-wrap:wrap;align-items:center;gap:10px; }
+        .vl-filters select, .vl-filters input[type=text] { background:var(--surface2);border:1px solid var(--border-strong);border-radius:var(--radius);padding:7px 10px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;color-scheme:light dark; }
+        .vl-tip { font-size:11.5px;color:var(--text-muted);margin:-6px 0 14px; }
+        .vl-tip code { font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;background:var(--surface3);border-radius:4px;padding:1px 5px; }
+        @media (max-width: 900px) { .vl-sim { grid-template-columns:1fr; } }
+      </style>
+      <h1>Credential Vault</h1>
+      <p class="subtitle">Store credentials once, encrypted. Agents obtain them at runtime only when a policy allows it &mdash; nothing lives in <code>.env</code> files or agent code.</p>
+
+      <details class="vl-help">
+        <summary>How agents use this</summary>
+        <h3>1 &middot; Runtime checkout &mdash; the agent receives the value</h3>
+        <p>Needs a <b>permit</b> policy with the <b>reveal</b> operation. The response carries a <code>lease_id</code> and <code>expires_at</code>; cache the value only until then.</p>
+        <div class="vl-snip"><pre id="vl-snip-checkout">curl -X POST http://localhost:3003/api/vault/checkout \
+  -H "X-Agent-Token: wag_..." -H "Content-Type: application/json" \
+  -d '{"secret": "stripe-key", "virtual_server_id": "&lt;optional vs id&gt;", "ttl_seconds": 120}'</pre><button class="btn btn-ghost btn-sm" onclick="vlCopyEl('vl-snip-checkout')">Copy</button></div>
+        <h3>2 &middot; Brokered &mdash; the agent never sees the value</h3>
+        <p>Needs a <b>permit</b> policy with the <b>broker</b> operation and an <code>X-Agent-Token</code> on the proxied call. Put <code>vault://secret-name</code> as the <b>whole string</b> of a value:</p>
+        <div class="vl-snip"><pre id="vl-snip-broker">// tool arguments (resolved after policy + inbound scan, redacted from the response)
+{ "api_key": "vault://stripe-key" }
+
+// MCP server auth_config (Corridor &rarr; MCP Servers)
+{ "header": "X-API-Key", "key": "vault://stripe-key" }
+
+// Virtual server Okta client secret field
+vault://okta-client-secret</pre><button class="btn btn-ghost btn-sm" onclick="vlCopyEl('vl-snip-broker')">Copy</button></div>
+        <p>For MCP server credentials, <b>API Key Header</b> is injected on every call; <b>Bearer</b> and <b>Basic</b> replace the Authorization header and therefore only apply when the virtual server has OBO turned off.</p>
+        <p>Brokering only happens on virtual servers that have <b>Credential Vault</b> switched on (Edit Virtual Server &rarr; Pipeline Features). With it off, the vault is never consulted for that virtual server.</p>
+        <h3>3 &middot; Sign &mdash; only the JWT leaves the vault</h3>
+        <p>For <b>private_key</b> secrets; needs the <b>sign</b> operation. Optional metadata <code>client_id</code>, <code>token_url</code> and <code>kid</code> supply the default iss/sub, aud and key id.</p>
+        <div class="vl-snip"><pre id="vl-snip-sign">curl -X POST http://localhost:3003/api/vault/sign \
+  -H "X-Agent-Token: wag_..." -H "Content-Type: application/json" \
+  -d '{"secret": "okta-private-key", "claims": {}, "expires_in": 300}'</pre><button class="btn btn-ghost btn-sm" onclick="vlCopyEl('vl-snip-sign')">Copy</button></div>
+      </details>
+
+      <div class="tab-pills vl-tabs" id="vl-tabs">
+        <button class="tab-pill active" data-tab="secrets" onclick="vlSwitchTab('secrets')">Secrets</button>
+        <button class="tab-pill" data-tab="policies" onclick="vlSwitchTab('policies')">Policies</button>
+        <button class="tab-pill" data-tab="leases" onclick="vlSwitchTab('leases')">Leases</button>
+        <button class="tab-pill" data-tab="activity" onclick="vlSwitchTab('activity')">Activity</button>
+      </div>
+
+      <!-- Secrets -->
+      <div id="vl-panel-secrets">
+        <div class="action-row">
+          <span id="vl-secrets-count" style="font-size:13px;color:var(--text-muted)"></span>
+          <button class="btn btn-primary" onclick="vlOpenSecretModal()">＋ New Secret</button>
+        </div>
+        <div class="card vl-card">
+          <table id="vl-secrets-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Version</th><th>Status</th><th>Expires</th><th>Last accessed</th><th>Uses</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="vl-secrets-empty" class="empty-state" style="display:none"><div class="icon">🔐</div><div class="msg">No secrets yet.<br>Click <b>New Secret</b> to store a credential. Values are write-only &mdash; they are never shown again.</div></div>
+        </div>
+      </div>
+
+      <!-- Policies -->
+      <div id="vl-panel-policies" style="display:none">
+        <div class="vl-hint"><b>Deny by default.</b> An agent can use a secret only if a <b>permit</b> policy matches its identity (or one of its groups), the secret, the virtual server and the operation. Policies are checked by priority (highest first); the first match decides, and a <b>forbid</b> beats a permit of equal priority.</div>
+        <div class="action-row">
+          <span id="vl-policies-count" style="font-size:13px;color:var(--text-muted)"></span>
+          <button class="btn btn-primary" onclick="vlOpenPolicyModal()">＋ New Policy</button>
+        </div>
+        <div class="card vl-card">
+          <table id="vl-policies-table">
+            <thead><tr><th style="width:60px">Priority</th><th>Rule</th><th>Caller &rarr; Secret</th><th>Operations</th><th>Max lease</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="vl-policies-empty" class="empty-state" style="display:none"><div class="icon">🛂</div><div class="msg">No vault policies.<br><b>With no rules, every vault request is denied.</b> Click <b>New Policy</b> to let an agent or group use a secret.</div></div>
+        </div>
+        <div class="card">
+          <h2>Policy Simulator</h2>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px">Check a decision without touching a secret &mdash; see which policies fire for an agent, secret, virtual server and operation.</p>
+          <div class="vl-sim">
+            <div><label for="vl-sim-agent">Agent</label><select id="vl-sim-agent"></select></div>
+            <div><label for="vl-sim-secret">Secret</label><select id="vl-sim-secret"></select></div>
+            <div><label for="vl-sim-vs">Virtual server</label><select id="vl-sim-vs"></select></div>
+            <div><label for="vl-sim-op">Operation</label><select id="vl-sim-op"></select></div>
+            <button class="btn btn-primary" onclick="vlRunSimulation()">▶ Simulate</button>
+          </div>
+          <div id="vl-sim-result" style="display:none;margin-top:18px">
+            <div id="vl-sim-decision" style="font-size:22px;font-weight:700;margin-bottom:6px"></div>
+            <div id="vl-sim-reason" style="color:var(--text-muted);font-size:13.5px;margin-bottom:12px"></div>
+            <div id="vl-sim-ctx" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:14px;font-size:12.5px"></div>
+            <h2 style="font-size:14px">Policy Trace</h2>
+            <div id="vl-sim-trace"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leases -->
+      <div id="vl-panel-leases" style="display:none">
+        <div class="vl-hint">A lease is issued every time an agent checks out a value. Revoking a lease stops it validating; <b>rotate the secret</b> to invalidate the value itself (rotation also revokes every outstanding lease).</div>
+        <div class="action-row">
+          <div class="vl-filters">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);cursor:pointer"><input type="checkbox" id="vl-leases-active" onchange="vlLoadLeases()" style="width:auto"> Active only</label>
+          </div>
+          <button class="btn btn-ghost" onclick="vlLoadLeases()">↻ Refresh</button>
+        </div>
+        <div class="card vl-card">
+          <table id="vl-leases-table">
+            <thead><tr><th>Secret</th><th>Agent</th><th>Virtual server</th><th>Operation</th><th>Issued</th><th>Expires</th><th>State</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="vl-leases-empty" class="empty-state" style="display:none"><div class="icon">🎫</div><div class="msg">No leases.<br>Leases appear when an agent checks a secret out at runtime.</div></div>
+        </div>
+      </div>
+
+      <!-- Activity -->
+      <div id="vl-panel-activity" style="display:none">
+        <div class="action-row">
+          <div class="vl-filters">
+            <select id="vl-act-level" onchange="vlLoadActivity()">
+              <option value="">All levels</option><option value="info">Info</option><option value="warn">Warn</option><option value="error">Error</option>
+            </select>
+            <input type="text" id="vl-act-secret" placeholder="Secret name" onkeydown="if(event.key==='Enter')vlLoadActivity()" />
+            <button class="btn btn-ghost btn-sm" onclick="vlLoadActivity()">Filter</button>
+          </div>
+          <button class="btn btn-ghost" onclick="vlLoadActivity()">↻ Refresh</button>
+        </div>
+        <div class="card vl-card">
+          <table id="vl-activity-table">
+            <thead><tr><th>Time</th><th>Level</th><th>Summary</th><th>Principal</th><th>Operation</th><th>Via</th><th>Agent</th><th>Secret</th><th>Reason</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="vl-activity-empty" class="empty-state" style="display:none"><div class="icon">📜</div><div class="msg">No vault activity yet.</div></div>
         </div>
       </div>
     </div>
@@ -5105,8 +5367,8 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
           <div class="a2d-cards">
             <div class="a2d-card"><div class="a2d-card-icon">🛡️</div><div class="a2d-card-title">Gateway, not a host</div>
               <div class="a2d-card-body">Warden never runs an agent. Remote agents run elsewhere; you register each one by its Agent Card and assign it to a virtual server. Warden sits between the caller and the target.</div></div>
-            <div class="a2d-card"><div class="a2d-card-icon">🔌</div><div class="a2d-card-title">A2A 1.0, JSON-RPC only</div>
-              <div class="a2d-card-body">Implements the A2A 1.0 JSON-RPC binding. A2A 0.3 agents and cards are rejected. The REST and gRPC bindings are not implemented.</div></div>
+            <div class="a2d-card"><div class="a2d-card-icon">🔌</div><div class="a2d-card-title">A2A 1.0 and 0.3, JSON-RPC only</div>
+              <div class="a2d-card-body">Implements the JSON-RPC binding of A2A 1.0 and A2A 0.3. Each registered agent speaks one version, chosen at registration (or auto-detected from its card), and its gateway speaks that same version to callers and to the agent, with no translation. Earlier versions are rejected. The REST and gRPC bindings are not implemented.</div></div>
             <div class="a2d-card"><div class="a2d-card-icon">🏠</div><div class="a2d-card-title">Self-contained</div>
               <div class="a2d-card-body">The A2A path needs no external services: no Redis, no OBO token exchange and no message queue. It runs on Warden's own libraries and its SQLite database. Okta is contacted only to verify an <i>optional</i> user token, and enabled interceptors use Warden's local scanners.</div></div>
           </div>
@@ -5206,7 +5468,7 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
             <div class="a2d-card"><div class="a2d-card-title">🧑‍💻 Caller identity</div>
               <div class="a2d-card-body">Callers are ordinary Warden <b>Agent Hub</b> agents authenticating with <code>X-Agent-Token</code> (<code>wag_…</code>). Their <b>Agent Groups</b> can be used in policies, so membership rules also drive A2A access.</div></div>
             <div class="a2d-card"><div class="a2d-card-title">🛂 A2A Policies</div>
-              <div class="a2d-card-body">Deny-by-default rules per virtual server: caller (any / agent / group) → target (any / agent) → skills, with permit or forbid and a priority. Highest priority first; the first match decides.</div></div>
+              <div class="a2d-card-body">Deny-by-default rules per virtual server: caller (any / agent / group) → target (any / agent) → skills, with permit, forbid or approval and a priority. Highest priority first; the first match decides. An <b>approval</b> rule holds the message in the Approvals queue until an admin decides.</div></div>
             <div class="a2d-card"><div class="a2d-card-title">🔐 Outbound credentials</div>
               <div class="a2d-card-body">Optional per remote agent: bearer token, API-key header or basic auth, encrypted at rest (AES-256-GCM). The API never returns the secret.</div></div>
             <div class="a2d-card"><div class="a2d-card-title">🧾 Tasks</div>
@@ -5344,7 +5606,7 @@ node setup-warden.js</pre>
 WARDEN_A2A_VS_ID=&lt;virtual server id&gt;
 WARDEN_A2A_TARGET_ID=&lt;credit-card-agent id&gt;
 WARDEN_A2A_AGENT_TOKEN=wag_…        # shown once</pre>
-              It writes <code>VITE_WARDEN_A2A_VS_ID</code>, <code>VITE_WARDEN_A2A_TARGET_ID</code> and <code>VITE_WARDEN_A2A_AGENT_TOKEN</code> into <code>banking-app/frontend/.env.local</code>, merging with any existing lines. Set <code>SKIP_FRONTEND_ENV=1</code> to skip that.</div>
+              It writes <code>WARDEN_A2A_VS_ID</code>, <code>WARDEN_A2A_TARGET_ID</code> and this agent's <code>WARDEN_A2A_AGENT_TOKEN</code> into the git-ignored <code>banking-app/backend/.env.local</code>, merging with any existing lines (the browser holds no Warden credentials; the backend relays calls as this agent and reads the Warden API key from the Vault). Set <code>SKIP_BACKEND_ENV=1</code> to skip that.</div>
             <div class="a2d-note warn"><b>Re-running rotates the token.</b> If <code>securebank-a2a-agent</code> already exists, the script issues a new token and the old one stops working. Update <code>agent/.env</code> (and restart the frontend) after every re-run.</div>
           </div></div>
 
@@ -5473,7 +5735,7 @@ python test_a2a.py</pre>
                 <tr><td><code>GET /.well-known/jwks.json</code></td><td>Public keys for verifying Warden's delegation tokens</td></tr>
                 <tr><td colspan="2"><b>A2A agents registry</b></td></tr>
                 <tr><td><code>GET /api/a2a-agents</code> · <code>GET /api/a2a-agents/{id}</code></td><td>List / detail. Includes <code>auth_type</code>, <code>auth_header</code>, <code>has_secret</code>; never the secret</td></tr>
-                <tr><td><code>POST /api/a2a-agents</code></td><td>Register. Body: <code>card_url</code> or <code>card_json</code>, optional <code>name</code>, optional <code>auth: {type, header?, secret?}</code></td></tr>
+                <tr><td><code>POST /api/a2a-agents</code></td><td>Register. Body: <code>card_url</code> or <code>card_json</code>, optional <code>name</code>, optional <code>protocol_version</code> (<code>"auto"</code> default, <code>"1.0"</code> or <code>"0.3"</code>; an explicit value must match the card; it is the version this agent's gateway speaks), optional <code>auth: {type, header?, secret?}</code></td></tr>
                 <tr><td><code>POST /api/a2a-agents/{id}/refresh</code></td><td>Re-fetch the card. On failure the cached card is kept and <code>card_error</code> is set</td></tr>
                 <tr><td><code>PUT /api/a2a-agents/{id}/auth</code></td><td>Set, change or clear (<code>type: "none"</code>) the outbound credential. Omit <code>secret</code> to keep the stored one</td></tr>
                 <tr><td><code>PATCH /api/a2a-agents/{id}/toggle</code> · <code>DELETE /api/a2a-agents/{id}</code></td><td>Enable/disable · remove</td></tr>
@@ -5482,17 +5744,17 @@ python test_a2a.py</pre>
                 <tr><td><code>GET|POST /api/virtual-servers/{id}/a2a-agents</code> · <code>DELETE …/a2a-agents/{a2aAgentId}</code></td><td>List / assign (<code>{a2a_agent_id}</code>) / unassign. Assigning to an MCP-only server returns 400</td></tr>
                 <tr><td colspan="2"><b>Policies</b></td></tr>
                 <tr><td><code>GET /api/a2a-policies?virtual_server_id=</code></td><td>List, with resolved caller and target names</td></tr>
-                <tr><td><code>POST /api/a2a-policies</code> · <code>PUT /…/{id}</code> · <code>DELETE /…/{id}</code></td><td>Create / update / delete</td></tr>
-                <tr><td><code>POST /api/a2a-policies/simulate</code></td><td>Dry run: <code>{virtual_server_id, caller_agent_id, target_agent_id, skill?, user_status?}</code> (<code>user_status</code>: <code>absent</code> · <code>verified</code> · <code>invalid</code> · <code>idp_down</code>) → <code>{decision, reason, policy_id, skill, caller, target, user_check, trace}</code>. <code>trace</code> lists every active policy in evaluation order with its caller, target and skill match.</td></tr>
+                <tr><td><code>POST /api/a2a-policies</code> · <code>PUT /…/{id}</code> · <code>DELETE /…/{id}</code></td><td>Create / update / delete. <code>effect</code> may be <code>approval</code>, with <code>approval_ttl_minutes</code> and <code>approval_timeout_action</code></td></tr>
+                <tr><td><code>POST /api/a2a-policies/simulate</code></td><td>Dry run: <code>{virtual_server_id, caller_agent_id, target_agent_id, skill?, user_status?}</code> (<code>user_status</code>: <code>absent</code> · <code>verified</code> · <code>invalid</code> · <code>idp_down</code>) → <code>{decision, reason, policy_id, approval, skill, caller, target, user_check, trace}</code> (<code>decision</code>: <code>allow</code> · <code>deny</code> · <code>approval</code>; <code>approval</code> is <code>{ttl_minutes, timeout_action}</code> or null). <code>trace</code> lists every active policy in evaluation order with its caller, target and skill match.</td></tr>
               </tbody>
             </table>
           </div>
-          <div class="a2d-note warn"><b>Admin API access:</b> as with the rest of Warden's <code>/api</code>, these admin endpoints have no authentication of their own. Restrict network access to Warden accordingly.</div>
+          <div class="a2d-note warn"><b>Admin API access:</b> when <code>WARDEN_ADMIN_TOKEN</code> is set (in <code>mcp-virtual-server/.env</code>), every admin endpoint under <code>/api</code> requires it: send <code>X-Admin-Token: &lt;token&gt;</code> or <code>Authorization: Bearer &lt;token&gt;</code> (this UI signs in with it and keeps an HttpOnly session cookie). Without it the admin API is unauthenticated, so restrict network access to Warden. The data-plane routes (MCP proxy, <code>/a2a</code>, vault checkout/sign) use their own agent credentials.</div>
         </div>
 
         <div class="a2d-section">
           <div class="a2d-h2">JSON-RPC methods</div>
-          <div class="a2d-sub2">Names are the A2A 1.0 PascalCase methods. Warden forwards the supported ones and answers the rest itself.</div>
+          <div class="a2d-sub2">Names below are the A2A 1.0 PascalCase methods. For an agent registered as <b>A2A 0.3</b> the equivalents are <code>message/send</code>, <code>message/stream</code>, <code>tasks/get</code>, <code>tasks/cancel</code> and <code>tasks/resubscribe</code>, with the same checks (0.3 has no <code>ListTasks</code>; push config is <code>tasks/pushNotificationConfig/*</code> and the extended card <code>agent/getAuthenticatedExtendedCard</code>, both unsupported as below). A method from the other version gets <code>-32601</code> with a hint naming the right one. Warden forwards the supported ones and answers the rest itself.</div>
           <div class="a2d-box" style="padding:0;overflow:hidden">
             <table class="a2d-table">
               <thead><tr><th>Method</th><th>Behavior in Warden</th></tr></thead>
@@ -5581,7 +5843,8 @@ python test_a2a.py</pre>
             <table class="a2d-table">
               <thead><tr><th>Field</th><th>Values</th></tr></thead>
               <tbody>
-                <tr><td><code>effect</code></td><td><code>permit</code> or <code>forbid</code></td></tr>
+                <tr><td><code>effect</code></td><td><code>permit</code>, <code>forbid</code> or <code>approval</code> (hold the call for an admin; see below)</td></tr>
+                <tr><td><code>approval_ttl_minutes</code>, <code>approval_timeout_action</code></td><td>Only for <code>approval</code>: how long the ticket waits (1–10080 minutes, default 30) and what happens if nobody decides: <code>deny</code> (default) or <code>approve</code> (auto-approve, unattended)</td></tr>
                 <tr><td><code>priority</code></td><td>Number; higher is evaluated first. Ties keep creation order</td></tr>
                 <tr><td>Caller</td><td><code>any</code>, an <b>agent</b> (Agent Hub agent ID) or an <b>agent group</b> (group ID). A group matches active groups the agent belongs to</td></tr>
                 <tr><td>Target</td><td><code>any</code> or one <b>A2A agent</b> (registry ID)</td></tr>
@@ -5597,6 +5860,7 @@ python test_a2a.py</pre>
               <li>If nothing matches, the call is <b>denied</b> (deny by default). With no policies at all, every A2A call is denied.</li>
               <li>A skill-restricted <b>permit</b> does not match a request that names no skill.</li>
               <li>A skill-restricted <b>forbid</b> <i>does</i> match a request that names no skill, so leaving the skill out can't bypass it.</li>
+              <li>An <b>approval</b> match holds the call: the gateway answers HTTP 202 with JSON-RPC error <code>-32011</code> (<code>data</code>: <code>ticket_id</code>, <code>poll_url</code>, <code>expires_at</code>, <code>timeout_action</code>) and does not contact the target. An admin approves or denies it on the <b>Approvals</b> page; once approved Warden forwards the message and the caller polls <code>/api/approvals/{id}/status</code> for the result. A skill-restricted approval also matches a request that names no skill. Streaming requests run as a normal request once approved. Follow-ups on a task the caller already owns (<code>GetTask</code>, <code>CancelTask</code> …) are allowed without a new approval.</li>
               <li>Follow-up methods (<code>GetTask</code>, <code>CancelTask</code>, <code>SubscribeToTask</code>, <code>ListTasks</code>) cannot name a skill, so: a skill-restricted <b>permit</b> still applies (the caller may continue work it was allowed to start), while a skill-restricted <b>forbid</b> is skipped (otherwise it would block every follow-up call from everyone). They still need a matching caller/target permit, and task ownership still limits who can touch a task.</li>
             </ul>
           </div>
@@ -6383,6 +6647,7 @@ python test_a2a.py</pre>
       .appr-badge.denied   { background: rgba(239,68,68,.15);  color: #ef4444; }
       .appr-badge.executed { background: rgba(99,102,241,.15); color: #6366f1; }
       .appr-badge.expired  { background: var(--surface2); color: var(--text-muted); }
+      .appr-kind { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: .3px; background: rgba(6,182,212,.15); color: #06b6d4; vertical-align: middle; }
 
       .appr-timer { font-size: 12px; font-family: 'JetBrains Mono','Fira Code',monospace; color: var(--text-2); }
       .appr-timer.urgent { color: #ef4444; font-weight: 700; }
@@ -6406,7 +6671,7 @@ python test_a2a.py</pre>
 
     <div class="appr-header">
       <h1>⏳ Approval Queue</h1>
-      <p>MCP tool calls held pending admin review. Approve to execute; deny to reject.</p>
+      <p>MCP tool calls and A2A messages held pending admin review. Approve to run them; deny to reject.</p>
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -6417,6 +6682,11 @@ python test_a2a.py</pre>
         <button class="appr-filter-btn" onclick="setApprFilter('denied',this)">Denied</button>
         <button class="appr-filter-btn" onclick="setApprFilter('expired',this)">Expired</button>
       </div>
+      <div class="appr-filters" id="appr-kind-filters">
+        <button class="appr-filter-btn active" onclick="setApprKind('all',this)">All types</button>
+        <button class="appr-filter-btn" onclick="setApprKind('mcp',this)">MCP</button>
+        <button class="appr-filter-btn" onclick="setApprKind('a2a',this)">A2A</button>
+      </div>
       <button class="btn btn-ghost btn-sm" onclick="loadApprovals()" style="margin-left:auto">↻ Refresh</button>
     </div>
 
@@ -6424,8 +6694,8 @@ python test_a2a.py</pre>
       <table class="appr-table">
         <thead>
           <tr>
-            <th>Tool</th>
-            <th>MCP Server</th>
+            <th>Tool / Skill</th>
+            <th>MCP Server / A2A Agent</th>
             <th>User (sub)</th>
             <th>Status</th>
             <th>Time Remaining</th>
@@ -6454,20 +6724,30 @@ python test_a2a.py</pre>
 
     <script>
     let apprFilter = 'pending';
+    let apprKind = 'all';
     let apprTickets = [];
     let apprTimerInterval = null;
     let apprDetailTicketId = null;
 
     function setApprFilter(f, btn) {
       apprFilter = f;
-      document.querySelectorAll('.appr-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.parentElement.querySelectorAll('.appr-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadApprovals();
+    }
+    function setApprKind(k, btn) {
+      apprKind = k;
+      btn.parentElement.querySelectorAll('.appr-filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       loadApprovals();
     }
 
     async function loadApprovals() {
       try {
-        const qs = apprFilter === 'all' ? '' : `?status=${apprFilter}`;
+        const q = [];
+        if (apprFilter !== 'all') q.push(`status=${encodeURIComponent(apprFilter)}`);
+        if (apprKind !== 'all') q.push(`kind=${encodeURIComponent(apprKind)}`);
+        const qs = q.length ? '?' + q.join('&') : '';
         apprTickets = await api('/approvals' + qs);
         renderApprovals();
       } catch (e) {
@@ -6493,8 +6773,8 @@ python test_a2a.py</pre>
              </div>`
           : `<button class="btn-detail" onclick="openApprDetail('${t.id}')">Detail</button>`;
         return `<tr>
-          <td><code style="font-size:12px">${esc(t.tool_name)}</code></td>
-          <td style="font-size:12px;color:var(--text-2)">${esc(t.mcp_server_id)}</td>
+          <td><code style="font-size:12px">${esc(t.tool_name)}</code>${t.kind === 'a2a' ? '<span class="appr-kind">A2A</span>' : ''}</td>
+          <td style="font-size:12px;color:var(--text-2)">${esc(t.kind === 'a2a' ? (t.target_name || t.mcp_server_id) : t.mcp_server_id)}</td>
           <td style="font-size:12px;color:var(--text-2);max-width:140px;overflow:hidden;text-overflow:ellipsis">${esc(t.user_sub||'—')}</td>
           <td>${statusBadge}</td>
           <td class="appr-timer ${t.status==='pending'&&t.time_remaining_seconds<120?'urgent':''}" data-ticket-id="${t.id}">${timer}</td>
@@ -6577,11 +6857,37 @@ python test_a2a.py</pre>
         ${t.result ? `<div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--text-2)">Result</div><pre class="appr-detail-pre">${esc(JSON.stringify(t.result, null, 2))}</pre>` : ''}
         ${t.exec_error ? `<div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:#ef4444">Execution Error</div><pre class="appr-detail-pre" style="color:#ef4444">${esc(t.exec_error)}</pre>` : ''}
       `;
+      if (t.kind === 'a2a') document.getElementById('appr-detail-body').innerHTML = apprA2aDetailHtml(t);
       const approveBtn = document.getElementById('appr-detail-approve-btn');
       const denyBtn = document.getElementById('appr-detail-deny-btn');
       approveBtn.style.display = t.status === 'pending' ? '' : 'none';
       denyBtn.style.display    = t.status === 'pending' ? '' : 'none';
       document.getElementById('appr-detail-modal').style.display = 'flex';
+    }
+
+    // The A2A message as readable text: its text parts joined, falling back to JSON when there are none.
+    function apprMessageText(t) {
+      const msg = t.a2a_params?.message || t.tool_arguments?.message;
+      const texts = (msg?.parts || []).filter(x => x && typeof x.text === 'string').map(x => x.text);
+      if (texts.length) return texts.join('\n');
+      return msg ? JSON.stringify(msg, null, 2) : '—';
+    }
+
+    function apprA2aDetailHtml(t) {
+      const row = (label, val) => `<div class="appr-detail-row"><div class="appr-detail-label">${label}</div><div class="appr-detail-val">${val}</div></div>`;
+      const stream = /stream/i.test(t.a2a_method || '') ? '<div style="font-size:12px;color:var(--text-muted);margin:-2px 0 8px">Streaming request: it will run as a normal request once approved.</div>' : '';
+      return row('Status', `<span class="appr-badge ${esc(t.status)}">${statusLabel(t.status)}</span>`)
+        + row('Kind', '<span class="appr-kind" style="margin-left:0">A2A</span>')
+        + row('A2A Agent', esc(t.target_name || t.mcp_server_id))
+        + row('Caller Agent', esc(t.caller_name || '—'))
+        + row('Method', `<code>${esc(t.a2a_method || '—')}</code>`)
+        + row('Skill', esc(t.tool_arguments?.skill || '—'))
+        + row('User Sub', `<span style="font-size:12px">${esc(t.user_sub || '—')}</span>`)
+        + row('Expires At', `<span style="font-size:12px">${esc(t.expires_at)} (TTL ${esc(t.ttl_minutes)}m, on timeout: ${esc(t.timeout_action)})</span>`)
+        + (t.decided_by ? row('Decided By', `${esc(t.decided_by)} at ${esc(t.decided_at)}`) : '')
+        + `<div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--text-2)">Message</div>${stream}<pre class="appr-detail-pre" style="white-space:pre-wrap">${esc(apprMessageText(t))}</pre>`
+        + (t.result ? `<div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--text-2)">Result</div><pre class="appr-detail-pre">${esc(JSON.stringify(t.result, null, 2))}</pre>` : '')
+        + (t.exec_error ? `<div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:#ef4444">Execution Error</div><pre class="appr-detail-pre" style="color:#ef4444">${esc(t.exec_error)}</pre>` : '');
     }
 
     function closeApprDetail() {
@@ -8966,6 +9272,7 @@ python test_a2a.py</pre>
           <div class="form-group"><label>Password</label><input id="mcp-auth-pass" type="password" placeholder="password" /></div>
         </div>
       </div>
+      <div class="vl-tip">Tip: use <code>vault://secret-name</code> to pull this from the Vault</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeMcpModal()">Cancel</button>
@@ -8993,8 +9300,12 @@ python test_a2a.py</pre>
       <div class="form-group"><label>Client ID</label><input id="vs-client-id" placeholder="Okta client ID" /></div>
       <div class="form-group"><label>Client Secret</label><input id="vs-client-secret" type="password" placeholder="Okta client secret" /></div>
     </div>
+    <div class="vl-tip">Tip: use <code>vault://secret-name</code> to pull this from the Vault</div>
     <div class="form-group"><label>OBO Audience / Scope</label><input id="vs-audience" placeholder="api://my-api" /></div>
     <div class="form-group"><label>JWKS URI (optional — derived from issuer if blank)</label><input id="vs-jwks" placeholder="https://your-domain.okta.com/oauth2/default/v1/keys" /></div>
+    <div class="form-group"><label>Expected token audience</label><input id="vs-token-aud" placeholder="api://banking" autocomplete="off" /></div>
+    <div class="form-group"><label>Expected token issuer</label><input id="vs-token-iss" placeholder="https://your-domain.okta.com/oauth2/&lt;server id&gt;" autocomplete="off" />
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px;line-height:1.5">Checked in addition to the signature. Leave blank to accept any token signed by the JWKS above. This is different from the OBO audience.</div></div>
     <div class="form-group">
       <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
         <input type="checkbox" id="vs-require-obo" checked style="width:16px;height:16px;margin-top:2px;accent-color:#6366f1;flex-shrink:0;cursor:pointer">
@@ -9086,6 +9397,13 @@ python test_a2a.py</pre>
           <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Reject calls that don't include a valid <code style="font-size:11px">X-Agent-Token</code> from a registered agent. When off, agent identity is logged when present but not enforced.</div>
         </div>
       </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+        <input type="checkbox" id="vs-feat-vault" style="width:16px;height:16px;margin-top:2px;accent-color:#0ea5e9;flex-shrink:0;cursor:pointer">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">🔐 Credential Vault</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">Let Warden resolve <code style="font-size:11px">vault://</code> references for calls on this virtual server (in tool arguments and in its MCP servers' credentials), subject to vault policies. When off, the vault is never consulted here: <code style="font-size:11px">vault://</code> text passes through untouched, and an MCP server that needs a vault credential is refused with a clear error.</div>
+        </div>
+      </div>
     </div>
 
     <!-- Allowed Agents section — visible only when Require Agent Identity is on -->
@@ -9128,6 +9446,14 @@ python test_a2a.py</pre>
     <h2>Register A2A Agent</h2>
     <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;line-height:1.5">Warden fetches the Agent Card once and caches it, so the agent stays routable even if its card endpoint is briefly down.</p>
     <div class="form-group"><label>Agent Card URL</label><input id="a2a-card-url" placeholder="https://agent.example.com/.well-known/agent-card.json" /></div>
+    <div class="form-group"><label>A2A version</label>
+      <select id="a2a-version">
+        <option value="auto">Auto-detect from the card (recommended)</option>
+        <option value="1.0">A2A 1.0 — SendMessage, supportedInterfaces</option>
+        <option value="0.3">A2A 0.3 — message/send, url + preferredTransport</option>
+      </select>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.5">Decides which method names this agent's gateway accepts and uses. Warden speaks the same version to callers and to the agent. An explicit choice must match the card, and it can't be changed later (register the agent again to switch).</div>
+    </div>
     <div class="form-group"><label>Display name (optional — defaults to the card name)</label><input id="a2a-name" placeholder="e.g. report-agent" /></div>
     <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:12px">
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:10px">Authentication to this agent</div>
@@ -9181,6 +9507,7 @@ python test_a2a.py</pre>
         <div class="a2ap-seg" id="a2ap-effect">
           <button type="button" data-v="permit" onclick="a2apSetEffect('permit')">✓ Permit</button>
           <button type="button" data-v="forbid" onclick="a2apSetEffect('forbid')">✕ Forbid</button>
+          <button type="button" data-v="approval" onclick="a2apSetEffect('approval')">⏳ Approval</button>
         </div>
       </div>
       <div class="form-group"><label>Priority</label><input id="a2ap-priority" type="number" value="0" /></div>
@@ -9198,8 +9525,28 @@ python test_a2a.py</pre>
       <div class="form-group"><label>&nbsp;</label><select id="a2ap-target-value"></select></div>
     </div>
     <div class="form-group"><label>Skills (comma-separated; * = any)</label><input id="a2ap-skills" value="*" placeholder="* or summarize, translate" /></div>
+    <div id="a2ap-approval-wrap" class="a2ap-appr-box" style="display:none">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px;align-items:end">
+        <div class="form-group" style="margin-bottom:0"><label>Window (minutes)</label><input id="a2ap-approval-ttl" type="number" min="1" max="10080" step="1" value="30" /></div>
+        <div class="form-group" style="margin-bottom:0"><label>If nobody decides in time</label>
+          <select id="a2ap-approval-timeout" onchange="a2apToggleTimeoutWarn()">
+            <option value="deny">Deny automatically (recommended)</option>
+            <option value="approve">Approve automatically</option>
+          </select></div>
+      </div>
+      <div id="a2ap-approval-warn" class="a2ap-appr-warn">⚠ Auto-approve lets the call through <b>unattended</b> once the window ends, with no human decision.</div>
+      <div style="font-size:12.5px;color:var(--text);line-height:1.5;margin-top:10px">Matching messages are <b>held</b> until an admin approves them on the <b>Approvals</b> page. Only then does Warden send them to the agent.</div>
+      <details class="a2ap-appr-more">
+        <summary>How callers experience this</summary>
+        <ul>
+          <li>The caller gets <b>HTTP 202</b> with JSON-RPC error <code>-32011</code> and a ticket ID, then polls <code>/api/approvals/&lt;id&gt;/status</code> for the result.</li>
+          <li>Streaming requests run as a normal request once approved.</li>
+          <li>Follow-ups on a task the caller already owns need no new approval.</li>
+        </ul>
+      </details>
+    </div>
     <div class="form-group">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:13px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;font-size:13px;color:var(--text)">
         <input type="checkbox" id="a2ap-require-user" onchange="a2apToggleFail()" style="width:auto" /> Require verified user token
       </label>
       <div id="a2ap-fail-wrap" style="display:none;margin-top:8px">
@@ -9214,6 +9561,135 @@ python test_a2a.py</pre>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="a2apCloseModal()">Cancel</button>
       <button class="btn btn-primary" onclick="a2apSave()">Save Policy</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Vault secret (create / edit) -->
+<div class="modal-overlay" id="vl-secret-modal">
+  <div class="modal" style="max-width:560px">
+    <h2 id="vl-secret-title">New Secret</h2>
+    <div class="form-group" id="vl-s-name-wrap">
+      <label for="vl-s-name">Name</label>
+      <input id="vl-s-name" placeholder="e.g. stripe-key" autocomplete="off" spellcheck="false" />
+      <div class="vl-note">Letters, digits, <code>.</code> <code>_</code> <code>-</code> (max 64). Referenced as <code>vault://name</code> and cannot be renamed.</div>
+    </div>
+    <div class="form-group" id="vl-s-ref-wrap" style="display:none">
+      <label>Reference</label>
+      <div><span class="vl-code" id="vl-s-ref"></span></div>
+    </div>
+    <div class="form-group" id="vl-s-type-wrap">
+      <label for="vl-s-type">Type</label>
+      <select id="vl-s-type" onchange="vlSecretTypeChanged()"></select>
+    </div>
+    <div class="form-group" id="vl-s-value-wrap">
+      <label for="vl-s-value">Value</label>
+      <input id="vl-s-value" type="password" autocomplete="new-password" spellcheck="false" placeholder="Secret value" />
+      <textarea id="vl-s-value-ta" autocomplete="off" spellcheck="false" style="display:none" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
+      <div class="vl-note warn">Write-only: the value is encrypted on save and is never displayed again. To change it later use <b>Rotate</b>.</div>
+    </div>
+    <div class="form-group">
+      <label for="vl-s-desc">Description</label>
+      <input id="vl-s-desc" placeholder="Optional" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label for="vl-s-expires">Expires (optional)</label>
+      <input id="vl-s-expires" type="datetime-local" />
+    </div>
+    <div class="form-group">
+      <label for="vl-s-meta">Metadata (optional JSON)</label>
+      <textarea id="vl-s-meta" spellcheck="false" style="min-height:64px" placeholder='{}'></textarea>
+      <div class="vl-note warn">Metadata is <b>NOT encrypted</b> &mdash; never put secrets in it.</div>
+      <div class="vl-note" id="vl-s-meta-hint" style="display:none">For <b>private_key</b> secrets, <code>client_id</code>, <code>token_url</code> and <code>kid</code> drive JWT signing: <code>{"client_id": "...", "token_url": "https://.../oauth2/v1/token", "kid": "..."}</code></div>
+    </div>
+    <div class="form-group" id="vl-s-active-wrap" style="display:none">
+      <div class="vl-checks"><label><input type="checkbox" id="vl-s-active" /> Enabled</label></div>
+      <div class="vl-note">A disabled secret is denied to every agent.</div>
+    </div>
+    <div id="vl-secret-error" class="vl-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="vlCloseSecretModal()">Cancel</button>
+      <button class="btn btn-primary" id="vl-secret-save" onclick="vlSaveSecret()">Create Secret</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Vault rotate -->
+<div class="modal-overlay" id="vl-rotate-modal">
+  <div class="modal" style="max-width:520px">
+    <h2>Rotate Secret</h2>
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:14px">Replace the value of <span class="vl-code" id="vl-r-name"></span>. The version increases and <b>every outstanding lease is revoked</b>.</p>
+    <div class="form-group">
+      <label for="vl-r-value">New value</label>
+      <input id="vl-r-value" type="password" autocomplete="new-password" spellcheck="false" placeholder="New secret value" />
+      <textarea id="vl-r-value-ta" autocomplete="off" spellcheck="false" style="display:none" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
+    </div>
+    <div id="vl-rotate-error" class="vl-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="vlCloseRotateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="vlSaveRotate()">Rotate</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Vault policy -->
+<div class="modal-overlay" id="vl-policy-modal">
+  <div class="modal" style="max-width:580px">
+    <h2 id="vl-policy-title">New Vault Policy</h2>
+    <div class="form-group"><label for="vl-p-name">Name</label><input id="vl-p-name" placeholder="e.g. payment agents may broker stripe-key" autocomplete="off" /></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+      <div class="form-group"><label>Effect</label>
+        <div class="vl-seg" id="vl-p-effect">
+          <button type="button" data-v="permit" onclick="vlSetEffect('permit')">✓ Permit</button>
+          <button type="button" data-v="forbid" onclick="vlSetEffect('forbid')">✕ Forbid</button>
+        </div>
+      </div>
+      <div class="form-group"><label for="vl-p-priority">Priority</label><input id="vl-p-priority" type="number" value="0" /></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:12px">
+      <div class="form-group"><label for="vl-p-caller-type">Caller</label>
+        <select id="vl-p-caller-type" onchange="vlPopulatePolicyPickers()"><option value="any">Any agent</option><option value="agent">Agent</option><option value="group">Agent Group</option></select>
+      </div>
+      <div class="form-group"><label>&nbsp;</label><select id="vl-p-caller-value"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label for="vl-p-secret">Secret</label><select id="vl-p-secret"></select></div>
+      <div class="form-group"><label for="vl-p-vs">Virtual server</label><select id="vl-p-vs"></select></div>
+    </div>
+    <div class="form-group">
+      <label>Operations</label>
+      <div class="vl-checks" id="vl-p-ops">
+        <label><input type="checkbox" id="vl-p-op-all" onchange="vlOpsAllChanged()" /> All</label>
+        <label><input type="checkbox" class="vl-p-op" value="reveal" /> reveal</label>
+        <label><input type="checkbox" class="vl-p-op" value="broker" /> broker</label>
+        <label><input type="checkbox" class="vl-p-op" value="sign" /> sign</label>
+      </div>
+      <div class="vl-note"><b>reveal</b>: agent receives the value &middot; <b>broker</b>: Warden injects it, agent never sees it &middot; <b>sign</b>: Warden signs a JWT with a stored key.</div>
+    </div>
+    <div class="form-group">
+      <label for="vl-p-ttl">Max lease (seconds, reveal only)</label>
+      <input id="vl-p-ttl" type="number" min="1" value="300" />
+      <div class="vl-note">Upper bound on how long an agent may cache a revealed value (max 3600).</div>
+    </div>
+    <div class="form-group"><div class="vl-checks"><label><input type="checkbox" id="vl-p-active" checked /> Active</label></div></div>
+    <div id="vl-policy-error" class="vl-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="vlClosePolicyModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="vlSavePolicy()">Save Policy</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Vault "in use" delete confirmation -->
+<div class="modal-overlay" id="vl-inuse-modal">
+  <div class="modal" style="max-width:520px">
+    <h2>Secret is in use</h2>
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">Deleting <span class="vl-code" id="vl-iu-name"></span> will break these references (calls using them will fail):</p>
+    <div id="vl-iu-list" style="font-size:13px;margin-bottom:6px"></div>
+    <div id="vl-inuse-error" class="vl-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="vlCloseInUse()">Cancel</button>
+      <button class="btn btn-danger" onclick="vlDeleteAnyway()">Delete anyway</button>
     </div>
   </div>
 </div>
@@ -9320,6 +9796,7 @@ function navigate(page) {
 const DOCS_PAGES = new Set(['docs', 'architecture', 'pipeline', 'mcp-architecture', 'mcp-flow', 'identities', 'agent-groups-doc', 'agent-group-rules-doc', 'a2a-overview', 'a2a-demo', 'a2a-reference']);
 
 function handleRoute() {
+  if (loginShown) return; // no page loads (and no requests fire) behind the sign-in screen
   const page = window.location.hash.slice(1) || 'dashboard';
 
   // Show/hide pages
@@ -9348,6 +9825,7 @@ function handleRoute() {
   if (page === 'a2a-agents')        loadA2aAgents();
   if (page === 'a2a-policies')      loadA2aPolicies();
   if (page === 'a2a-simulate')      loadA2aSimulate();
+  if (page === 'vault')             loadVault();
   if (page === 'agent-groups')      loadAgentGroups();
   if (page === 'agent-group-rules') loadAgentGroupRules();
   if (page === 'approvals')       loadApprovals();
@@ -10618,6 +11096,98 @@ function showToast(msg) {
   setTimeout(() => el.remove(), 2500);
 }
 
+// ─── ADMIN SIGN-IN ────────────────────────────────────────────────────────────
+// The admin token is only ever typed into the overlay and posted to /api/auth/login; Warden answers with an
+// HttpOnly session cookie, so no token or credential is kept in page JavaScript, storage or the URL.
+const AUTH_MSG = 'Admin sign-in required';
+let authRequired = false, loginShown = false, appStarted = false;
+const OPEN_BANNER_KEY = 'warden_open_banner_dismissed';
+
+// An expired session raises AUTH_MSG from api(); callers that would show it in an alert() stay quiet while the
+// sign-in overlay is up, since the overlay is the message.
+const _nativeAlert = window.alert.bind(window);
+window.alert = (m) => { if (loginShown && String(m).includes(AUTH_MSG)) return; _nativeAlert(m); };
+
+function reloadApp() { window.location.reload(); }
+
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/auth/status');
+    const st = await r.json();
+    authRequired = !!st.authRequired;
+    return { authRequired: !!st.authRequired, authenticated: st.authenticated !== false };
+  } catch { return { authRequired: false, authenticated: true }; }
+}
+
+function openBannerDismissed() { try { return sessionStorage.getItem(OPEN_BANNER_KEY) === '1'; } catch { return false; } }
+function dismissOpenBanner() {
+  document.getElementById('open-banner').style.display = 'none';
+  try { sessionStorage.setItem(OPEN_BANNER_KEY, '1'); } catch { /* storage unavailable: it just comes back next visit */ }
+}
+function applyAuthChrome(st) {
+  document.getElementById('signout-btn').style.display = st.authRequired && st.authenticated ? '' : 'none';
+  document.getElementById('open-banner').style.display = !st.authRequired && !openBannerDismissed() ? 'flex' : 'none';
+}
+
+function showLogin(message) {
+  loginShown = true;
+  document.body.classList.add('auth-locked');
+  document.getElementById('auth-overlay').style.display = 'flex';
+  const err = document.getElementById('auth-error');
+  err.textContent = message || '';
+  err.style.display = message ? 'block' : 'none';
+  const input = document.getElementById('auth-token');
+  input.value = '';
+  input.focus();
+}
+function hideLogin() {
+  loginShown = false;
+  document.body.classList.remove('auth-locked');
+  document.getElementById('auth-overlay').style.display = 'none';
+}
+function loginError(msg) {
+  const err = document.getElementById('auth-error');
+  err.textContent = msg; err.style.display = 'block';
+}
+
+async function submitLogin() {
+  const input = document.getElementById('auth-token');
+  const btn = document.getElementById('auth-submit');
+  const token = input.value;
+  input.value = ''; // never leave the token sitting in the field, whatever the outcome
+  if (!token) { loginError('Enter the admin token.'); return; }
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
+    let data = {};
+    try { data = await res.json(); } catch { /* non-JSON error page */ }
+    if (res.ok) {
+      const wasRunning = appStarted;
+      hideLogin();
+      if (wasRunning) { reloadApp(); return; } // session had expired: reload so nothing stale is shown
+      applyAuthChrome(await checkAuth());
+      await startApp();
+    } else if (res.status === 429) {
+      loginError(`Too many attempts. Try again in ${data.retry_after_seconds ?? res.headers.get('retry-after') ?? '?'} s.`);
+    } else if (res.status === 401) {
+      loginError("That token isn't right.");
+    } else {
+      loginError(data.error || `Sign-in failed (HTTP ${res.status}).`);
+    }
+  } catch {
+    loginError('Could not reach Warden. Check that it is running, then try again.');
+  } finally {
+    btn.disabled = false;
+    if (loginShown) input.focus();
+  }
+}
+
+async function adminSignOut() {
+  showLogin(); // lock the screen first
+  try { await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch { /* signed out locally either way */ }
+  reloadApp();
+}
+
 // ─── API HELPERS ──────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
   const res = await fetch('/api' + path, {
@@ -10626,7 +11196,13 @@ async function api(path, opts = {}) {
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) {
+    if (res.status === 401 && data && data.code === 'admin_auth_required') {
+      showLogin(appStarted ? 'Your session has ended. Sign in again.' : '');
+      const e = new Error(AUTH_MSG); e.authRequired = true; throw e;
+    }
+    throw new Error(data.error || 'Request failed');
+  }
   return data;
 }
 
@@ -10915,6 +11491,7 @@ function openMcpModal(id = null) {
   document.getElementById('mcp-modal-title').textContent = id ? 'Edit MCP Server' : 'Add MCP Server';
   ['mcp-name','mcp-url','mcp-desc'].forEach(f => document.getElementById(f).value = '');
   document.getElementById('mcp-auth-type').value = 'none';
+  vlFillMcpAuth({});
   toggleMcpAuth();
   document.getElementById('mcp-modal').classList.add('open');
 }
@@ -10927,6 +11504,8 @@ async function editMcp(id) {
   document.getElementById('mcp-url').value = s.url;
   document.getElementById('mcp-desc').value = s.description || '';
   document.getElementById('mcp-auth-type').value = s.auth_type;
+  // Saving replaces auth_config wholesale, so refill what we can: header/username and any vault:// refs.
+  vlFillMcpAuth(s.auth_config);
   toggleMcpAuth();
   document.getElementById('mcp-modal').classList.add('open');
 }
@@ -10992,7 +11571,7 @@ async function loadVirtualServers() {
     card.innerHTML = `
       <div class="card-header">
         <div>
-          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span>${protoBadge}${(() => { const f = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })(); const tags = []; if (f.includes('interceptors')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">🛡 Intercept</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🛡 Intercept</span>'); if (f.includes('policy')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">🔒 Token Policy</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🔒 Token Policy</span>'); if (vs.require_agent_token) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(251,191,36,0.15);color:#f59e0b;border:1px solid rgba(251,191,36,0.3)">🤖 Agent Required</span>'); return ' ' + tags.join(' '); })()}</div>
+          <div class="card-title">${vs.name} <span class="badge ${vs.is_active ? 'badge-green' : 'badge-gray'}">${vs.is_active ? 'Active' : 'Inactive'}</span> <span class="badge ${vs.require_obo !== 0 ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px">${vs.require_obo !== 0 ? '🔑 OBO' : '↔ Direct'}</span>${protoBadge}${(() => { const f = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })(); const tags = []; if (f.includes('interceptors')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">🛡 Intercept</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🛡 Intercept</span>'); if (f.includes('policy')) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">🔒 Token Policy</span>'); else tags.push('<span class="badge badge-gray" style="font-size:10.5px;text-decoration:line-through">🔒 Token Policy</span>'); if (vs.require_agent_token) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(251,191,36,0.15);color:#f59e0b;border:1px solid rgba(251,191,36,0.3)">🤖 Agent Required</span>'); if (vs.allow_anonymous) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" title="No user token and no agent token required: anyone who can reach this virtual server can call its tools">⚠ Anonymous</span>'); if (vs.vault_enabled !== 0) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(14,165,233,0.15);color:#0ea5e9;border:1px solid rgba(14,165,233,0.3)">🔐 Vault</span>'); if (vs.user_token_audience) tags.push('<span class="badge" style="font-size:10.5px;background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.3)" title="User tokens must be issued for audience ' + escHtml(vs.user_token_audience) + '">🎯 aud checked</span>'); return ' ' + tags.join(' '); })()}</div>
           ${hasMcp ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">Proxy: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px">POST /api/proxy/${vs.id}</code></div>` : ''}
           ${hasA2a ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">A2A: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px">POST /a2a/${vs.id}/&lt;agentId&gt;</code></div>` : ''}
         </div>
@@ -11035,12 +11614,14 @@ async function loadVirtualServers() {
 function openVsModal() {
   editingVsId = null;
   document.getElementById('vs-modal-title').textContent = 'New Virtual Server';
-  ['vs-name','vs-desc','vs-issuer','vs-client-id','vs-client-secret','vs-audience','vs-jwks'].forEach(f => document.getElementById(f).value = '');
+  ['vs-name','vs-desc','vs-issuer','vs-client-id','vs-client-secret','vs-audience','vs-jwks','vs-token-aud','vs-token-iss'].forEach(f => document.getElementById(f).value = '');
+  vlSyncRefType(document.getElementById('vs-client-secret'));
   document.getElementById('vs-require-obo').checked = true;
   document.getElementById('vs-feat-interceptors').checked = true;
   document.getElementById('vs-feat-policy').checked = true;
   document.getElementById('vs-feat-idp-connect').checked = false;
   document.getElementById('vs-require-agent-token').checked = false;
+  document.getElementById('vs-feat-vault').checked = false; // opt-in for new virtual servers
   document.getElementById('vs-allowed-agents-section').style.display = 'none';
   vsToggleIdpConnectRow();
   vsSetProtocol('mcp');
@@ -11055,15 +11636,20 @@ async function editVs(id) {
   document.getElementById('vs-desc').value = vs.description || '';
   document.getElementById('vs-issuer').value = vs.okta_issuer || '';
   document.getElementById('vs-client-id').value = vs.okta_client_id || '';
-  document.getElementById('vs-client-secret').value = '';
+  // A plain secret comes back as '***' (left blank = keep existing); a vault:// reference is shown and kept.
+  document.getElementById('vs-client-secret').value = vlIsRef(vs.okta_client_secret) ? vs.okta_client_secret : '';
+  vlSyncRefType(document.getElementById('vs-client-secret'));
   document.getElementById('vs-audience').value = vs.okta_audience || '';
   document.getElementById('vs-jwks').value = vs.jwks_uri || '';
+  document.getElementById('vs-token-aud').value = vs.user_token_audience || '';
+  document.getElementById('vs-token-iss').value = vs.user_token_issuer || '';
   document.getElementById('vs-require-obo').checked = vs.require_obo !== 0;
   const vsFeatures = (() => { try { return JSON.parse(vs.features_enabled || '["interceptors","policy"]'); } catch { return ['interceptors','policy']; } })();
   document.getElementById('vs-feat-interceptors').checked = vsFeatures.includes('interceptors');
   document.getElementById('vs-feat-policy').checked = vsFeatures.includes('policy');
   document.getElementById('vs-feat-idp-connect').checked = vsFeatures.includes('idp_connect');
   document.getElementById('vs-require-agent-token').checked = vs.require_agent_token === 1;
+  document.getElementById('vs-feat-vault').checked = vs.vault_enabled !== 0;
   vsToggleIdpConnectRow();
   vsToggleIdpSection();
   const agentSec = document.getElementById('vs-allowed-agents-section');
@@ -11130,6 +11716,7 @@ function vsRenderA2a(assigned, all, vsId) {
           <div class="a2a-vs-name">
             <span style="width:8px;height:8px;border-radius:50%;background:${a.is_active ? '#10b981' : '#6b7280'};flex-shrink:0"></span>
             <span class="n">💳 ${escHtml(a.name)}</span>
+            <span class="a2a-chip" title="The A2A version this agent's gateway speaks">A2A ${escHtml(a.protocol_version || '1.0')}</span>
             ${a.is_active ? '' : '<span class="a2a-chip off">inactive</span>'}
             ${a.card_error ? `<span class="a2a-chip warn" title="${escHtml(a.card_error)}">card refresh failed</span>` : ''}
           </div>
@@ -11255,7 +11842,7 @@ async function loadA2aAgents() {
     const err = a.card_error ? `<div style="font-size:11px;color:var(--red);margin-top:3px;max-width:260px" title="${escHtml(a.card_error)}">⚠ ${escHtml(a.card_error.length > 70 ? a.card_error.slice(0, 70) + '…' : a.card_error)}</div>` : '';
     return `<tr>
       <td>
-        <div style="font-weight:600">${escHtml(a.name)}</div>
+        <div style="font-weight:600">${escHtml(a.name)} <span class="badge ${a.protocol_version === '0.3' ? 'badge-blue' : 'badge-gray'}" style="font-size:10.5px;vertical-align:middle" title="The A2A version this agent's gateway speaks">A2A ${escHtml(a.protocol_version || '1.0')}</span></div>
         <div style="font-size:11px;color:var(--text-muted);font-family:monospace;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(a.card_url || '')}">${escHtml(a.card_url || '')}</div>
         ${a.description ? `<div style="font-size:12px;color:var(--text-2);margin-top:2px;max-width:300px">${escHtml(a.description)}</div>` : ''}
       </td>
@@ -11278,6 +11865,7 @@ async function loadA2aAgents() {
 
 function a2aOpenRegister() {
   document.getElementById('a2a-card-url').value = '';
+  document.getElementById('a2a-version').value = 'auto';
   document.getElementById('a2a-name').value = '';
   document.getElementById('a2a-auth-type').value = 'none';
   document.getElementById('a2a-auth-header').value = '';
@@ -11302,7 +11890,7 @@ async function a2aRegister() {
   }
   btn.disabled = true; btn.textContent = 'Fetching card…'; errEl.style.display = 'none';
   try {
-    await api('/a2a-agents', { method: 'POST', body: { card_url, ...(name ? { name } : {}), ...(auth ? { auth } : {}) } });
+    await api('/a2a-agents', { method: 'POST', body: { card_url, protocol_version: document.getElementById('a2a-version').value, ...(name ? { name } : {}), ...(auth ? { auth } : {}) } });
     a2aCloseRegister(); loadA2aAgents();
   } catch (e) {
     errEl.textContent = e.message; errEl.style.display = 'block';
@@ -11375,7 +11963,7 @@ async function loadA2aPolicies() {
     return `<tr style="${p.is_active ? '' : 'opacity:.55'}">
       <td style="font-weight:700">${p.priority}</td>
       <td><div style="font-weight:600">${escHtml(p.name)}</div>
-        <span class="badge ${p.effect === 'forbid' ? 'badge-red' : 'badge-green'}" style="margin-top:4px">${p.effect === 'forbid' ? '✕ Forbid' : '✓ Permit'}</span></td>
+        <span class="badge ${p.effect === 'forbid' ? 'badge-red' : p.effect === 'approval' ? 'badge-yellow' : 'badge-green'}" style="margin-top:4px">${p.effect === 'forbid' ? '✕ Forbid' : p.effect === 'approval' ? '⏳ Approval' : '✓ Permit'}</span>${p.effect === 'approval' ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${Number(p.approval_ttl_minutes) || 30} min · auto-${p.approval_timeout_action === 'approve' ? 'approve' : 'deny'}</div>` : ''}</td>
       <td style="white-space:nowrap">${caller}<span class="a2ap-arrow">→</span>${target}</td>
       <td style="max-width:220px">${skills}</td>
       <td>${user}</td>
@@ -11455,8 +12043,11 @@ async function runA2aSimulation() {
   document.getElementById('a2as-result').style.display = '';
   document.getElementById('a2as-decision').innerHTML = r.decision === 'allow'
     ? '<span style="color:var(--green)">✅ ALLOW</span>'
-    : '<span style="color:var(--red)">🚫 DENY</span>';
-  document.getElementById('a2as-reason').textContent = r.reason;
+    : r.decision === 'approval'
+      ? '<span style="color:#f59e0b">⏳ APPROVAL REQUIRED</span>'
+      : '<span style="color:var(--red)">🚫 DENY</span>';
+  document.getElementById('a2as-reason').textContent = r.reason + (r.decision === 'approval' && r.approval
+    ? ` The message is held for ${Number(r.approval.ttl_minutes)} min; if nobody decides: auto-${r.approval.timeout_action === 'approve' ? 'approve (unattended)' : 'deny'}.` : '');
 
   const groups = (r.caller?.groups || []).map(g => `<span class="a2ap-chip">🫂 ${escHtml(g)}</span>`).join('');
   document.getElementById('a2as-ctx').innerHTML =
@@ -11470,16 +12061,19 @@ async function runA2aSimulation() {
   const traceEl = document.getElementById('a2as-trace');
   traceEl.innerHTML = (r.trace || []).length ? r.trace.map(t => {
     const forbid = t.effect === 'forbid';
-    const cls = t.decides ? (forbid ? 'decides-forbid' : 'decides-permit') : (t.reached ? '' : 'unreached');
+    const approval = t.effect === 'approval';
+    const cls = t.decides ? (forbid ? 'decides-forbid' : approval ? 'decides-approval' : 'decides-permit') : (t.reached ? '' : 'unreached');
     const badge = t.decides
-      ? (forbid ? '<span class="badge badge-red">🚫 Forbid matched — decided</span>' : '<span class="badge badge-green">✅ Permit matched — decided</span>')
+      ? (forbid ? '<span class="badge badge-red">🚫 Forbid matched — decided</span>'
+        : approval ? '<span class="badge badge-yellow">⏳ Approval matched — decided</span>'
+        : '<span class="badge badge-green">✅ Permit matched — decided</span>')
       : (t.reached ? '<span class="badge badge-gray">No match</span>' : '<span class="badge badge-gray">Not reached</span>');
     const skills = (t.skills || ['*']).map(s => s === '*' ? 'any skill' : s).join(', ');
-    const omitted = forbid && !r.skill && !(t.skills || []).includes('*') && t.callerMatched && t.targetMatched
-      ? '<div class="a2as-note">A skill-restricted forbid also matches when no skill is named, so leaving the skill out does not get around it.</div>' : '';
+    const omitted = (forbid || approval) && !r.skill && !(t.skills || []).includes('*') && t.callerMatched && t.targetMatched
+      ? `<div class="a2as-note">A skill-restricted ${approval ? 'approval' : 'forbid'} also matches when no skill is named, so leaving the skill out does not get around it.</div>` : '';
     return `<div class="a2as-trace ${cls}">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
-        <strong style="font-size:13px">${escHtml(t.policyName)} <span style="color:var(--text-muted);font-weight:500;font-size:11.5px">· priority ${t.priority} · ${forbid ? 'forbid' : 'permit'}</span></strong>${badge}
+        <strong style="font-size:13px">${escHtml(t.policyName)} <span style="color:var(--text-muted);font-weight:500;font-size:11.5px">· priority ${t.priority} · ${forbid ? 'forbid' : approval ? 'approval' : 'permit'}</span></strong>${badge}
       </div>
       <div class="a2as-checks">Caller: ${tick(t.callerMatched)} &nbsp;|&nbsp; Target: ${tick(t.targetMatched)} &nbsp;|&nbsp; Skill: ${tick(t.skillMatched)} <span style="opacity:.8">(${escHtml(skills)})</span></div>${omitted}
     </div>`;
@@ -11503,6 +12097,10 @@ function a2apSetEffect(v) {
   document.querySelectorAll('#a2ap-effect button').forEach(b => {
     b.className = b.dataset.v === v ? 'sel-' + v : '';
   });
+  document.getElementById('a2ap-approval-wrap').style.display = v === 'approval' ? 'block' : 'none';
+}
+function a2apToggleTimeoutWarn() {
+  document.getElementById('a2ap-approval-warn').style.display = document.getElementById('a2ap-approval-timeout').value === 'approve' ? 'block' : 'none';
 }
 function a2apToggleFail() {
   document.getElementById('a2ap-fail-wrap').style.display = document.getElementById('a2ap-require-user').checked ? 'block' : 'none';
@@ -11531,6 +12129,9 @@ function a2apOpenModal(id) {
   document.getElementById('a2ap-name').value = p?.name || '';
   document.getElementById('a2ap-priority').value = p?.priority ?? 0;
   a2apSetEffect(p?.effect || 'permit');
+  document.getElementById('a2ap-approval-ttl').value = p?.approval_ttl_minutes ?? 30;
+  document.getElementById('a2ap-approval-timeout').value = p?.approval_timeout_action === 'approve' ? 'approve' : 'deny';
+  a2apToggleTimeoutWarn();
   document.getElementById('a2ap-caller-type').value = p?.caller_type || 'any';
   document.getElementById('a2ap-target-type').value = p?.target_type || 'any';
   a2apPopulatePickers(p?.caller_value, p?.target_value);
@@ -11559,6 +12160,15 @@ async function a2apSave() {
     user_fail_mode: document.getElementById('a2ap-fail-mode').value,
   };
   if (!body.skills.length) body.skills = ['*'];
+  if (_a2apEffect === 'approval') {
+    const ttl = Number(document.getElementById('a2ap-approval-ttl').value);
+    if (!Number.isInteger(ttl) || ttl < 1 || ttl > 10080) {
+      errEl.textContent = 'Approval window must be a whole number of minutes between 1 and 10080 (one week).'; errEl.style.display = 'block'; return;
+    }
+    body.approval_ttl_minutes = ttl;
+    body.approval_timeout_action = document.getElementById('a2ap-approval-timeout').value === 'approve' ? 'approve' : 'deny';
+  }
+  errEl.style.display = 'none';
   try {
     if (_a2apEditId) await api('/a2a-policies/' + _a2apEditId, { method: 'PUT', body });
     else await api('/a2a-policies', { method: 'POST', body });
@@ -11741,8 +12351,11 @@ async function saveVs() {
     okta_client_secret: document.getElementById('vs-client-secret').value,
     okta_audience: document.getElementById('vs-audience').value,
     jwks_uri: document.getElementById('vs-jwks').value,
+    user_token_audience: document.getElementById('vs-token-aud').value.trim(),
+    user_token_issuer: document.getElementById('vs-token-iss').value.trim(),
     require_obo: document.getElementById('vs-require-obo').checked ? 1 : 0,
     require_agent_token: document.getElementById('vs-require-agent-token').checked ? 1 : 0,
+    vault_enabled: document.getElementById('vs-feat-vault').checked ? 1 : 0,
     protocol: vsProtocol,
     features_enabled: [
       document.getElementById('vs-feat-interceptors').checked ? 'interceptors' : null,
@@ -11750,6 +12363,14 @@ async function saveVs() {
       document.getElementById('vs-feat-policy').checked ? 'policy' : null,
     ].filter(Boolean),
   };
+  // No user token and no agent token required = nobody is identified. Make that a deliberate choice (the server refuses it otherwise).
+  const wouldBeAnonymous = vsProtocol !== 'a2a' && !body.require_obo && !body.require_agent_token;
+  if (wouldBeAnonymous) {
+    if (!confirm('This virtual server will accept calls from ANYONE who can reach it.\n\n"Require user token (OBO)" and "Require agent token" are both off, so Warden cannot tell who is calling and agent rules cannot apply.\n\nTurn on "Require agent token" and add the agents that need access, unless unauthenticated calls are intended.\n\nSave anyway?')) return;
+    body.allow_anonymous = 1;
+  } else {
+    body.allow_anonymous = 0;
+  }
   try {
     if (editingVsId) await api('/virtual-servers/' + editingVsId, { method: 'PUT', body });
     else             await api('/virtual-servers', { method: 'POST', body });
@@ -12672,13 +13293,606 @@ async function runSimulation() {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 async function init() {
+  const st = await checkAuth();
+  applyAuthChrome(st);
+  if (st.authRequired && !st.authenticated) { showLogin(); return; } // nothing loads behind the sign-in screen
+  await startApp();
+}
+
+async function startApp() {
+  appStarted = true;
   try {
     const [mcps, vss] = await Promise.all([api('/mcp'), api('/virtual-servers')]);
     allMcpServers = mcps;
     allVirtualServers = vss;
-  } catch (e) { console.error('Init failed:', e); }
+  } catch (e) { if (!e.authRequired) console.error('Init failed:', e); }
   handleRoute();
   refreshApprovalsBadge();
+}
+
+// ─── CREDENTIAL VAULT ────────────────────────────────────────────────────────
+const VL_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+const vl = { tab: 'secrets', meta: null, secrets: [], policies: [], agents: [], groups: [], vss: [], editId: null, rotateId: null, policyEditId: null, policyEffect: 'permit', pendingDelete: null };
+const vlEl = (id) => document.getElementById(id);
+
+function vlEsc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function vlIsRef(v) { return typeof v === 'string' && /^vault:\/\/[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(v); }
+
+// vault:// references are pointers, not secrets: show them in clear text instead of dots.
+function vlSyncRefType(el) { if (el) el.type = String(el.value).startsWith('vault://') ? 'text' : 'password'; }
+['mcp-auth-token', 'mcp-auth-key', 'mcp-auth-pass', 'vs-client-secret'].forEach(id => {
+  const el = vlEl(id);
+  if (el) el.addEventListener('input', () => vlSyncRefType(el));
+});
+
+// Editing an MCP server replaces auth_config wholesale, so refill the non-secret fields and any vault:// refs;
+// plain secrets are never returned masked-or-unmasked into the form and stay blank (re-enter to change).
+function vlFillMcpAuth(cfg) {
+  cfg = cfg || {};
+  const set = (id, v, secret) => {
+    const el = vlEl(id);
+    el.value = (typeof v === 'string' && v && (!secret || vlIsRef(v))) ? v : '';
+    vlSyncRefType(el);
+  };
+  set('mcp-auth-token', cfg.token, true);
+  set('mcp-auth-header', cfg.header, false);
+  set('mcp-auth-key', cfg.key, true);
+  set('mcp-auth-user', cfg.username, false);
+  set('mcp-auth-pass', cfg.password, true);
+}
+
+// created_at/last log times come from SQLite as "YYYY-MM-DD HH:MM:SS" (UTC); lease/expiry times are ISO with Z.
+function vlTime(ts) {
+  if (!ts) return '—';
+  let s = String(ts);
+  if (!s.includes('T')) s = s.replace(' ', 'T');
+  if (!/(Z|[+-]\d\d:?\d\d)$/i.test(s)) s += 'Z';
+  const d = new Date(s);
+  return isNaN(d) ? vlEsc(ts) : vlEsc(d.toLocaleString());
+}
+function vlToLocalInput(iso) {
+  const d = new Date(iso);
+  if (!iso || isNaN(d)) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+async function vlApi(path, opts = {}) {
+  const res = await fetch('/api/vault' + path, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+  });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (!res.ok && res.status === 401 && data && data.code === 'admin_auth_required') {
+    showLogin(appStarted ? 'Your session has ended. Sign in again.' : '');
+    const e = new Error(AUTH_MSG); e.authRequired = true; e.status = 401; throw e;
+  }
+  if (!res.ok) {
+    const e = new Error((data && data.error) || `Request failed (${res.status})`);
+    e.status = res.status; e.data = data;
+    throw e;
+  }
+  return data;
+}
+
+function vlShowErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function vlTableError(tbodySel, cols, msg) {
+  document.querySelector(tbodySel).innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:var(--red);padding:20px">${vlEsc(msg)}</td></tr>`;
+}
+
+async function vlCopyText(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  showToast('Copied to clipboard');
+}
+function vlCopyEl(id) { vlCopyText(vlEl(id).textContent); }
+
+// ── Page / tabs ──
+async function loadVault() {
+  try {
+    const [meta, agents, groups, vss] = await Promise.all([
+      vl.meta ? Promise.resolve(vl.meta) : vlApi('/meta'),
+      api('/agents').catch(() => []),
+      api('/agent-groups').catch(() => []),
+      api('/virtual-servers').catch(() => []),
+    ]);
+    vl.meta = meta; vl.agents = agents; vl.groups = groups;
+    vl.vss = Array.isArray(vss) ? vss : (vss.virtual_servers || []);
+  } catch (e) {
+    vlTableError('#vl-secrets-table tbody', 8, e.message);
+    return;
+  }
+  const typeSel = vlEl('vl-s-type');
+  typeSel.innerHTML = vl.meta.types.map(t => `<option value="${vlEsc(t)}">${vlEsc(t)}</option>`).join('');
+  vlSwitchTab(vl.tab);
+}
+
+function vlSwitchTab(tab) {
+  vl.tab = tab;
+  document.querySelectorAll('#vl-tabs .tab-pill').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  ['secrets', 'policies', 'leases', 'activity'].forEach(t => { vlEl('vl-panel-' + t).style.display = t === tab ? '' : 'none'; });
+  if (tab === 'secrets') vlLoadSecrets();
+  if (tab === 'policies') vlLoadPolicies();
+  if (tab === 'leases') vlLoadLeases();
+  if (tab === 'activity') vlLoadActivity();
+}
+
+vlEl('page-vault').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-vl]');
+  if (!b) return;
+  const id = b.dataset.id;
+  switch (b.dataset.vl) {
+    case 'secret-copy': { const s = vl.secrets.find(x => x.id === id); if (s) vlCopyText('vault://' + s.name); break; }
+    case 'secret-rotate': vlOpenRotate(id); break;
+    case 'secret-edit': vlOpenSecretModal(id); break;
+    case 'secret-delete': vlDeleteSecret(id, false); break;
+    case 'policy-toggle': vlTogglePolicy(id, b.dataset.active === '1' ? 0 : 1); break;
+    case 'policy-edit': vlOpenPolicyModal(id); break;
+    case 'policy-delete': vlDeletePolicy(id); break;
+    case 'lease-revoke': vlRevokeLease(id); break;
+  }
+});
+
+// ── Secrets ──
+async function vlLoadSecrets() {
+  try { vl.secrets = await vlApi('/secrets'); }
+  catch (e) { vlTableError('#vl-secrets-table tbody', 8, e.message); vlEl('vl-secrets-empty').style.display = 'none'; return; }
+  vlRenderSecrets();
+}
+
+function vlRenderSecrets() {
+  const tb = document.querySelector('#vl-secrets-table tbody');
+  const empty = vlEl('vl-secrets-empty');
+  const n = vl.secrets.length;
+  vlEl('vl-secrets-count').textContent = `${n} secret${n === 1 ? '' : 's'}`;
+  if (!n) { tb.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const never = '<span style="color:var(--text-muted)">never</span>';
+  tb.innerHTML = vl.secrets.map(s => {
+    const status = !s.is_active ? '<span class="badge badge-gray">Disabled</span>'
+      : s.expired ? '<span class="badge badge-red">Expired</span>'
+      : '<span class="badge badge-green">Active</span>';
+    return `<tr style="${s.is_active ? '' : 'opacity:.6'}">
+      <td><div style="font-weight:600;color:var(--text)">${vlEsc(s.name)}</div>${s.description ? `<div class="vl-sub">${vlEsc(s.description)}</div>` : ''}</td>
+      <td><span class="badge badge-gray">${vlEsc(s.type)}</span></td>
+      <td>v${vlEsc(s.version)}${s.rotated_at ? `<div class="vl-sub">rotated ${vlTime(s.rotated_at)}</div>` : ''}</td>
+      <td>${status}</td>
+      <td>${s.expires_at ? vlTime(s.expires_at) : never}</td>
+      <td>${s.last_accessed_at ? vlTime(s.last_accessed_at) : never}</td>
+      <td>${vlEsc(s.access_count)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" data-vl="secret-copy" data-id="${vlEsc(s.id)}" title="Copy vault://${vlEsc(s.name)}">Copy ref</button>
+        <button class="btn btn-ghost btn-sm" data-vl="secret-rotate" data-id="${vlEsc(s.id)}">Rotate</button>
+        <button class="btn btn-ghost btn-sm" data-vl="secret-edit" data-id="${vlEsc(s.id)}">Edit</button>
+        <button class="btn btn-danger btn-sm" data-vl="secret-delete" data-id="${vlEsc(s.id)}">Delete</button>
+      </td></tr>`;
+  }).join('');
+}
+
+function vlClearValueInputs(prefix) {
+  vlEl(prefix).value = '';
+  vlEl(prefix + '-ta').value = '';
+}
+
+function vlSecretTypeChanged() {
+  const isKey = vlEl('vl-s-type').value === 'private_key';
+  vlEl('vl-s-value').style.display = isKey ? 'none' : '';
+  vlEl('vl-s-value-ta').style.display = isKey ? '' : 'none';
+  vlClearValueInputs('vl-s-value');
+  vlEl('vl-s-meta-hint').style.display = isKey ? '' : 'none';
+}
+
+function vlOpenSecretModal(id) {
+  const s = id ? vl.secrets.find(x => x.id === id) : null;
+  if (id && !s) return;
+  vl.editId = s ? s.id : null;
+  vlEl('vl-secret-error').style.display = 'none';
+  vlClearValueInputs('vl-s-value');
+  vlEl('vl-secret-title').textContent = s ? 'Edit Secret' : 'New Secret';
+  vlEl('vl-secret-save').textContent = s ? 'Save Changes' : 'Create Secret';
+  ['vl-s-name-wrap', 'vl-s-type-wrap', 'vl-s-value-wrap'].forEach(w => { vlEl(w).style.display = s ? 'none' : ''; });
+  vlEl('vl-s-ref-wrap').style.display = s ? '' : 'none';
+  vlEl('vl-s-active-wrap').style.display = s ? '' : 'none';
+  if (s) {
+    vlEl('vl-s-ref').textContent = 'vault://' + s.name;
+    vlEl('vl-s-desc').value = s.description || '';
+    vlEl('vl-s-expires').value = vlToLocalInput(s.expires_at);
+    vlEl('vl-s-meta').value = s.metadata && Object.keys(s.metadata).length ? JSON.stringify(s.metadata, null, 2) : '';
+    vlEl('vl-s-active').checked = !!s.is_active;
+    vlEl('vl-s-meta-hint').style.display = s.type === 'private_key' ? '' : 'none';
+  } else {
+    vlEl('vl-s-name').value = '';
+    vlEl('vl-s-type').value = 'generic';
+    vlEl('vl-s-desc').value = '';
+    vlEl('vl-s-expires').value = '';
+    vlEl('vl-s-meta').value = '';
+    vlSecretTypeChanged();
+  }
+  vlEl('vl-secret-modal').classList.add('open');
+}
+
+function vlCloseSecretModal() {
+  vlClearValueInputs('vl-s-value');
+  vlEl('vl-secret-modal').classList.remove('open');
+}
+
+async function vlSaveSecret() {
+  const errEl = vlEl('vl-secret-error');
+  errEl.style.display = 'none';
+
+  let metadata = {};
+  const rawMeta = vlEl('vl-s-meta').value.trim();
+  if (rawMeta) {
+    try { metadata = JSON.parse(rawMeta); } catch { return vlShowErr(errEl, 'Metadata is not valid JSON'); }
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return vlShowErr(errEl, 'Metadata must be a JSON object');
+  }
+  const expRaw = vlEl('vl-s-expires').value;
+  const expires_at = expRaw ? new Date(expRaw).toISOString() : null;
+  const description = vlEl('vl-s-desc').value;
+
+  if (vl.editId) {
+    try {
+      await vlApi('/secrets/' + vl.editId, { method: 'PUT', body: { description, metadata, expires_at, is_active: vlEl('vl-s-active').checked } });
+    } catch (e) { return vlShowErr(errEl, e.message); }
+    vlCloseSecretModal();
+    showToast('Secret updated');
+    return vlLoadSecrets();
+  }
+
+  const name = vlEl('vl-s-name').value.trim();
+  if (!VL_NAME_RE.test(name)) return vlShowErr(errEl, 'Name must be 1-64 characters: letters, digits, ".", "_" or "-", starting with a letter or digit');
+  const type = vlEl('vl-s-type').value;
+  let value = type === 'private_key' ? vlEl('vl-s-value-ta').value : vlEl('vl-s-value').value;
+  if (!value.trim()) return vlShowErr(errEl, 'Value is required');
+
+  // The value leaves the form the moment it is submitted; it is never kept in page state.
+  const body = { name, type, value, description, metadata, expires_at };
+  value = null;
+  vlClearValueInputs('vl-s-value');
+  try {
+    await vlApi('/secrets', { method: 'POST', body });
+  } catch (e) {
+    body.value = '';
+    return vlShowErr(errEl, e.message + ' (the value field was cleared for safety — enter it again)');
+  }
+  body.value = '';
+  vlCloseSecretModal();
+  showToast(`Created — reference: vault://${name}`);
+  vlLoadSecrets();
+}
+
+function vlOpenRotate(id) {
+  const s = vl.secrets.find(x => x.id === id);
+  if (!s) return;
+  vl.rotateId = id;
+  vlEl('vl-r-name').textContent = s.name;
+  const isKey = s.type === 'private_key';
+  vlEl('vl-r-value').style.display = isKey ? 'none' : '';
+  vlEl('vl-r-value-ta').style.display = isKey ? '' : 'none';
+  vlClearValueInputs('vl-r-value');
+  vlEl('vl-rotate-error').style.display = 'none';
+  vlEl('vl-rotate-modal').classList.add('open');
+}
+function vlCloseRotateModal() {
+  vlClearValueInputs('vl-r-value');
+  vlEl('vl-rotate-modal').classList.remove('open');
+}
+async function vlSaveRotate() {
+  const errEl = vlEl('vl-rotate-error');
+  errEl.style.display = 'none';
+  const s = vl.secrets.find(x => x.id === vl.rotateId);
+  if (!s) return;
+  let value = s.type === 'private_key' ? vlEl('vl-r-value-ta').value : vlEl('vl-r-value').value;
+  if (!value.trim()) return vlShowErr(errEl, 'New value is required');
+  const body = { value };
+  value = null;
+  vlClearValueInputs('vl-r-value');
+  let r;
+  try { r = await vlApi('/secrets/' + s.id + '/rotate', { method: 'POST', body }); }
+  catch (e) { body.value = ''; return vlShowErr(errEl, e.message + ' (the value field was cleared for safety — enter it again)'); }
+  body.value = '';
+  vlCloseRotateModal();
+  showToast(`Rotated to v${r.version} — ${r.leases_revoked} lease${r.leases_revoked === 1 ? '' : 's'} revoked`);
+  vlLoadSecrets();
+}
+
+async function vlDeleteSecret(id, force) {
+  const s = vl.secrets.find(x => x.id === id);
+  if (!s) return;
+  if (!force && !confirm(`Delete secret "${s.name}"? Policies that target it are deleted too.`)) return;
+  try {
+    await vlApi('/secrets/' + id + (force ? '?force=true' : ''), { method: 'DELETE' });
+  } catch (e) {
+    if (e.status === 409 && e.data && e.data.usage) { vlShowInUse(s, e.data.usage); return; }
+    alert(e.message);
+    return;
+  }
+  vlCloseInUse();
+  showToast('Secret deleted');
+  vlLoadSecrets();
+}
+
+function vlShowInUse(secret, usage) {
+  vl.pendingDelete = secret.id;
+  vlEl('vl-iu-name').textContent = secret.name;
+  const list = vlEl('vl-iu-list');
+  list.textContent = '';
+  const add = (kind, name) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:6px 10px;margin-bottom:4px;background:var(--surface2);border:1px solid var(--border);border-radius:8px';
+    const k = document.createElement('span'); k.style.color = 'var(--text-muted)'; k.textContent = kind + ': ';
+    const n = document.createElement('b'); n.textContent = name;
+    row.append(k, n);
+    list.appendChild(row);
+  };
+  (usage.mcp_servers || []).forEach(m => add('MCP server', m.name));
+  (usage.virtual_servers || []).forEach(v => add('Virtual server (Okta client secret)', v.name));
+  vlEl('vl-inuse-error').style.display = 'none';
+  vlEl('vl-inuse-modal').classList.add('open');
+}
+function vlCloseInUse() { vl.pendingDelete = null; vlEl('vl-inuse-modal').classList.remove('open'); }
+function vlDeleteAnyway() { if (vl.pendingDelete) vlDeleteSecret(vl.pendingDelete, true); }
+
+// ── Policies ──
+async function vlLoadPolicies() {
+  try {
+    [vl.policies, vl.secrets] = await Promise.all([vlApi('/policies'), vlApi('/secrets')]);
+  } catch (e) { vlTableError('#vl-policies-table tbody', 7, e.message); vlEl('vl-policies-empty').style.display = 'none'; return; }
+  vlRenderPolicies();
+  vlFillSimSelects();
+}
+
+function vlCallerChip(p) {
+  if (p.caller_type === 'any') return '<span class="vl-chip any">any agent</span>';
+  const icon = p.caller_type === 'group' ? '🫂' : '🤖';
+  const label = p.caller_name || `${p.caller_value} (missing)`;
+  return `<span class="vl-chip" title="${vlEsc(p.caller_value)}">${icon} ${vlEsc(label)}</span>`;
+}
+function vlSecretChip(p) {
+  if (p.secret_id === '*') return '<span class="vl-chip any">any secret</span>';
+  return `<span class="vl-chip" title="${vlEsc(p.secret_id)}">🔐 ${vlEsc(p.secret_name || p.secret_id + ' (missing)')}</span>`;
+}
+
+function vlRenderPolicies() {
+  const tb = document.querySelector('#vl-policies-table tbody');
+  const empty = vlEl('vl-policies-empty');
+  const n = vl.policies.length;
+  vlEl('vl-policies-count').textContent = `${n} polic${n === 1 ? 'y' : 'ies'}`;
+  if (!n) { tb.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tb.innerHTML = vl.policies.map(p => {
+    const ops = (p.operations || ['*']).map(o => `<span class="badge badge-blue" style="margin-right:4px">${o === '*' ? 'all' : vlEsc(o)}</span>`).join('');
+    const reveals = (p.operations || ['*']).some(o => o === '*' || o === 'reveal');
+    const scope = p.virtual_server_id
+      ? `<span class="vl-chip" title="${vlEsc(p.virtual_server_id)}">🗂 ${vlEsc(p.virtual_server_name || p.virtual_server_id)}</span>`
+      : '<span class="vl-chip any">any virtual server</span>';
+    return `<tr style="${p.is_active ? '' : 'opacity:.55'}">
+      <td style="font-weight:700">${vlEsc(p.priority)}</td>
+      <td><div style="font-weight:600;color:var(--text)">${vlEsc(p.name)}</div>
+        <span class="badge ${p.effect === 'forbid' ? 'badge-red' : 'badge-green'}" style="margin-top:4px">${p.effect === 'forbid' ? '✕ Forbid' : '✓ Permit'}</span></td>
+      <td>${vlCallerChip(p)}<span class="vl-arrow">→</span>${vlSecretChip(p)}<div class="vl-sub" style="margin-top:6px">scope: ${scope}</div></td>
+      <td>${ops}</td>
+      <td>${reveals ? vlEsc(p.max_ttl_seconds) + 's' : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td><span class="badge ${p.is_active ? 'badge-green' : 'badge-gray'}">${p.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" data-vl="policy-toggle" data-id="${vlEsc(p.id)}" data-active="${p.is_active ? 1 : 0}">${p.is_active ? 'Disable' : 'Enable'}</button>
+        <button class="btn btn-ghost btn-sm" data-vl="policy-edit" data-id="${vlEsc(p.id)}">Edit</button>
+        <button class="btn btn-danger btn-sm" data-vl="policy-delete" data-id="${vlEsc(p.id)}">Delete</button>
+      </td></tr>`;
+  }).join('');
+}
+
+function vlSetEffect(v) {
+  vl.policyEffect = v;
+  document.querySelectorAll('#vl-p-effect button').forEach(b => { b.className = b.dataset.v === v ? 'sel-' + v : ''; });
+}
+
+function vlOpsAllChanged() {
+  const all = vlEl('vl-p-op-all').checked;
+  document.querySelectorAll('.vl-p-op').forEach(c => { c.disabled = all; if (all) c.checked = false; });
+}
+
+// Rebuilds the three pickers; preserves current selections unless explicit values are passed.
+function vlPopulatePolicyPickers(callerVal, secretVal, vsVal) {
+  const ct = vlEl('vl-p-caller-type').value;
+  const cs = vlEl('vl-p-caller-value');
+  cs.style.display = ct === 'any' ? 'none' : '';
+  const list = ct === 'agent' ? vl.agents : ct === 'group' ? vl.groups : [];
+  cs.innerHTML = list.length ? list.map(x => `<option value="${vlEsc(x.id)}">${vlEsc(x.name)}</option>`).join('') : '<option value="">None available</option>';
+  if (callerVal) cs.value = callerVal;
+
+  const ss = vlEl('vl-p-secret'); const prevS = secretVal ?? ss.value;
+  ss.innerHTML = '<option value="*">Any secret</option>' + vl.secrets.map(s => `<option value="${vlEsc(s.id)}">${vlEsc(s.name)}</option>`).join('');
+  ss.value = prevS || '*';
+  if (ss.value !== (prevS || '*')) ss.value = '*';
+
+  const vs = vlEl('vl-p-vs'); const prevV = vsVal ?? vs.value;
+  vs.innerHTML = '<option value="">Any virtual server</option>' + vl.vss.map(v => `<option value="${vlEsc(v.id)}">${vlEsc(v.name)}</option>`).join('');
+  vs.value = prevV || '';
+}
+
+function vlOpenPolicyModal(id) {
+  const p = id ? vl.policies.find(x => x.id === id) : null;
+  if (id && !p) return;
+  vl.policyEditId = p ? p.id : null;
+  vlEl('vl-policy-title').textContent = p ? 'Edit Vault Policy' : 'New Vault Policy';
+  vlEl('vl-p-name').value = p?.name || '';
+  vlEl('vl-p-priority').value = p?.priority ?? 0;
+  vlSetEffect(p?.effect || 'permit');
+  vlEl('vl-p-caller-type').value = p?.caller_type || 'any';
+  vlPopulatePolicyPickers(p?.caller_value, p ? p.secret_id : '*', p?.virtual_server_id || '');
+  const ops = p?.operations || ['*'];
+  vlEl('vl-p-op-all').checked = ops.includes('*');
+  document.querySelectorAll('.vl-p-op').forEach(c => { c.checked = !ops.includes('*') && ops.includes(c.value); });
+  vlOpsAllChanged();
+  vlEl('vl-p-ttl').value = p?.max_ttl_seconds ?? vl.meta?.default_ttl_seconds ?? 300;
+  vlEl('vl-p-active').checked = p ? !!p.is_active : true;
+  vlEl('vl-policy-error').style.display = 'none';
+  vlEl('vl-policy-modal').classList.add('open');
+}
+function vlClosePolicyModal() { vlEl('vl-policy-modal').classList.remove('open'); }
+
+async function vlSavePolicy() {
+  const errEl = vlEl('vl-policy-error');
+  errEl.style.display = 'none';
+  const name = vlEl('vl-p-name').value.trim();
+  if (!name) return vlShowErr(errEl, 'Name is required');
+  const ct = vlEl('vl-p-caller-type').value;
+  const callerValue = vlEl('vl-p-caller-value').value;
+  if (ct !== 'any' && !callerValue) return vlShowErr(errEl, `Pick an ${ct === 'group' ? 'agent group' : 'agent'}`);
+  const operations = vlEl('vl-p-op-all').checked ? ['*'] : [...document.querySelectorAll('.vl-p-op')].filter(c => c.checked).map(c => c.value);
+  if (!operations.length) return vlShowErr(errEl, 'Select at least one operation');
+  const max = vl.meta?.max_ttl_seconds || 3600;
+  const ttl = parseInt(vlEl('vl-p-ttl').value, 10);
+  if (!Number.isFinite(ttl) || ttl < 1 || ttl > max) return vlShowErr(errEl, `Max lease must be between 1 and ${max} seconds`);
+  const body = {
+    name, effect: vl.policyEffect,
+    priority: parseInt(vlEl('vl-p-priority').value, 10) || 0,
+    caller_type: ct, caller_value: ct === 'any' ? '*' : callerValue,
+    secret_id: vlEl('vl-p-secret').value || '*',
+    virtual_server_id: vlEl('vl-p-vs').value || null,
+    operations, max_ttl_seconds: ttl,
+    is_active: vlEl('vl-p-active').checked,
+  };
+  try {
+    if (vl.policyEditId) await vlApi('/policies/' + vl.policyEditId, { method: 'PUT', body });
+    else await vlApi('/policies', { method: 'POST', body });
+  } catch (e) { return vlShowErr(errEl, e.message); }
+  vlClosePolicyModal();
+  vlLoadPolicies();
+}
+
+async function vlTogglePolicy(id, active) {
+  try { await vlApi('/policies/' + id, { method: 'PUT', body: { is_active: !!active } }); } catch (e) { alert(e.message); }
+  vlLoadPolicies();
+}
+async function vlDeletePolicy(id) {
+  if (!confirm('Delete this vault policy?')) return;
+  try { await vlApi('/policies/' + id, { method: 'DELETE' }); } catch (e) { alert(e.message); }
+  vlLoadPolicies();
+}
+
+// ── Simulator ──
+function vlFillSimSelects() {
+  const keep = (sel, html) => { const prev = sel.value; sel.innerHTML = html; if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev; };
+  keep(vlEl('vl-sim-agent'), vl.agents.length ? vl.agents.map(a => `<option value="${vlEsc(a.id)}">${vlEsc(a.name)}</option>`).join('') : '<option value="">No agents</option>');
+  keep(vlEl('vl-sim-secret'), vl.secrets.length ? vl.secrets.map(s => `<option value="${vlEsc(s.id)}">${vlEsc(s.name)}</option>`).join('') : '<option value="">No secrets</option>');
+  keep(vlEl('vl-sim-vs'), '<option value="">— none —</option>' + vl.vss.map(v => `<option value="${vlEsc(v.id)}">${vlEsc(v.name)}</option>`).join(''));
+  keep(vlEl('vl-sim-op'), (vl.meta?.operations || ['reveal', 'broker', 'sign']).map(o => `<option value="${vlEsc(o)}">${vlEsc(o)}</option>`).join(''));
+}
+
+async function vlRunSimulation() {
+  const agent = vlEl('vl-sim-agent').value, secret = vlEl('vl-sim-secret').value;
+  if (!agent || !secret) return alert('Select an agent and a secret');
+  let r;
+  try {
+    r = await vlApi('/policies/simulate', { method: 'POST', body: {
+      caller_agent_id: agent, secret_id: secret,
+      virtual_server_id: vlEl('vl-sim-vs').value || undefined,
+      operation: vlEl('vl-sim-op').value,
+    } });
+  } catch (e) { return alert(e.message); }
+
+  vlEl('vl-sim-result').style.display = '';
+  vlEl('vl-sim-decision').innerHTML = r.decision === 'allow'
+    ? '<span style="color:var(--green)">✅ ALLOW</span>'
+    : '<span style="color:var(--red)">🚫 DENY</span>';
+  vlEl('vl-sim-reason').textContent = r.reason;
+
+  const groups = (r.caller?.groups || []).map(g => `<span class="vl-chip">🫂 ${vlEsc(g)}</span>`).join('');
+  vlEl('vl-sim-ctx').innerHTML =
+    `<span class="vl-chip">🤖 ${vlEsc(r.caller?.name || '?')}</span>`
+    + (groups ? `<span style="color:var(--text-muted)">member of</span>${groups}` : '<span style="color:var(--text-muted)">no group memberships</span>')
+    + '<span class="vl-arrow">→</span>'
+    + `<span class="vl-chip">🔐 ${vlEsc(r.secret?.name || '?')}</span>`
+    + `<span class="badge badge-blue">${vlEsc(r.operation)}</span>`
+    + (r.max_ttl_seconds ? `<span style="color:var(--text-muted)">max lease ${vlEsc(r.max_ttl_seconds)}s</span>` : '');
+
+  const tick = ok => ok ? '✅' : '✗';
+  vlEl('vl-sim-trace').innerHTML = (r.trace || []).length ? r.trace.map(t => {
+    const forbid = t.effect === 'forbid';
+    const cls = t.decides ? (forbid ? 'decides-forbid' : 'decides-permit') : (t.reached ? '' : 'unreached');
+    const badge = t.decides
+      ? (forbid ? '<span class="badge badge-red">🚫 Forbid matched — decided</span>' : '<span class="badge badge-green">✅ Permit matched — decided</span>')
+      : (t.reached ? '<span class="badge badge-gray">No match</span>' : '<span class="badge badge-gray">Not reached</span>');
+    const ops = (t.operations || ['*']).map(o => o === '*' ? 'all' : o).join(', ');
+    return `<div class="vl-trace ${cls}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+        <strong style="font-size:13px">${vlEsc(t.policyName)} <span style="color:var(--text-muted);font-weight:500;font-size:11.5px">· priority ${vlEsc(t.priority)} · ${forbid ? 'forbid' : 'permit'}</span></strong>${badge}
+      </div>
+      <div class="vl-checks-line">Caller: ${tick(t.callerMatched)} &nbsp;|&nbsp; Secret: ${tick(t.secretMatched)} &nbsp;|&nbsp; Scope: ${tick(t.scopeMatched)} &nbsp;|&nbsp; Operation: ${tick(t.operationMatched)} <span style="opacity:.8">(${vlEsc(ops)})</span></div>
+    </div>`;
+  }).join('') : '<div class="vl-note">No active policies — deny by default.</div>';
+}
+
+// ── Leases ──
+async function vlLoadLeases() {
+  const active = vlEl('vl-leases-active').checked;
+  const tb = document.querySelector('#vl-leases-table tbody');
+  const empty = vlEl('vl-leases-empty');
+  let rows;
+  try { rows = await vlApi('/leases' + (active ? '?active=1' : '')); }
+  catch (e) { vlTableError('#vl-leases-table tbody', 8, e.message); empty.style.display = 'none'; return; }
+  if (!rows.length) { tb.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const badge = { active: 'badge-green', expired: 'badge-gray', revoked: 'badge-red' };
+  tb.innerHTML = rows.map(l => `<tr>
+    <td style="font-weight:600;color:var(--text)">${vlEsc(l.secret_name)}<div class="vl-sub">v${vlEsc(l.secret_version)}</div></td>
+    <td>${vlEsc(l.agent_name || l.agent_id)}</td>
+    <td>${l.vs_id ? vlEsc(l.virtual_server_name || l.vs_id) : '<span style="color:var(--text-muted)">—</span>'}</td>
+    <td><span class="badge badge-blue">${vlEsc(l.operation)}</span></td>
+    <td>${vlTime(l.issued_at)}</td>
+    <td>${vlTime(l.expires_at)}</td>
+    <td><span class="badge ${badge[l.state] || 'badge-gray'}">${vlEsc(l.state)}</span>${l.revoked_at ? `<div class="vl-sub">${vlTime(l.revoked_at)}</div>` : ''}</td>
+    <td style="text-align:right">${l.state === 'active' ? `<button class="btn btn-danger btn-sm" data-vl="lease-revoke" data-id="${vlEsc(l.id)}">Revoke</button>` : ''}</td>
+  </tr>`).join('');
+}
+async function vlRevokeLease(id) {
+  if (!confirm('Revoke this lease? The agent will no longer be able to validate it.')) return;
+  try { await vlApi('/leases/' + id, { method: 'DELETE' }); showToast('Lease revoked'); } catch (e) { alert(e.message); }
+  vlLoadLeases();
+}
+
+// ── Activity ──
+async function vlLoadActivity() {
+  const tb = document.querySelector('#vl-activity-table tbody');
+  const empty = vlEl('vl-activity-empty');
+  const q = new URLSearchParams({ limit: '200' });
+  const level = vlEl('vl-act-level').value, secret = vlEl('vl-act-secret').value.trim();
+  if (level) q.set('level', level);
+  if (secret) q.set('secret_name', secret);
+  let rows;
+  try { rows = await vlApi('/activity?' + q.toString()); }
+  catch (e) { vlTableError('#vl-activity-table tbody', 9, e.message); empty.style.display = 'none'; return; }
+  if (!rows.length) { tb.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const lvl = { info: 'badge-blue', warn: 'badge-yellow', error: 'badge-red' };
+  const dash = '<span style="color:var(--text-muted)">—</span>';
+  const cell = (v) => (v === undefined || v === null || v === '') ? dash : vlEsc(v);
+  tb.innerHTML = rows.map(r => {
+    const d = r.data || {};
+    return `<tr>
+      <td style="white-space:nowrap">${vlTime(r.created_at)}</td>
+      <td><span class="badge ${lvl[r.level] || 'badge-gray'}">${vlEsc(r.level)}</span></td>
+      <td>${vlEsc(r.summary)}</td>
+      <td>${cell(d.principal)}</td>
+      <td>${cell(d.operation)}</td>
+      <td>${cell(d.via)}</td>
+      <td>${cell(d.agent_name || d.agent_id)}</td>
+      <td>${cell(d.secret_name)}</td>
+      <td style="max-width:260px;word-break:break-word">${cell(d.reason)}</td>
+    </tr>`;
+  }).join('');
 }
 
 init();

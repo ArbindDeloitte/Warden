@@ -1,6 +1,7 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { getOboToken, setOboToken } = require('./tokenCache');
+const { resolveSystemValue, isRef } = require('./vault');
 
 /**
  * Exchange a user's access token for an OBO (On-Behalf-Of) token using Okta's
@@ -13,7 +14,13 @@ async function exchangeForOboToken(userAccessToken, virtualServer) {
   const cached = await getOboToken(userAccessToken);
   if (cached) return { token: cached, fromCache: true };
 
-  const { okta_issuer, okta_client_id, okta_client_secret, okta_audience } = virtualServer;
+  const { okta_issuer, okta_client_id, okta_audience } = virtualServer;
+  // The client secret may be a vault:// reference; resolve it as Warden itself (audited), unless the
+  // virtual server has the vault switched off, which is a configuration conflict worth a clear error.
+  if (virtualServer.vault_enabled === 0 && isRef(virtualServer.okta_client_secret)) {
+    throw new Error('This virtual server has the Credential Vault disabled, but its Okta client secret is a vault:// reference. Enable the vault on it or enter the secret directly.');
+  }
+  const okta_client_secret = resolveSystemValue(virtualServer.okta_client_secret, 'obo');
 
   if (!okta_issuer || !okta_client_id || !okta_client_secret) {
     throw new Error('Virtual server missing Okta OBO configuration (issuer, client_id, client_secret)');

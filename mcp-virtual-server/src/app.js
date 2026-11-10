@@ -22,9 +22,15 @@ const agentGroups = require('./routes/agentGroups');
 const a2aAgents = require('./routes/a2aAgents');
 const a2aPolicies = require('./routes/a2aPolicies');
 const a2a = require('./routes/a2a');
+const vaultRoutes = require('./routes/vault');
+const adminAuth = require('./middleware/adminAuth');
+const { createRateLimiter } = require('./middleware/rateLimit');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
+// Loopback by default: only processes on this machine (the banking backend, your browser) can reach Warden.
+// Set WARDEN_HOST=0.0.0.0 to listen on every interface (then put it behind a firewall and set WARDEN_ADMIN_TOKEN).
+const HOST = process.env.WARDEN_HOST || '127.0.0.1';
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -36,6 +42,21 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// ── Security ────────────────────────────────────────────────────────────────────────────────────
+// Admin sign-in (open mode when WARDEN_ADMIN_TOKEN is unset), then the gate over the rest of /api. The data-plane
+// routes the gate lets through authenticate themselves (see middleware/adminAuth.js).
+const limitProxy = createRateLimiter({ scope: 'proxy' });
+const limitA2a = createRateLimiter({ scope: 'a2a', jsonRpc: true });
+const limitMisc = createRateLimiter({ scope: 'agent-api' });
+const loginLimit = createRateLimiter({ scope: 'login' });
+app.use('/api/auth/login', loginLimit);
+app.use('/api/auth', adminAuth.routes);
+app.use('/api', adminAuth.gate);
+app.use('/api/proxy', limitProxy);
+app.use('/a2a', (req, res, next) => (req.method === 'POST' ? limitA2a(req, res, next) : next()));
+app.use(['/api/vault/checkout', '/api/vault/sign'], limitMisc);
+app.use(/^\/api\/interceptors\/[^/]+\/scan$/, limitMisc);
 
 // API routes
 app.use('/api/mcp', mcpRegistry);
@@ -53,6 +74,7 @@ app.use('/api/warden-functions', wardenFunctions);
 app.use('/api/agent-groups', agentGroups);
 app.use('/api/a2a-agents', a2aAgents);
 app.use('/api/a2a-policies', a2aPolicies);
+app.use('/api/vault', vaultRoutes);
 
 // A2A gateway + discovery (must precede the SPA fallback)
 app.use('/a2a', a2a);
@@ -84,8 +106,11 @@ app.use((err, req, res, next) => {
 // Background job: expire pending approval tickets every 30 seconds
 setInterval(processExpiredTickets, 30 * 1000);
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`\n✅ MCP Virtual Server running on http://localhost:${PORT}`);
+  const notice = adminAuth.startupNotice();
+  console.log(`   Listening on ${HOST}${HOST === '127.0.0.1' ? ' (this machine only)' : ''}`);
+  console[notice.level === 'warn' ? 'warn' : 'log'](`   ${notice.level === 'warn' ? '⚠️  ' : '🔒 '}${notice.text}`);
   console.log(`   UI:    http://localhost:${PORT}`);
   console.log(`   Proxy: POST http://localhost:${PORT}/api/proxy/:virtualServerId\n`);
 

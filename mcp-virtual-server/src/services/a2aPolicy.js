@@ -31,6 +31,10 @@ function listPolicies(vsId) {
  * but a skill-restricted FORBID does not (it would otherwise block every follow-up call from
  * everyone). Forbidden skills can't be initiated in the first place, and task ownership already
  * limits who can touch a task.
+ *
+ * An APPROVAL policy gates initiating calls, so it matches like a FORBID when the request names no skill
+ * (otherwise omitting the skill would dodge the approval and fall through to a permit), and like a PERMIT
+ * for follow-ups (the task was already approved when it was started, and ownership protects it).
  */
 function matchPolicy(p, { callerId, targetId, skill, anySkill = false, groups }) {
   const callerOk = p.caller_type === 'any'
@@ -38,22 +42,25 @@ function matchPolicy(p, { callerId, targetId, skill, anySkill = false, groups })
     || (p.caller_type === 'group' && groups.includes(p.caller_value));
   const targetOk = p.target_type === 'any' || (p.target_type === 'agent' && p.target_value === targetId);
   const skills = parseSkills(p.skills);
+  const gates = p.effect === 'forbid' || p.effect === 'approval';
   const skillOk = skills.includes('*')
-    || (anySkill ? p.effect === 'permit' : (skill ? skills.includes(skill) : p.effect === 'forbid'));
+    || (anySkill ? (p.effect === 'permit' || p.effect === 'approval') : (skill ? skills.includes(skill) : gates));
   return { callerOk, targetOk, skillOk, matched: callerOk && targetOk && skillOk, skills };
 }
 
-/** Deny-by-default. Policies are evaluated by priority (desc); the first match decides. */
+/**
+ * Deny-by-default. Policies are evaluated by priority (desc); the first match decides.
+ * decision: 'allow' | 'deny' | 'approval'. 'approval' is only ever returned for initiating calls
+ * (anySkill=false); for follow-ups an approval policy simply allows.
+ */
 function evaluateA2aPolicy({ vsId, callerId, targetId, skill, anySkill = false }) {
   const groups = callerGroupIds(callerId);
 
   for (const p of listPolicies(vsId)) {
     if (!matchPolicy(p, { callerId, targetId, skill, anySkill, groups }).matched) continue;
-    return {
-      decision: p.effect === 'forbid' ? 'deny' : 'allow',
-      policy: p,
-      reason: p.effect === 'forbid' ? `Forbidden by policy "${p.name}"` : `Permitted by policy "${p.name}"`,
-    };
+    if (p.effect === 'forbid') return { decision: 'deny', policy: p, reason: `Forbidden by policy "${p.name}"` };
+    if (p.effect === 'approval' && !anySkill) return { decision: 'approval', policy: p, reason: `Approval required by policy "${p.name}"` };
+    return { decision: 'allow', policy: p, reason: `Permitted by policy "${p.name}"` };
   }
   return { decision: 'deny', policy: null, reason: 'No matching permit policy (deny by default)' };
 }
@@ -82,4 +89,4 @@ function explainA2aPolicy({ vsId, callerId, targetId, skill }) {
   return { ...verdict, trace };
 }
 
-module.exports = { evaluateA2aPolicy, explainA2aPolicy };
+module.exports = { evaluateA2aPolicy, explainA2aPolicy, callerGroupIds };

@@ -1,7 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash, timingSafeEqual } from 'crypto';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 
 import { initDatabase, getDb, getOrCreateUser } from './db.js';
@@ -12,6 +14,13 @@ import standingOrdersRouter from './routes/standing-orders.js';
 import transfersRouter from './routes/transfers.js';
 import adminRouter from './routes/admin.js';
 import { createMcpServer } from './mcp/server.js';
+import { verifyToken } from './middleware/auth.js';
+import { createWardenGateway, loadWardenConfig } from './services/wardenGateway.js';
+import { createWardenRouter } from './routes/warden.js';
+
+// .env.local is git-ignored and holds machine-local secrets (the two Warden agent tokens).
+// Already-set variables win, so a real environment variable still overrides it.
+dotenv.config({ path: fileURLToPath(new URL('../.env.local', import.meta.url)) });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,7 +44,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'mcp-session-id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'mcp-session-id', 'X-Id-Token'],
   })
 );
 
@@ -61,6 +70,13 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/standing-orders', standingOrdersRouter);
 app.use('/api/transfers', transfersRouter);
 
+// ─── Warden relay ─────────────────────────────────────────────────────────────
+// The browser calls these with its Okta token only. The Warden agent tokens (server-side, .env.local) and
+// the Warden API key (read from the Credential Vault) are added here, so none ship in the frontend bundle.
+const wardenConfig = loadWardenConfig();
+const wardenGateway = createWardenGateway({ config: wardenConfig });
+app.use('/api/warden', createWardenRouter({ gateway: wardenGateway, authMiddleware: verifyToken }));
+
 // ─── MCP (Model Context Protocol) ─────────────────────────────────────────────
 // Security is handled by PointGuard (OBO token exchange + policy enforcement).
 // We decode the JWT payload forwarded by PointGuard to extract user identity,
@@ -77,6 +93,28 @@ function decodeMcpToken(req) {
     return null;
   }
 }
+
+// Gateway credential. /mcp trusts the JWT it is handed without verifying it, so on its own anything that can
+// reach this port could forge a token and act as any user. When MCP_GATEWAY_KEY_SHA256 is set, every /mcp
+// request must also carry the gateway key (X-Gateway-Key). Only Warden holds it: in brokered mode Warden
+// injects it from the Credential Vault, so the agent never sees it. Only the key's SHA-256 is stored here.
+// Unset = open (the previous behaviour); set but malformed = refuse to start rather than silently run open.
+const gatewayKeyEnv = (process.env.MCP_GATEWAY_KEY_SHA256 || '').trim().toLowerCase();
+if (gatewayKeyEnv && !/^[0-9a-f]{64}$/.test(gatewayKeyEnv)) {
+  console.error('MCP_GATEWAY_KEY_SHA256 must be a 64-character hex SHA-256. Refusing to start with a broken /mcp credential.');
+  process.exit(1);
+}
+const gatewayKeyHash = gatewayKeyEnv ? Buffer.from(gatewayKeyEnv, 'hex') : null;
+
+function requireGatewayKey(req, res, next) {
+  if (!gatewayKeyHash) return next();
+  const provided = req.headers['x-gateway-key'];
+  const ok = typeof provided === 'string' && provided.length > 0
+    && timingSafeEqual(createHash('sha256').update(provided).digest(), gatewayKeyHash);
+  if (ok) return next();
+  res.status(401).json({ error: 'Gateway credential required' });
+}
+app.use('/mcp', requireGatewayKey);
 
 // Session store: sessionId -> { transport }  (auto-expires after 30 min)
 const mcpSessions = new Map();
@@ -272,6 +310,9 @@ async function main() {
       console.log(`  REST API: http://localhost:${PORT}/api`);
       console.log(`  MCP endpoint: http://localhost:${PORT}/mcp`);
       console.log(`  Health: http://localhost:${PORT}/api/health`);
+      console.log(`  MCP gateway key: ${gatewayKeyHash ? 'REQUIRED (X-Gateway-Key)' : 'not required — /mcp trusts any caller that can reach this port'}`);
+      const w = wardenGateway.describe();
+      console.log(`  Warden relay: tools ${w.toolsConfigured ? 'configured' : 'NOT configured'}, A2A ${w.a2aConfigured ? 'configured' : 'NOT configured'}, chat scan ${w.scanConfigured ? 'configured' : 'NOT configured'}, API key ${wardenConfig.apiKeySecret ? `from vault secret "${wardenConfig.apiKeySecret}"` : 'not used'}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);

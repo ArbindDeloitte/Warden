@@ -5,17 +5,22 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { exchangeForOboToken } = require('../services/oboService');
 const { callMcpTool } = require('../services/mcpClient');
+const { prepareToolCall, redact } = require('../services/vault');
+const a2a = require('./a2a'); // runs approved A2A tickets (it does not depend on this file)
+const admin = require('../middleware/adminAuth');
+const { authenticateAgent, checkVsApiKey } = require('../services/dataPlaneAuth');
 
 const router = express.Router();
 
 // ── List tickets (admin) ──────────────────────────────────────────────────────
 // GET /api/approvals?status=pending&vs=...&limit=50
 router.get('/', (req, res) => {
-  const { status, vs, limit = 50 } = req.query;
+  const { status, vs, kind, limit = 50 } = req.query;
   let sql = `SELECT * FROM approval_tickets WHERE 1=1`;
   const params = [];
   if (status) { sql += ` AND status = ?`; params.push(status); }
   if (vs)     { sql += ` AND virtual_server_id = ?`; params.push(vs); }
+  if (kind)   { sql += ` AND kind = ?`; params.push(kind); }
   sql += ` ORDER BY created_at DESC LIMIT ?`;
   params.push(Number(limit));
   const rows = db.prepare(sql).all(...params);
@@ -43,12 +48,26 @@ router.get('/:id', (req, res) => {
 // GET /api/approvals/:id/status
 // Returns lightweight status + result once executed.
 router.get('/:id/status', (req, res) => {
-  const ticket = db.prepare(`SELECT * FROM approval_tickets WHERE id = ?`).get(req.params.id);
+  // Secure mode (WARDEN_ADMIN_TOKEN set): an admin may read any ticket; a caller must be the agent that made the
+  // call (X-Agent-Token), plus the virtual server's API key if it has one. A ticket that is not the caller's looks
+  // exactly like one that does not exist, so ticket ids cannot be probed.
+  let ticket;
+  if (admin.enabled() && !admin.isAdmin(req)) {
+    const a = authenticateAgent(req);
+    if (a.error) return res.status(a.error.status).json({ error: a.error.message });
+    ticket = db.prepare(`SELECT * FROM approval_tickets WHERE id = ?`).get(req.params.id);
+    if (!ticket || ticket.agent_id !== a.agent.id) return res.status(404).json({ error: 'Ticket not found' });
+    const k = checkVsApiKey(req, ticket.virtual_server_id);
+    if (k) return res.status(k.status).json({ error: k.message });
+  } else {
+    ticket = db.prepare(`SELECT * FROM approval_tickets WHERE id = ?`).get(req.params.id);
+  }
   if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
   const payload = {
     ticket_id:      ticket.id,
     status:         ticket.status,
+    kind:           ticket.kind || 'mcp',
     tool_name:      ticket.tool_name,
     expires_at:     ticket.expires_at,
     timeout_action: ticket.timeout_action,
@@ -65,14 +84,17 @@ router.get('/:id/status', (req, res) => {
       : `Approval timeout — auto-${ticket.timeout_action}d`;
     return res.status(403).json(payload);
   }
-  if (ticket.status === 'approved') {
-    // Execution in progress (async path); tell caller to keep polling
-    payload.message = 'Approved — executing MCP call, check back shortly';
-    return res.json(payload);
-  }
+  // A failed execution leaves the ticket 'approved' with exec_error set; report it instead of "still executing".
   if (ticket.exec_error) {
     payload.error = ticket.exec_error;
     return res.status(502).json(payload);
+  }
+  if (ticket.status === 'approved') {
+    // Execution in progress (async path); tell caller to keep polling
+    payload.message = ticket.kind === 'a2a'
+      ? 'Approved — forwarding to the A2A agent, check back shortly'
+      : 'Approved — executing MCP call, check back shortly';
+    return res.json(payload);
   }
 
   // pending
@@ -102,6 +124,7 @@ router.post('/:id/decide', async (req, res) => {
   if (action === 'deny') {
     db.prepare(`UPDATE approval_tickets SET status = 'denied', decided_by = ?, decided_at = ? WHERE id = ?`)
       .run(decided_by, now, id);
+    if (ticket.kind === 'a2a') a2a.auditTicket(ticket, 'block', `A2A ${ticket.a2a_method} denied by ${decided_by}`, { decision: 'deny', reason: `Denied by ${decided_by}` });
     return res.json({ ticket_id: id, status: 'denied' });
   }
 
@@ -109,7 +132,7 @@ router.post('/:id/decide', async (req, res) => {
   db.prepare(`UPDATE approval_tickets SET status = 'approved', decided_by = ?, decided_at = ? WHERE id = ?`)
     .run(decided_by, now, id);
 
-  res.json({ ticket_id: id, status: 'approved', message: 'Executing MCP call…' });
+  res.json({ ticket_id: id, status: 'approved', message: ticket.kind === 'a2a' ? 'Forwarding to the A2A agent…' : 'Executing MCP call…' });
 
   // Fire-and-forget execution (errors stored on ticket, caller sees via next poll)
   executeTicket(ticket).catch(err =>
@@ -119,7 +142,20 @@ router.post('/:id/decide', async (req, res) => {
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
+// A2A tickets: the approved call is forwarded by the gateway (which re-checks that it is still allowed).
+async function executeA2aTicket(ticket) {
+  try {
+    const result = await a2a.executeApprovedTicket(ticket);
+    db.prepare(`UPDATE approval_tickets SET status = 'executed', result = ?, executed_at = ? WHERE id = ?`)
+      .run(JSON.stringify(result), new Date().toISOString(), ticket.id);
+  } catch (err) {
+    db.prepare(`UPDATE approval_tickets SET exec_error = ? WHERE id = ?`).run(err.message, ticket.id);
+    a2a.auditTicket(ticket, 'error', `A2A ${ticket.a2a_method} failed after approval`, { decision: 'error', reason: err.message });
+  }
+}
+
 async function executeTicket(ticket) {
+  if (ticket.kind === 'a2a') return executeA2aTicket(ticket);
   const now = new Date().toISOString();
   try {
     const virtualServer = db.prepare(
@@ -151,7 +187,18 @@ async function executeTicket(ticket) {
       auth_config: toolAssignment.auth_config,
     };
     const toolArgs = JSON.parse(ticket.tool_arguments || '{}');
-    const result = await callMcpTool(mcpServer, ticket.tool_name, toolArgs, oboToken);
+    // Tickets store the vault:// placeholders, never secret values; they resolve here, under the
+    // original agent's policy, at execution time.
+    const prepared = prepareToolCall({
+      args: toolArgs, mcpServer,
+      ctx: { agentId: ticket.agent_id, agentName: ticket.agent_name, vsId: ticket.virtual_server_id },
+      hasObo: virtualServer.require_obo !== 0,
+      vaultEnabled: virtualServer.vault_enabled !== 0,
+    });
+    const result = redact(
+      await callMcpTool(mcpServer, ticket.tool_name, prepared.args, oboToken, prepared.extraHeaders),
+      prepared.injected,
+    );
 
     db.prepare(`
       UPDATE approval_tickets
@@ -178,8 +225,16 @@ function toUtcMs(iso) {
 function normalise(t) {
   const now = Date.now();
   const expiresMs = toUtcMs(t.expires_at);
+  // A2A tickets: names resolved for display (mcp_server_id holds the target agent id for these)
+  const a2aExtra = t.kind === 'a2a' ? {
+    target_name: db.prepare('SELECT name FROM a2a_agents WHERE id = ?').get(t.a2a_agent_id)?.name || null,
+    caller_name: t.agent_name || null,
+    a2a_params:  safeJson(t.a2a_params, null),
+    a2a_user:    safeJson(t.a2a_user, null),
+  } : {};
   return {
     ...t,
+    ...a2aExtra,
     tool_arguments: safeJson(t.tool_arguments, {}),
     user_groups:    safeJson(t.user_groups,    []),
     result:         safeJson(t.result,         null),
@@ -209,6 +264,7 @@ function processExpiredTickets() {
     } else {
       db.prepare(`UPDATE approval_tickets SET status = 'expired', decided_by = 'system', decided_at = ? WHERE id = ?`)
         .run(now, ticket.id);
+      if (ticket.kind === 'a2a') a2a.auditTicket(ticket, 'block', `A2A ${ticket.a2a_method} approval timed out`, { decision: 'deny', reason: 'Approval timed out' });
     }
   }
 

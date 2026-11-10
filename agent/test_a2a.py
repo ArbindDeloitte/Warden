@@ -49,7 +49,7 @@ def step(title: str):
     print(f"\n{B}{title}{X}")
 
 
-client = A2AClient(warden, vs, target, token, user_token)
+client = A2AClient(warden, vs, target, token, user_token, version=os.environ.get("WARDEN_A2A_VERSION", "1.0"))
 
 step("1. Bypass attempt: call the credit-card-agent directly (no Warden)")
 r = requests.post(f"{card_agent}/a2a", json={"jsonrpc": "2.0", "id": 1, "method": "SendMessage",

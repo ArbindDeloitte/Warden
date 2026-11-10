@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useOktaAuth } from '@okta/okta-react';
 import { banking } from '../services/api.js';
-import { mcpBanking, scanMessage, ApprovalPendingError, pollApprovalStatus, askCreditCardAgent, a2aConfigured, A2AError, A2A_AGENT_NAME } from '../services/mcpProxy.js';
+import { mcpBanking, scanMessage, ApprovalPendingError, pollApprovalStatus, askCreditCardAgent, isA2AConfigured, A2AError, A2AApprovalPendingError, interpretA2aApproval, A2A_AGENT_NAME } from '../services/mcpProxy.js';
 
 // ── format helpers ────────────────────────────────────────────────────────────
 function fmtCurrency(amount, currency = 'USD') {
@@ -431,7 +431,7 @@ export default function Agent() {
   const [loading, setLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [cachedAccounts, setCachedAccounts] = useState(null);
-  // Approval polling: { ticketId, msgId, toolName }
+  // Approval polling: { ticketId, msgId, toolName, kind: 'mcp' | 'a2a', skill }
   const [approvalPolling, setApprovalPolling] = useState(null);
   const approvalIntervalRef = useRef(null);
 
@@ -452,11 +452,31 @@ export default function Agent() {
       return;
     }
 
-    const { ticketId, msgId, toolName } = approvalPolling;
+    const { ticketId, msgId, toolName, kind, skill } = approvalPolling;
 
     const check = async () => {
       try {
-        const status = await pollApprovalStatus(ticketId);
+        const status = await pollApprovalStatus(ticketId, kind);
+
+        if (kind === 'a2a') {
+          // The Credit Card Agent call that an A2A approval policy is holding
+          const outcome = interpretA2aApproval(status);
+          if (outcome.state === 'pending') return; // waiting for an admin, or approved and being forwarded
+          clearInterval(approvalIntervalRef.current);
+          approvalIntervalRef.current = null;
+          setApprovalPolling(null);
+          if (outcome.state === 'done') {
+            updateMsg(msgId, "✅ **Approved** by an admin — here is the Credit Card Agent's answer.");
+            await showA2aResult(outcome.result, skill); // goes through the same outbound chat scan as a direct answer
+          } else if (outcome.state === 'denied') {
+            updateMsg(msgId, '🚫 **Denied** — an admin denied your request to the Credit Card Agent.');
+          } else if (outcome.state === 'expired') {
+            updateMsg(msgId, `⏱ **Timed out** — The approval window expired and the request was auto-${outcome.autoAction}.`);
+          } else {
+            updateMsg(msgId, `⚠️ **The approved request could not be completed**\n\n• ${outcome.message}`);
+          }
+          return;
+        }
 
         if (status.status === 'executed') {
           clearInterval(approvalIntervalRef.current);
@@ -477,6 +497,12 @@ export default function Agent() {
           setApprovalPolling(null);
           const autoAction = status.timeout_action === 'approve' ? 'auto-approved' : 'auto-denied';
           updateMsg(msgId, `⏱ **Timed out** — The approval window expired and the request was ${autoAction}.`);
+        } else if (status.status === 'approved' && status.error) {
+          // Approved, but running it failed (Warden now reports this instead of "still executing")
+          clearInterval(approvalIntervalRef.current);
+          approvalIntervalRef.current = null;
+          setApprovalPolling(null);
+          updateMsg(msgId, `⚠️ **The approved request could not be completed**\n\n• ${status.error}`);
         }
         // pending / approved (executing) → keep polling
       } catch {
@@ -830,11 +856,27 @@ export default function Agent() {
     }
   }
 
+  // Shows an answer from the Credit Card Agent, whether it arrived directly or after an admin approved it.
+  // Replies go through the same outbound chat scan as MCP replies (addAgentMsg).
+  async function showA2aResult(r, skill) {
+    const blob = JSON.stringify(r.data);
+    const cards = r.data.find(d => d?.cards)?.cards;
+    const transactions = r.data.find(d => d?.transactions)?.transactions;
+    const trace = { outcome: 'ok', skill, taskId: r.taskId, state: r.state };
+    if (skill === 'card-details') {
+      await addAgentMsg('a2a_card', 'Here are your credit cards, answered by the **Credit Card Agent**:', { cards, redacted: blob.includes('REDACTED'), trace });
+    } else if (skill === 'card-transactions') {
+      await addAgentMsg('a2a_card', 'Recent credit card transactions, from the **Credit Card Agent**:', { transactions, trace });
+    } else {
+      await addAgentMsg('a2a_card', `✅ ${r.text}`, { trace });
+    }
+  }
+
   // ── A2A: delegate a credit card question to the Credit Card Agent via Warden ──
   async function askCardAgent(question, skill) {
-    if (!a2aConfigured) {
+    if (!(await isA2AConfigured())) {
       addMsg('agent', 'text',
-        '🏦 **Credit Card Agent is not connected yet.**\n\nRun `node credit-card-agent/setup-warden.js` (with the card agent and Warden running), then restart the frontend dev server so it picks up `.env.local`.');
+        '🏦 **Credit Card Agent is not connected yet.**\n\nRun `node credit-card-agent/setup-warden.js` (with the card agent and Warden running), store the printed agent token in the Warden Credential Vault, then restart the banking backend so it picks up `banking-app/backend/.env.local`.');
       return;
     }
     addMsg('agent', 'text', skill === 'card-freeze'
@@ -842,20 +884,20 @@ export default function Agent() {
       : 'Asking the **Credit Card Agent** — over A2A, through Warden…');
     try {
       const r = await askCreditCardAgent(question, skill);
-      const blob = JSON.stringify(r.data);
-      const cards = r.data.find(d => d?.cards)?.cards;
-      const transactions = r.data.find(d => d?.transactions)?.transactions;
-      const trace = { outcome: 'ok', skill, taskId: r.taskId, state: r.state };
-      // Replies go through the same outbound chat scan as MCP replies (addAgentMsg)
-      if (skill === 'card-details') {
-        await addAgentMsg('a2a_card', 'Here are your credit cards, answered by the **Credit Card Agent**:', { cards, redacted: blob.includes('REDACTED'), trace });
-      } else if (skill === 'card-transactions') {
-        await addAgentMsg('a2a_card', 'Recent credit card transactions, from the **Credit Card Agent**:', { transactions, trace });
-      } else {
-        await addAgentMsg('a2a_card', `✅ ${r.text}`, { trace });
-      }
+      await showA2aResult(r, skill);
     } catch (err) {
-      if (err instanceof A2AError) {
+      if (err instanceof A2AApprovalPendingError) {
+        // An approval policy is holding the call: show a polling bubble (like MCP approvals); the result appears
+        // here automatically once an admin approves it.
+        const msgId = `${Date.now()}-a2a-approval`;
+        const expiresIn = err.expiresAt ? Math.max(1, Math.round((new Date(err.expiresAt).getTime() - Date.now()) / 60000)) : '?';
+        setMessages(prev => [...prev, {
+          id: msgId, role: 'agent', type: 'text',
+          content: `⏳ **Awaiting Admin Approval**\n\nYour request to the Credit Card Agent is held by a Warden approval policy. I'll update this message automatically every 5 seconds.\n\n• **Ticket:** \`${err.ticketId}\`\n• **Expires in:** ~${expiresIn} min\n• **On timeout:** ${err.timeoutAction === 'approve' ? 'auto-approve ✅' : 'auto-deny 🚫'}\n\nAn admin must approve in the Warden dashboard.`,
+          data: null, ts: new Date(),
+        }]);
+        setApprovalPolling({ ticketId: err.ticketId, msgId, toolName: skill || 'Credit Card Agent request', kind: 'a2a', skill });
+      } else if (err instanceof A2AError) {
         const denied = err.status === 403 || err.status === 401;
         addMsg('agent', 'a2a_card',
           denied ? `🚫 **Warden blocked this A2A call**\n\n• **Reason:** ${err.message}` : `⚠️ **The A2A call failed**\n\n• ${err.message}`,

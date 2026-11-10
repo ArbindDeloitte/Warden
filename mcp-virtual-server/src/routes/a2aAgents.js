@@ -3,7 +3,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
-const { fetchCard, parseCard } = require('../services/a2aCards');
+const { fetchCard, parseCard, SUPPORTED_VERSIONS } = require('../services/a2aCards');
 
 const { encrypt } = require('../services/secrets');
 
@@ -37,9 +37,10 @@ function parseAuth(a, cur = {}) {
 
 function shape(row) {
   let skills = [];
-  try { skills = parseCard(JSON.parse(row.card_json)).skills; } catch {}
+  try { skills = parseCard(JSON.parse(row.card_json), row.protocol_version || '1.0').skills; } catch {}
   return {
     id: row.id, name: row.name, description: row.description,
+    protocol_version: row.protocol_version || '1.0',
     card_url: row.card_url, endpoint_url: row.endpoint_url, skills,
     is_active: row.is_active, card_fetched_at: row.card_fetched_at, card_error: row.card_error,
     created_at: row.created_at, vs_count: row.vs_count ?? 0,
@@ -64,8 +65,14 @@ router.get('/:id', (req, res) => {
 });
 
 // Register by card URL (fetched server-side) or by pasted card_json.
+// protocol_version: "auto" (default; read it from the card), "1.0" or "0.3". An explicit choice must agree
+// with the card, and is what the gateway for this agent speaks from then on.
 router.post('/', async (req, res) => {
   const { name, card_url, card_json, auth } = req.body;
+  const requestedVersion = req.body.protocol_version ?? 'auto';
+  if (requestedVersion !== 'auto' && !SUPPORTED_VERSIONS.includes(requestedVersion)) {
+    return res.status(400).json({ error: `protocol_version must be "auto", ${SUPPORTED_VERSIONS.map(v => `"${v}"`).join(' or ')}` });
+  }
   if (!card_url && !card_json) return res.status(400).json({ error: 'card_url or card_json is required' });
   const a = auth ? parseAuth(auth) : { type: 'none', header: null, enc: null };
   if (a.error) return res.status(400).json({ error: a.error });
@@ -76,15 +83,15 @@ router.post('/', async (req, res) => {
     return res.status(502).json({ error: e.message });
   }
   let parsed;
-  try { parsed = parseCard(card); } catch (e) { return res.status(400).json({ error: e.message }); }
+  try { parsed = parseCard(card, requestedVersion); } catch (e) { return res.status(400).json({ error: e.message }); }
 
   const id = uuidv4();
   try {
-    db.prepare(`INSERT INTO a2a_agents (id,name,description,card_url,card_json,endpoint_url,card_fetched_at,outbound_auth_type,outbound_auth_header,outbound_secret_enc)
-                VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    db.prepare(`INSERT INTO a2a_agents (id,name,description,card_url,card_json,endpoint_url,card_fetched_at,outbound_auth_type,outbound_auth_header,outbound_secret_enc,protocol_version)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
       .run(id, (name || parsed.name).trim(), parsed.description, card_url || null,
-           JSON.stringify(card), parsed.endpoint_url, new Date().toISOString(), a.type, a.header, a.enc);
-    res.status(201).json({ id });
+           JSON.stringify(card), parsed.endpoint_url, new Date().toISOString(), a.type, a.header, a.enc, parsed.version);
+    res.status(201).json({ id, protocol_version: parsed.version });
   } catch (err) {
     if (err.message?.includes('UNIQUE')) return res.status(409).json({ error: 'An A2A agent with that name already exists' });
     throw err;
@@ -98,7 +105,9 @@ router.post('/:id/refresh', async (req, res) => {
   if (!row.card_url) return res.status(400).json({ error: 'Agent was registered from pasted JSON; no card_url to refresh' });
   try {
     const card = await fetchCard(row.card_url);
-    const parsed = parseCard(card);
+    // Validated against the version the agent was registered with: a card that has changed version is an
+    // error (the cached card is kept), not a silent switch of protocol under live callers.
+    const parsed = parseCard(card, row.protocol_version || '1.0');
     db.prepare(`UPDATE a2a_agents SET card_json=?, endpoint_url=?, description=?, card_fetched_at=?, card_error=NULL WHERE id=?`)
       .run(JSON.stringify(card), parsed.endpoint_url, parsed.description, new Date().toISOString(), row.id);
     res.json({ ok: true });

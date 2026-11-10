@@ -1,0 +1,3 @@
+# Machine-local secrets (Warden gateway agent token). Never commit.
+.env.local
+.gateway-key-backup.json

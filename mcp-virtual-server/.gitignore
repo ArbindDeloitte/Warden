@@ -1,2 +1,5 @@
 # Encryption key for stored A2A credentials — must never be committed
 data/.warden-secrets.key
+
+# Broker demo state (holds the demo agents' tokens)
+demo/broker/.state.json

@@ -1,6 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
+const { isRef } = require('../services/vault');
 
 const router = express.Router();
 
@@ -8,7 +9,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
   const servers = db.prepare('SELECT * FROM virtual_servers ORDER BY created_at DESC').all();
   servers.forEach((s) => {
-    if (s.okta_client_secret) s.okta_client_secret = '***';
+    if (s.okta_client_secret && !isRef(s.okta_client_secret)) s.okta_client_secret = '***';
   });
   res.json(servers);
 });
@@ -16,7 +17,7 @@ router.get('/', (req, res) => {
 function listVsA2aAgents(vsId) {
   return db.prepare(`
     SELECT a.id, a.name, a.description, a.card_url, a.endpoint_url, a.is_active,
-           a.card_fetched_at, a.card_error, a.card_json, v.created_at AS assigned_at
+           a.card_fetched_at, a.card_error, a.card_json, a.protocol_version, v.created_at AS assigned_at
     FROM virtual_server_a2a_agents v
     JOIN a2a_agents a ON a.id = v.a2a_agent_id
     WHERE v.vs_id = ? ORDER BY v.created_at DESC
@@ -52,7 +53,7 @@ router.get('/:id', (req, res) => {
     ORDER BY vsa.created_at DESC
   `).all(req.params.id);
 
-  if (server.okta_client_secret) server.okta_client_secret = '***';
+  if (server.okta_client_secret && !isRef(server.okta_client_secret)) server.okta_client_secret = '***';
 
   const a2a_agents = listVsA2aAgents(req.params.id);
 
@@ -68,34 +69,99 @@ function parseFeatures(raw) {
   try { return Array.isArray(raw) ? raw : JSON.parse(raw); } catch { return DEFAULT; }
 }
 
+// A virtual server that proxies MCP tools (protocol mcp or both) with require_obo = 0 AND require_agent_token = 0
+// has no caller identity at all: no user token and no agent token. Warden then cannot say who is calling, so agent
+// rules cannot apply and anyone who can reach it (plus its API key, if it has any) reaches the tools. Saving that
+// combination needs an explicit `allow_anonymous: true`. A2A-only virtual servers have their own controls and are exempt.
+// (A vaulted upstream credential is never injected for an unidentified caller either way; this guards the rest.)
+function anonymousRefusal({ protocol, requireObo, requireAgentToken, allowAnonymous }) {
+  if (protocol === 'a2a') return null;
+  if (requireObo !== 0 || requireAgentToken) return null;
+  if (allowAnonymous) return null;
+  return {
+    error: 'Refusing to save: this virtual server would accept calls from anyone',
+    code: 'anonymous_virtual_server',
+    hint: 'require_obo is off and require_agent_token is off, so no caller identity is checked. Turn on require_agent_token (and add the agents that need access), or send allow_anonymous: true to confirm that unauthenticated calls are intended.',
+  };
+}
+
+// require_obo on means the caller's user token is verified and exchanged. With no issuer, no jwks_uri and no global
+// JWKS_URI there is nothing to verify it against, so the token's claims would be read unchecked (and the exchange,
+// which needs the issuer, could not work either). Refuse to save that instead of failing on the first call.
+function noIdpRefusal({ protocol, requireObo, issuer, jwksUri }) {
+  if (protocol === 'a2a' || requireObo === 0) return null;
+  if (String(issuer || '').trim() || String(jwksUri || '').trim() || process.env.JWKS_URI) return null;
+  return {
+    error: 'Refusing to save: require_obo is on but no identity provider is configured',
+    code: 'obo_without_idp',
+    hint: 'Set the Okta issuer (or a jwks_uri) so user tokens can be verified, or turn off require_obo for an agent-only virtual server.',
+  };
+}
+
+function logAnonymousAck(vsId, name) {
+  try {
+    db.prepare(`INSERT INTO event_log (id, vs_id, log_type, level, summary, data) VALUES (?,?,?,?,?,?)`)
+      .run(uuidv4(), vsId, 'config', 'warn', `Virtual server "${name}" saved as anonymous (no user token, no agent token required)`, JSON.stringify({ allow_anonymous: true }));
+  } catch {}
+}
+
 // Create a virtual server
 router.post('/', (req, res) => {
-  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, require_agent_token, features_enabled, protocol } = req.body;
+  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, require_agent_token, features_enabled, protocol, vault_enabled, user_token_audience, user_token_issuer, allow_anonymous } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
+
+  const oboNew = require_obo === false || require_obo === 0 ? 0 : 1;
+  const agentNew = require_agent_token ? 1 : 0;
+  const protoNew = parseProtocol(protocol);
+  const refusal = anonymousRefusal({ protocol: protoNew, requireObo: oboNew, requireAgentToken: agentNew, allowAnonymous: allow_anonymous === true || allow_anonymous === 1 });
+  if (refusal) return res.status(400).json(refusal);
+  const noIdp = noIdpRefusal({ protocol: protoNew, requireObo: oboNew, issuer: okta_issuer, jwksUri: jwks_uri });
+  if (noIdp) return res.status(400).json(noIdp);
+  const anonAck = protoNew !== 'a2a' && oboNew === 0 && !agentNew ? 1 : 0;
 
   const id = uuidv4();
   db.prepare(`
-    INSERT INTO virtual_servers (id, name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, require_agent_token, features_enabled, protocol)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO virtual_servers (id, name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, require_obo, require_agent_token, features_enabled, protocol, vault_enabled, allow_anonymous)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, name, description || null, okta_issuer || null, okta_client_id || null,
     okta_client_secret || null, okta_audience || null, jwks_uri || null,
-    require_obo === false || require_obo === 0 ? 0 : 1,
-    require_agent_token ? 1 : 0,
+    oboNew,
+    agentNew,
     JSON.stringify(parseFeatures(features_enabled)),
-    parseProtocol(protocol));
+    protoNew,
+    // omitted = on, so clients that predate this switch keep their behaviour (the UI sends it explicitly)
+    vault_enabled === undefined ? 1 : (vault_enabled ? 1 : 0),
+    anonAck);
+  if (anonAck) logAnonymousAck(id, name);
+  if (user_token_audience || user_token_issuer) {
+    db.prepare('UPDATE virtual_servers SET user_token_audience=?, user_token_issuer=? WHERE id=?')
+      .run(String(user_token_audience || '').trim() || null, String(user_token_issuer || '').trim() || null, id);
+  }
 
   res.status(201).json({ id, name });
 });
 
 // Update a virtual server
 router.put('/:id', (req, res) => {
-  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, is_active, require_obo, require_agent_token, features_enabled, protocol } = req.body;
-  const server = db.prepare('SELECT id FROM virtual_servers WHERE id = ?').get(req.params.id);
+  const { name, description, okta_issuer, okta_client_id, okta_client_secret, okta_audience, jwks_uri, is_active, require_obo, require_agent_token, features_enabled, protocol, vault_enabled, user_token_audience, user_token_issuer, allow_anonymous } = req.body;
+  const server = db.prepare('SELECT id, protocol, allow_anonymous FROM virtual_servers WHERE id = ?').get(req.params.id);
   if (!server) return res.status(404).json({ error: 'Virtual server not found' });
 
   const secretUpdate = okta_client_secret && okta_client_secret !== '***' ? okta_client_secret : null;
   const oboVal      = require_obo === false || require_obo === 0 ? 0 : 1;
   const agentVal    = require_agent_token ? 1 : 0;
+
+  // Checked before anything is written. protocol / allow_anonymous change only when supplied (like vault_enabled),
+  // so an older client that omits them neither flips the protocol nor loses or gains the acknowledgement.
+  const effProtocol = protocol !== undefined ? parseProtocol(protocol, server.protocol || 'mcp') : (server.protocol || 'mcp');
+  const effAllow = allow_anonymous !== undefined ? (allow_anonymous === true || allow_anonymous === 1) : !!server.allow_anonymous;
+  const refusal = anonymousRefusal({ protocol: effProtocol, requireObo: oboVal, requireAgentToken: agentVal, allowAnonymous: effAllow });
+  if (refusal) return res.status(400).json(refusal);
+  const noIdp = noIdpRefusal({ protocol: effProtocol, requireObo: oboVal, issuer: okta_issuer, jwksUri: jwks_uri });
+  if (noIdp) return res.status(400).json(noIdp);
+  const anonNow =effProtocol !== 'a2a' && oboVal === 0 && !agentVal;
+  // The acknowledgement only means something while the combination is in effect; securing the VS clears it.
+  const allowStored = anonNow ? 1 : 0;
   const featuresJson = JSON.stringify(parseFeatures(features_enabled));
 
   if (secretUpdate) {
@@ -112,6 +178,22 @@ router.put('/:id', (req, res) => {
     `).run(name, description || null, okta_issuer || null, okta_client_id || null,
       okta_audience || null, jwks_uri || null,
       is_active !== undefined ? (is_active ? 1 : 0) : 1, oboVal, agentVal, featuresJson, req.params.id);
+  }
+
+  // The expected user-token audience / issuer change only when supplied ('' clears them), so older clients can't drop a check.
+  if (user_token_audience !== undefined) {
+    db.prepare('UPDATE virtual_servers SET user_token_audience=? WHERE id=?').run(String(user_token_audience || '').trim() || null, req.params.id);
+  }
+  if (user_token_issuer !== undefined) {
+    db.prepare('UPDATE virtual_servers SET user_token_issuer=? WHERE id=?').run(String(user_token_issuer || '').trim() || null, req.params.id);
+  }
+
+  db.prepare('UPDATE virtual_servers SET allow_anonymous=? WHERE id=?').run(allowStored, req.params.id);
+  if (allowStored && !server.allow_anonymous) logAnonymousAck(req.params.id, name);
+
+  // vault_enabled, like protocol, changes only when explicitly supplied, so older clients can't flip it
+  if (vault_enabled !== undefined) {
+    db.prepare('UPDATE virtual_servers SET vault_enabled=? WHERE id=?').run(vault_enabled ? 1 : 0, req.params.id);
   }
 
   // protocol is only changed when explicitly supplied, so older clients can't reset it

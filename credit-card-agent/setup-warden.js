@@ -21,8 +21,17 @@ const TARGET_NAME = 'credit-card-agent';
 const GROUP_NAME = 'banking-agents';
 const CALLER_NAME = 'securebank-a2a-agent';
 
+// Warden's admin API requires WARDEN_ADMIN_TOKEN when it is set there. Taken from the environment, else Warden's .env.
+function adminHeaders() {
+  let t = process.env.WARDEN_ADMIN_TOKEN; // set but empty = "no token" (tests use this)
+  if (t === undefined) {
+    try { const m = /^WARDEN_ADMIN_TOKEN=(.+)$/m.exec(fs.readFileSync(path.join(__dirname, '..', 'mcp-virtual-server', '.env'), 'utf8')); if (m) t = m[1].trim(); } catch { /* no .env: Warden is probably open */ }
+  }
+  return t ? { 'X-Admin-Token': t } : {};
+}
+
 async function api(method, path, body) {
-  const r = await fetch(W + '/api' + path, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const r = await fetch(W + '/api' + path, { method, headers: { 'Content-Type': 'application/json', ...adminHeaders() }, body: body ? JSON.stringify(body) : undefined });
   const text = await r.text();
   let data; try { data = JSON.parse(text); } catch { data = text; }
   if (!r.ok) throw Object.assign(new Error(`${method} ${path} -> ${r.status} ${data?.error || text}`), { status: r.status });
@@ -103,18 +112,23 @@ const log = (m) => console.log('  ' + m);
     log('interceptor: BLOCK prompt injection');
   }
 
-  // 7. Wire the SecureBank chat UI (Vite reads .env.local; merged so other keys are preserved)
-  const feDir = path.join(__dirname, '..', 'banking-app', 'frontend');
+  // 7. Wire the SecureBank chat UI. The browser holds NO Warden credentials: it calls the banking backend,
+  // which acts as this A2A agent. The agent token is that agent's identity, so it is saved server-side in the
+  // backend's git-ignored .env.local (merged so other keys are preserved). The shared Warden API key is read
+  // from the Warden Credential Vault, so it is never written anywhere.
+  const beDir = path.join(__dirname, '..', 'banking-app', 'backend');
   let feNote = '';
-  if (!process.env.SKIP_FRONTEND_ENV && fs.existsSync(feDir)) {
-    const vals = { VITE_WARDEN_A2A_VS_ID: vsId, VITE_WARDEN_A2A_TARGET_ID: target.id, VITE_WARDEN_A2A_AGENT_TOKEN: token };
-    const file = path.join(feDir, '.env.local');
+  if (!process.env.SKIP_BACKEND_ENV && fs.existsSync(beDir)) {
+    const vals = { WARDEN_A2A_VS_ID: vsId, WARDEN_A2A_TARGET_ID: target.id, WARDEN_A2A_AGENT_TOKEN: token, ...(W !== 'http://localhost:3003' ? { WARDEN_URL: W } : {}) };
+    const file = path.join(beDir, '.env.local');
     const keep = fs.existsSync(file)
       ? fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(l => l && !Object.keys(vals).some(k => l.startsWith(k + '=')))
       : [];
     fs.writeFileSync(file, [...keep, ...Object.entries(vals).map(([k, v]) => `${k}=${v}`)].join('\n') + '\n');
-    feNote = '\nFrontend chat wired: wrote banking-app/frontend/.env.local - restart the Vite dev server (npm run dev) to pick it up.'
-      + (W !== 'http://localhost:3003' ? `\n  NOTE: Warden is not on :3003; also set VITE_WARDEN_URL=${W} for the frontend.` : '');
+    feNote = `
+SecureBank chat wired: ids and this agent's token saved to banking-app/backend/.env.local (git-ignored).
+  If the virtual server uses Warden API keys, add a Vault policy letting this agent "reveal" the API-key
+  secret, then restart the banking backend. The frontend needs no changes or env vars.`;
   }
 
   console.log(`

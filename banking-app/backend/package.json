@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test:warden-relay": "node scripts/test-warden-relay.js",
+    "gateway-key": "node scripts/gateway-key.js",
+    "test:gateway-key": "node scripts/test-gateway-key.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.3",
